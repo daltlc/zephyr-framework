@@ -1,0 +1,17 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Minified output (generated)
+*.min.js
+*.min.css
+
+# Node (if ever added for tooling)
+node_modules/

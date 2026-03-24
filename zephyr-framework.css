@@ -1,0 +1,425 @@
+/**
+ * Zephyr Framework - Core Styles
+ * Zero-JS interactions using modern CSS
+ */
+
+@layer reset, components, utilities;
+
+@layer reset {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  input, button, textarea, select {
+    font: inherit;
+  }
+
+  p, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+  }
+}
+
+/* View Transitions API Support */
+@layer components {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.3s;
+  }
+
+  ::view-transition-old(slide) {
+    animation: slide-out 0.4s ease-in-out;
+  }
+
+  ::view-transition-new(slide) {
+    animation: slide-in 0.4s ease-in-out;
+  }
+
+  @keyframes slide-out {
+    to {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  /* Accordion */
+  z-accordion-item [slot="content"] {
+    display: grid;
+    grid-template-rows: 0fr;
+    overflow: hidden;
+    transition: grid-template-rows 0.3s ease-out, padding 0.3s ease-out;
+  }
+
+  z-accordion-item [slot="content"] > * {
+    min-height: 0;
+  }
+
+  z-accordion-item:has([data-open]) [slot="content"] {
+    grid-template-rows: 1fr;
+  }
+
+  z-accordion-item [slot="trigger"] {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+
+  z-accordion-item [slot="trigger"]::after {
+    content: '+';
+    position: absolute;
+    right: 1rem;
+    transition: transform 0.3s ease;
+  }
+
+  z-accordion-item:has([data-open]) [slot="trigger"]::after {
+    transform: rotate(45deg);
+  }
+
+  /* Modal */
+  z-modal dialog {
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0;
+    max-width: 90vw;
+    max-height: 90vh;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  z-modal dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  z-modal dialog[open] {
+    animation: modal-in 0.3s ease-out;
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-1rem);
+    }
+  }
+
+  /* Tabs */
+  z-tabs {
+    container-type: inline-size;
+    display: block;
+  }
+
+  z-tabs [data-tab] {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  z-tabs [data-tab]:not([data-active]) {
+    opacity: 0.6;
+  }
+
+  z-tabs [data-tab][data-active]::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: currentColor;
+    animation: tab-slide 0.2s ease;
+  }
+
+  @keyframes tab-slide {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  z-tabs [data-tab-panel]:not([data-active]) {
+    display: none;
+  }
+
+  z-tabs [data-tab-panel][data-active] {
+    animation: fade-in 0.3s ease;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+  }
+
+  /* Container query for responsive tabs */
+  @container (max-width: 500px) {
+    z-tabs [role="tablist"] {
+      flex-direction: column;
+    }
+  }
+
+  /* Select */
+  z-select {
+    position: relative;
+    display: inline-block;
+    container-type: inline-size;
+  }
+
+  z-select [slot="trigger"] {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  z-select [slot="options"] {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.25rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5rem);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    background: white;
+    border-radius: 0.375rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 50;
+  }
+
+  z-select:has([data-open]) [slot="options"] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  z-select [slot="options"] [data-value] {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  z-select [slot="options"] [data-value]:hover {
+    background-color: rgb(243 244 246);
+  }
+
+  /* Carousel */
+  z-carousel {
+    position: relative;
+    overflow: hidden;
+    container-type: inline-size;
+  }
+
+  z-carousel [slot="item"] {
+    display: none;
+    view-transition-name: slide;
+  }
+
+  z-carousel [slot="item"][data-active] {
+    display: block;
+    animation: carousel-enter 0.4s ease-in-out;
+  }
+
+  @keyframes carousel-enter {
+    from {
+      opacity: 0;
+    }
+  }
+
+  z-carousel [data-prev],
+  z-carousel [data-next] {
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s ease;
+  }
+
+  z-carousel [data-prev]:hover,
+  z-carousel [data-next]:hover {
+    opacity: 0.8;
+  }
+
+  @container (max-width: 600px) {
+    z-carousel [data-prev],
+    z-carousel [data-next] {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* Toast */
+  z-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem 1.5rem;
+    background: rgb(17 24 39);
+    color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    transform: translateY(calc(100% + 2rem));
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    z-index: 1000;
+  }
+
+  z-toast[data-visible] {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Dropdown */
+  z-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  z-dropdown [slot="content"] {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5rem);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    min-width: 200px;
+    z-index: 50;
+  }
+
+  z-dropdown:has([data-open]) [slot="content"] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* Dark mode support using :has() */
+  html:has([data-theme="dark"]) {
+    color-scheme: dark;
+  }
+
+  html:has([data-theme="dark"]) z-modal dialog {
+    background: rgb(17 24 39);
+    color: white;
+  }
+
+  html:has([data-theme="dark"]) z-select [slot="options"],
+  html:has([data-theme="dark"]) z-dropdown [slot="content"] {
+    background: rgb(17 24 39);
+    color: white;
+  }
+
+  html:has([data-theme="dark"]) z-select [slot="options"] [data-value]:hover {
+    background-color: rgb(31 41 55);
+  }
+
+  /* Loading state using :has() */
+  button:has([data-loading]) {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+  }
+
+  button:has([data-loading])::after {
+    content: '';
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Form validation using :has() */
+  label:has(+ input:user-invalid) {
+    color: rgb(239 68 68);
+  }
+
+  label:has(+ input:user-valid) {
+    color: rgb(34 197 94);
+  }
+
+  input:user-invalid {
+    border-color: rgb(239 68 68);
+  }
+
+  input:user-valid {
+    border-color: rgb(34 197 94);
+  }
+
+  /* Checked state styling using :has() */
+  .card:has(input[type="checkbox"]:checked) {
+    border-color: rgb(59 130 246);
+    background-color: rgb(239 246 255);
+  }
+
+  /* Scroll-driven animations */
+  @supports (animation-timeline: scroll()) {
+    .fade-in-on-scroll {
+      animation: fade-in-scroll linear;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+
+    @keyframes fade-in-scroll {
+      from {
+        opacity: 0;
+        transform: translateY(2rem);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+@layer utilities {
+  .container {
+    container-type: inline-size;
+    width: 100%;
+  }
+
+  @container (min-width: 640px) {
+    .container-sm\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @container (min-width: 768px) {
+    .container-md\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}

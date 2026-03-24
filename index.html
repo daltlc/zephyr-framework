@@ -5,368 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zephyr Framework - Zero-JS Interactive Components</title>
   <link rel="stylesheet" href="zephyr-framework.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-    :root {
-      --midnight: #0a0e27;
-      --charcoal: #1a1d35;
-      --slate: #2a2f4f;
-      --silver: #9ba3bf;
-      --ice: #e8edf7;
-      --accent: #ff6b9d;
-      --accent-soft: #ffa5c3;
-      --warning: #ffd700;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'IBM Plex Mono', monospace;
-      background: linear-gradient(135deg, var(--midnight) 0%, var(--charcoal) 100%);
-      color: var(--ice);
-      min-height: 100vh;
-      padding: 2rem;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 4rem;
-      animation: title-enter 1s ease-out;
-    }
-
-    @keyframes title-enter {
-      from {
-        opacity: 0;
-        transform: translateY(-2rem);
-      }
-    }
-
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.5rem, 8vw, 5rem);
-      font-weight: 900;
-      margin: 0;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.02em;
-    }
-
-    .subtitle {
-      font-size: 1.125rem;
-      color: var(--silver);
-      margin-top: 0.5rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .demo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-      gap: 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .demo-card {
-      background: var(--charcoal);
-      border: 1px solid rgba(155, 163, 191, 0.1);
-      border-radius: 1rem;
-      padding: 2rem;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      animation: card-enter 0.6s ease-out backwards;
-    }
-
-    .demo-card:nth-child(1) { animation-delay: 0.1s; }
-    .demo-card:nth-child(2) { animation-delay: 0.2s; }
-    .demo-card:nth-child(3) { animation-delay: 0.3s; }
-    .demo-card:nth-child(4) { animation-delay: 0.4s; }
-    .demo-card:nth-child(5) { animation-delay: 0.5s; }
-    .demo-card:nth-child(6) { animation-delay: 0.6s; }
-
-    @keyframes card-enter {
-      from {
-        opacity: 0;
-        transform: translateY(2rem);
-      }
-    }
-
-    .demo-card:hover {
-      transform: translateY(-0.25rem);
-      box-shadow: 0 20px 40px rgba(255, 107, 157, 0.15);
-    }
-
-    h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.75rem;
-      margin: 0 0 1.5rem;
-      color: var(--accent-soft);
-      font-weight: 700;
-    }
-
-    button, .button {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    button:hover, .button:hover {
-      background: var(--accent-soft);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
-    }
-
-    button:active, .button:active {
-      transform: translateY(0);
-    }
-
-    /* Accordion Styles */
-    z-accordion {
-      display: block;
-    }
-
-    z-accordion-item {
-      display: block;
-      margin-bottom: 1rem;
-      background: var(--slate);
-      border-radius: 0.5rem;
-      overflow: hidden;
-    }
-
-    z-accordion-item [slot="trigger"] {
-      width: 100%;
-      text-align: left;
-      background: transparent;
-      border: none;
-      padding: 1rem 1.5rem;
-      color: var(--ice);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    z-accordion-item [slot="content"] {
-      padding: 0 1.5rem;
-      color: var(--silver);
-    }
-
-    z-accordion-item:has([data-open]) [slot="content"] {
-      padding: 0 1.5rem 1.5rem;
-    }
-
-    /* Tab Styles */
-    z-tabs [role="tablist"] {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid rgba(155, 163, 191, 0.1);
-      padding-bottom: 0;
-    }
-
-    z-tabs [data-tab] {
-      background: transparent;
-      border: none;
-      padding: 0.75rem 1.25rem;
-      color: var(--silver);
-      font-weight: 500;
-      border-radius: 0.5rem 0.5rem 0 0;
-    }
-
-    z-tabs [data-tab][data-active] {
-      color: var(--accent);
-      background: var(--slate);
-    }
-
-    z-tabs [data-tab-panel] {
-      color: var(--silver);
-      line-height: 1.6;
-    }
-
-    /* Select Styles */
-    z-select [slot="trigger"] {
-      background: var(--slate);
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(155, 163, 191, 0.2);
-      color: var(--ice);
-      width: 100%;
-      text-align: left;
-      position: relative;
-    }
-
-    z-select [slot="trigger"]::after {
-      content: 'â–¼';
-      position: absolute;
-      right: 1rem;
-      font-size: 0.75rem;
-      color: var(--silver);
-      transition: transform 0.2s ease;
-    }
-
-    z-select:has([data-open]) [slot="trigger"]::after {
-      transform: rotate(180deg);
-    }
-
-    z-select [slot="options"] {
-      background: var(--slate);
-      border: 1px solid rgba(155, 163, 191, 0.2);
-    }
-
-    z-select [slot="options"] [data-value] {
-      padding: 0.75rem 1rem;
-      color: var(--ice);
-    }
-
-    z-select [slot="options"] [data-value]:hover {
-      background: var(--charcoal);
-      color: var(--accent-soft);
-    }
-
-    /* Carousel Styles */
-    z-carousel {
-      background: var(--slate);
-      border-radius: 0.5rem;
-      padding: 2rem;
-      min-height: 200px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    z-carousel [slot="item"] {
-      text-align: center;
-      color: var(--ice);
-    }
-
-    z-carousel [slot="item"] h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      color: var(--accent-soft);
-    }
-
-    .carousel-controls {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .carousel-controls button {
-      background: transparent;
-      border: 2px solid var(--accent);
-      color: var(--accent);
-      padding: 0.5rem 1.5rem;
-      font-weight: 500;
-    }
-
-    .carousel-controls button:hover {
-      background: var(--accent);
-      color: white;
-    }
-
-    /* Dropdown Styles */
-    z-dropdown [slot="trigger"] {
-      background: var(--slate);
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(155, 163, 191, 0.2);
-      color: var(--ice);
-    }
-
-    z-dropdown [slot="content"] {
-      background: var(--slate);
-      border: 1px solid rgba(155, 163, 191, 0.2);
-      padding: 1rem;
-      color: var(--silver);
-    }
-
-    z-dropdown [slot="content"] a {
-      display: block;
-      padding: 0.5rem;
-      color: var(--ice);
-      text-decoration: none;
-      border-radius: 0.25rem;
-      transition: background 0.15s ease;
-    }
-
-    z-dropdown [slot="content"] a:hover {
-      background: var(--charcoal);
-      color: var(--accent-soft);
-    }
-
-    /* Modal Styles */
-    z-modal dialog {
-      background: var(--charcoal);
-      color: var(--ice);
-      padding: 2rem;
-      min-width: 400px;
-    }
-
-    z-modal dialog h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.75rem;
-      margin: 0 0 1rem;
-      color: var(--accent-soft);
-    }
-
-    z-modal dialog p {
-      color: var(--silver);
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: flex-end;
-    }
-
-    .modal-actions button {
-      background: transparent;
-      border: 2px solid var(--accent);
-      color: var(--accent);
-    }
-
-    .modal-actions button:first-child {
-      background: var(--accent);
-      color: white;
-    }
-
-    /* Toast position override */
-    z-toast {
-      background: var(--accent);
-      color: white;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 4rem;
-      padding-top: 2rem;
-      border-top: 1px solid rgba(155, 163, 191, 0.1);
-      color: var(--silver);
-      font-size: 0.875rem;
-    }
-
-    code {
-      background: var(--slate);
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      color: var(--accent-soft);
-      font-size: 0.875em;
-    }
-  </style>
+  <link rel="stylesheet" href="demo.css">
 </head>
 <body>
   <header>
@@ -380,28 +19,28 @@
       <h2>Accordion</h2>
       <z-accordion>
         <z-accordion-item>
-          <button slot="trigger">ðŸŒŠ How does it work?</button>
+          <button slot="trigger">How does it work?</button>
           <div slot="content">
             <div>
-              Uses CSS Grid with <code>grid-template-rows</code> transition and <code>:has()</code> selector. 
+              Uses CSS Grid with <code>grid-template-rows</code> transition and <code>:has()</code> selector.
               No JavaScript required for animation.
             </div>
           </div>
         </z-accordion-item>
         <z-accordion-item>
-          <button slot="trigger">âš¡ Performance</button>
+          <button slot="trigger">Performance</button>
           <div slot="content">
             <div>
-              Pure CSS animations are GPU-accelerated and don't block the main thread. 
+              Pure CSS animations are GPU-accelerated and don't block the main thread.
               Animations run at 60fps with zero overhead.
             </div>
           </div>
         </z-accordion-item>
         <z-accordion-item>
-          <button slot="trigger">â™¿ Accessibility</button>
+          <button slot="trigger">Accessibility</button>
           <div slot="content">
             <div>
-              Uses semantic HTML with proper ARIA patterns. Keyboard navigation works 
+              Uses semantic HTML with proper ARIA patterns. Keyboard navigation works
               out of the box with native focus management.
             </div>
           </div>
@@ -419,15 +58,15 @@
           <button data-tab="api" role="tab">API</button>
         </div>
         <div data-tab-panel="features" role="tabpanel">
-          View Transitions API creates smooth transitions between tab changes. 
+          View Transitions API creates smooth transitions between tab changes.
           Container queries handle responsive layouts without media queries.
         </div>
         <div data-tab-panel="usage" role="tabpanel">
-          Simple declarative markup with data attributes. The framework handles 
+          Simple declarative markup with data attributes. The framework handles
           state management, focus, and animations automatically.
         </div>
         <div data-tab-panel="api" role="tabpanel">
-          Minimal API surface. Components use custom elements with slots for 
+          Minimal API surface. Components use custom elements with slots for
           maximum flexibility and composability.
         </div>
       </z-tabs>
@@ -446,7 +85,7 @@
         </div>
       </z-select>
       <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
-        Form-associated custom element that works with native forms. 
+        Form-associated custom element that works with native forms.
         Styled entirely with CSS using <code>:has()</code>.
       </p>
     </div>
@@ -468,8 +107,8 @@
           <p>Container queries adapt layout based on component size, not viewport.</p>
         </div>
         <div class="carousel-controls">
-          <button data-prev>â† Previous</button>
-          <button data-next>Next â†’</button>
+          <button data-prev>Previous</button>
+          <button data-next>Next</button>
         </div>
       </z-carousel>
     </div>
@@ -478,7 +117,7 @@
     <div class="demo-card">
       <h2>Dropdown</h2>
       <z-dropdown>
-        <button slot="trigger">Actions â–¼</button>
+        <button slot="trigger">Actions</button>
         <div slot="content">
           <a href="#edit">Edit Profile</a>
           <a href="#settings">Settings</a>
@@ -494,21 +133,21 @@
     <!-- Modal Demo -->
     <div class="demo-card">
       <h2>Modal</h2>
-      <button onclick="document.getElementById('demo-modal').open()">Open Modal</button>
+      <button data-action="open-modal" data-target="demo-modal">Open Modal</button>
       <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
-        Uses native <code>&lt;dialog&gt;</code> element with View Transitions for smooth 
+        Uses native <code>&lt;dialog&gt;</code> element with View Transitions for smooth
         entrance animations. Backdrop blur with no performance cost.
       </p>
 
       <z-modal id="demo-modal">
         <h3>Welcome to Zephyr</h3>
         <p>
-          This modal uses the View Transitions API for smooth animations. 
+          This modal uses the View Transitions API for smooth animations.
           The backdrop blur is pure CSS with GPU acceleration.
         </p>
         <div class="modal-actions">
-          <button onclick="document.getElementById('demo-modal').close()">Close</button>
-          <button onclick="Zephyr.toast('Action confirmed!'); document.getElementById('demo-modal').close()">Confirm</button>
+          <button data-action="close-modal" data-target="demo-modal">Close</button>
+          <button data-action="confirm-modal" data-target="demo-modal">Confirm</button>
         </div>
       </z-modal>
     </div>
@@ -519,12 +158,37 @@
       Built with View Transitions API, :has() selector, container queries, and custom elements.<br>
       Zero client-side JavaScript for interactivity. Progressive enhancement at its finest.
     </p>
-    <button onclick="Zephyr.toast('Framework features: Form-associated elements, View Transitions, Container Queries, CSS :has()', 5000)" 
-            style="margin-top: 1rem;">
+    <button data-action="show-toast" style="margin-top: 1rem;">
       Show Toast Notification
     </button>
   </footer>
 
   <script src="zephyr-framework.js"></script>
+  <script>
+    // Demo event delegation — replaces all inline onclick handlers for CSP compatibility
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const targetId = btn.dataset.target;
+
+      switch (action) {
+        case 'open-modal':
+          document.getElementById(targetId).open();
+          break;
+        case 'close-modal':
+          document.getElementById(targetId).close();
+          break;
+        case 'confirm-modal':
+          Zephyr.toast('Action confirmed!');
+          document.getElementById(targetId).close();
+          break;
+        case 'show-toast':
+          Zephyr.toast('Framework features: Form-associated elements, View Transitions, Container Queries, CSS :has()', 5000);
+          break;
+      }
+    });
+  </script>
 </body>
 </html>

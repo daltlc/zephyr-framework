@@ -75,38 +75,51 @@ All code in this project must follow these principles:
 - Document security model for content injection in components
 - Sanitize any content that flows from user input into the DOM
 
+## State Attribute Conventions
+
+| Attribute | Purpose | Used By |
+|-----------|---------|---------|
+| `data-open` | Binary open/closed state | Accordion, Select, Dropdown |
+| `data-active` | Selected/current item in a set | Tabs, Carousel |
+| `data-visible` | Visibility toggle | Toast |
+| `data-value` | Item value for selection | Select options |
+
 ## Full Stack Layout
 
 ```
 zephyr-framework/
 ├── zephyr-framework.js      # Core framework — Web Components (custom elements)
-│   ├── ZephyrElement          # Base class (HTMLElement + ElementInternals)
-│   ├── ZAccordion             # Collapsible sections via CSS Grid
-│   ├── ZModal                 # Native <dialog> wrapper with View Transitions
-│   ├── ZTabs                  # Tab panels with View Transitions
-│   ├── ZSelect                # Form-associated custom select
-│   ├── ZCarousel              # Slide viewer with autoplay
-│   ├── ZToast                 # Notification system
-│   ├── ZDropdown              # Menu dropdown with click-outside
-│   └── window.Zephyr          # Global utility API
+│   ├── ZephyrElement          # Base class (shared utilities, lifecycle, click-outside)
+│   ├── ZAccordionItem         # Registered custom element for accordion items
+│   ├── ZAccordion             # Collapsible sections via CSS Grid + ARIA
+│   ├── ZModal                 # Native <dialog> wrapper with View Transitions + ARIA
+│   ├── ZTabs                  # Tab panels with View Transitions + keyboard nav
+│   ├── ZSelect                # Form-associated custom select (ElementInternals) + ARIA
+│   ├── ZCarousel              # Slide viewer with autoplay + keyboard nav
+│   ├── ZToast                 # Notification system (role=alert)
+│   ├── ZDropdown              # Menu dropdown with click-outside + ARIA
+│   └── window.Zephyr          # Global utility API + component registry
 │
-├── zephyr-framework.css      # Core styles
+├── zephyr-framework.css      # Core styles (CSS custom properties for theming)
+│   ├── :root                  # --z-* design tokens
 │   ├── @layer reset           # CSS reset (box-sizing, margins)
 │   ├── @layer components      # Component styles + animations
 │   │   ├── View Transitions   # Slide/fade transition keyframes
 │   │   ├── Accordion          # Grid-based expand/collapse
 │   │   ├── Modal              # Dialog + backdrop blur
 │   │   ├── Tabs               # Container query responsive tabs
-│   │   ├── Select             # Floating dropdown panel
+│   │   ├── Floating Panel     # Shared select/dropdown positioning
+│   │   ├── Select             # Select-specific overrides
 │   │   ├── Carousel           # Slide transitions
 │   │   ├── Toast              # Fixed-position notification
-│   │   ├── Dropdown           # Floating menu panel
+│   │   ├── Dropdown           # Dropdown-specific overrides
 │   │   ├── Dark Mode          # :has([data-theme="dark"]) theming
 │   │   ├── Loading States     # Spinner animation
 │   │   ├── Form Validation    # :user-invalid/:user-valid styling
 │   │   └── Scroll Animations  # animation-timeline: view()
 │   └── @layer utilities       # Container query grid utilities
 │
+├── demo.css                  # Demo page styles (NOT part of framework)
 ├── index.html                # Demo/showcase page
 ├── README.md                 # Documentation + usage guide
 ├── CLAUDE.md                 # Claude Code configuration

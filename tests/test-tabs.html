@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Tabs</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <z-tabs id="test-tabs">
+    <div role="tablist">
+      <button data-tab="one" role="tab">Tab 1</button>
+      <button data-tab="two" role="tab">Tab 2</button>
+      <button data-tab="three" role="tab">Tab 3</button>
+    </div>
+    <div data-tab-panel="one" role="tabpanel">Panel 1</div>
+    <div data-tab-panel="two" role="tabpanel">Panel 2</div>
+    <div data-tab-panel="three" role="tabpanel">Panel 3</div>
+  </z-tabs>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Tabs');
+
+    t.test('z-tabs is registered', async (assert) => {
+      assert.ok(customElements.get('z-tabs'), 'z-tabs should be defined');
+    });
+
+    t.test('first tab and panel are active by default', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      const panels = document.querySelectorAll('[data-tab-panel]');
+      assert.hasAttribute(tabs[0], 'data-active', 'first tab should be active');
+      assert.hasAttribute(panels[0], 'data-active', 'first panel should be active');
+      assert.notHasAttribute(tabs[1], 'data-active', 'second tab should not be active');
+    });
+
+    t.test('tabs have aria-selected attributes', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      assert.equal(tabs[0].getAttribute('aria-selected'), 'true', 'first tab aria-selected=true');
+      assert.equal(tabs[1].getAttribute('aria-selected'), 'false', 'second tab aria-selected=false');
+    });
+
+    t.test('tabs have aria-controls pointing to panels', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      tabs.forEach((tab, i) => {
+        const controlsId = tab.getAttribute('aria-controls');
+        assert.ok(controlsId, `tab ${i} should have aria-controls`);
+        const panel = document.getElementById(controlsId);
+        assert.ok(panel, `aria-controls should point to existing panel`);
+      });
+    });
+
+    t.test('clicking second tab activates it', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      const panels = document.querySelectorAll('[data-tab-panel]');
+      click(tabs[1]);
+      assert.hasAttribute(tabs[1], 'data-active', 'second tab should be active');
+      assert.hasAttribute(panels[1], 'data-active', 'second panel should be active');
+      assert.notHasAttribute(tabs[0], 'data-active', 'first tab should no longer be active');
+      assert.notHasAttribute(panels[0], 'data-active', 'first panel should no longer be active');
+    });
+
+    t.test('inactive tabs have tabindex="-1"', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      // Tab 1 was clicked in previous test, so tab 0 should be inactive
+      const inactive = Array.from(tabs).filter(t => !t.hasAttribute('data-active'));
+      inactive.forEach((tab, i) => {
+        assert.equal(tab.getAttribute('tabindex'), '-1', `inactive tab should have tabindex="-1"`);
+      });
+    });
+
+    t.test('ArrowRight moves to next tab', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      // Activate first tab
+      click(tabs[0]);
+      // Press ArrowRight
+      keydown(document.querySelector('[role="tablist"]'), 'ArrowRight');
+      assert.hasAttribute(tabs[1], 'data-active', 'second tab should be active after ArrowRight');
+    });
+
+    t.test('ArrowLeft wraps around', async (assert) => {
+      await waitForElements();
+      const tabs = document.querySelectorAll('[data-tab]');
+      click(tabs[0]);
+      keydown(document.querySelector('[role="tablist"]'), 'ArrowLeft');
+      assert.hasAttribute(tabs[2], 'data-active', 'last tab should be active after ArrowLeft from first');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

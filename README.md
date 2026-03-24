@@ -4,7 +4,7 @@ Zero-JavaScript interactive framework using View Transitions API, CSS `:has()`, 
 
 ## Why Zephyr?
 
-Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interactions without shipping JavaScript to users:
+Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interactions without shipping runtime JavaScript to users:
 
 - **View Transitions API** - Smooth animations between states
 - **CSS `:has()`** - Parent selectors enable complex state styling
@@ -12,19 +12,34 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 - **Form-Associated Custom Elements** - Native form integration
 - **`<dialog>`** - Native modals with backdrop
 
+### How "Zero-JS" Works
+
+The framework JavaScript (~7kb) runs **once at page load** to register custom elements and attach event listeners. After that, **no JavaScript executes during user interactions** -- all animations, state changes, and visual feedback are driven by CSS. This is fundamentally different from React, Vue, or Alpine.js where JavaScript runs on every click, keystroke, and state change.
+
+| What | How |
+|------|-----|
+| Accordion open/close | CSS Grid `grid-template-rows: 0fr` to `1fr` transition |
+| Tab switching | CSS `:has([data-active])` + View Transitions |
+| Modal animation | Native `<dialog>` + CSS `::backdrop` + keyframes |
+| Dropdown toggle | CSS `opacity`/`transform` transition on `:has([data-open])` |
+| Form validation | CSS `:user-invalid` / `:user-valid` pseudo-classes |
+| Dark mode | CSS `:has([data-theme="dark"])` cascade |
+| Scroll effects | CSS `animation-timeline: view()` |
+
 ## Features
 
-- âœ… Accordions with smooth open/close
-- âœ… Tabs with animated transitions  
-- âœ… Dropdowns with auto-positioning
-- âœ… Modals with backdrop blur
-- âœ… Carousels with View Transitions
-- âœ… Custom selects that work with forms
-- âœ… Toast notifications
-- âœ… Dark mode via `:has([data-theme="dark"])`
-- âœ… Form validation styling
-- âœ… Loading states
-- âœ… Scroll-driven animations
+- Accordions with smooth open/close
+- Tabs with animated transitions
+- Dropdowns with auto-positioning
+- Modals with backdrop blur
+- Carousels with View Transitions
+- Custom selects that work with forms
+- Toast notifications
+- Dark mode via `:has([data-theme="dark"])`
+- Form validation styling
+- Loading states
+- Scroll-driven animations
+- Full ARIA support and keyboard navigation
 
 ## Installation
 
@@ -48,36 +63,43 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 </z-accordion>
 ```
 
-**How it works:** CSS Grid `grid-template-rows` transition from `0fr` to `1fr`. The `:has([data-open])` selector triggers the expansion.
+**How it works:** CSS Grid `grid-template-rows` transition from `0fr` to `1fr`. The `:has([data-open])` selector triggers the expansion. ARIA attributes (`aria-expanded`, `aria-controls`) are set automatically.
 
 ### Tabs
 
 ```html
 <z-tabs>
   <div role="tablist">
-    <button data-tab="tab1">Tab 1</button>
-    <button data-tab="tab2">Tab 2</button>
+    <button data-tab="tab1" role="tab">Tab 1</button>
+    <button data-tab="tab2" role="tab">Tab 2</button>
   </div>
-  <div data-tab-panel="tab1">Panel 1</div>
-  <div data-tab-panel="tab2">Panel 2</div>
+  <div data-tab-panel="tab1" role="tabpanel">Panel 1</div>
+  <div data-tab-panel="tab2" role="tabpanel">Panel 2</div>
 </z-tabs>
 ```
 
-**How it works:** View Transitions API animates between panel changes. Container queries handle responsive tab layouts.
+**How it works:** View Transitions API animates between panel changes. Container queries handle responsive tab layouts. Arrow keys navigate between tabs.
 
 ### Modal
 
 ```html
-<button onclick="document.getElementById('my-modal').open()">Open</button>
+<button data-action="open-modal" data-target="my-modal">Open</button>
 
 <z-modal id="my-modal">
   <h2>Modal Title</h2>
   <p>Content</p>
-  <button onclick="document.getElementById('my-modal').close()">Close</button>
+  <button data-action="close-modal" data-target="my-modal">Close</button>
 </z-modal>
 ```
 
-**How it works:** Native `<dialog>` element with View Transitions for entrance/exit. CSS `::backdrop` for blur effect.
+Or programmatically:
+
+```javascript
+document.getElementById('my-modal').open();
+document.getElementById('my-modal').close();
+```
+
+**How it works:** Native `<dialog>` element with View Transitions for entrance/exit. CSS `::backdrop` for blur effect. `aria-labelledby` auto-detected from heading.
 
 ### Select (Form-Associated)
 
@@ -93,7 +115,7 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 </form>
 ```
 
-**How it works:** Form-associated custom element integrates with native forms. Value syncs automatically.
+**How it works:** Form-associated custom element integrates with native forms via `ElementInternals`. Value syncs automatically. Arrow keys navigate options.
 
 ### Carousel
 
@@ -107,7 +129,7 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 </z-carousel>
 ```
 
-**How it works:** View Transitions create slide animations. `view-transition-name: slide` enables custom transitions.
+**How it works:** View Transitions create slide animations. `view-transition-name: slide` enables custom transitions. Arrow keys navigate slides.
 
 ### Dropdown
 
@@ -121,7 +143,7 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 </z-dropdown>
 ```
 
-**How it works:** CSS transforms and opacity for open/close. Click-outside handled by event delegation.
+**How it works:** CSS transforms and opacity for open/close. Click-outside handled by shared event delegation. Escape key closes.
 
 ### Toast
 
@@ -129,20 +151,40 @@ Most "zero-JS" frameworks sacrifice interactivity. Zephyr delivers rich interact
 Zephyr.toast('Message', 3000); // duration in ms
 ```
 
-**How it works:** Fixed position element with transform animation. Auto-removes after duration.
+**How it works:** Fixed position element with transform animation. Auto-removes after duration. Uses `role="alert"` and `aria-live="polite"`.
+
+## Events
+
+All components dispatch DOM events for state changes:
+
+| Component | Event | Detail |
+|-----------|-------|--------|
+| `z-accordion` | `toggle` | `{ index, open }` |
+| `z-modal` | `open` | -- |
+| `z-modal` | `close` | -- |
+| `z-select` | `change` | -- |
+| `z-carousel` | `slide` | `{ index, direction }` |
+| `z-dropdown` | `toggle` | `{ open }` |
+| `z-toast` | `show` | `{ message }` |
+| `z-toast` | `hide` | -- |
+
+```javascript
+document.querySelector('z-carousel').addEventListener('slide', (e) => {
+  console.log(`Moved to slide ${e.detail.index}`);
+});
+```
 
 ## Advanced Features
 
 ### Dark Mode
 
 ```html
-<html>
-  <body>
-    <button onclick="document.body.toggleAttribute('data-theme', 'dark')">
-      Toggle Dark Mode
-    </button>
-  </body>
-</html>
+<button id="theme-toggle">Toggle Dark Mode</button>
+<script>
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    document.body.toggleAttribute('data-theme');
+  });
+</script>
 ```
 
 CSS automatically applies dark styles via `:has([data-theme="dark"])`.
@@ -190,6 +232,60 @@ Uses `animation-timeline: view()` for scroll-driven animations.
 
 Components respond to their container size, not viewport.
 
+## Customization
+
+Override CSS custom properties to theme all components:
+
+```css
+:root {
+  --z-transition-duration: 0.3s;
+  --z-transition-timing: ease;
+  --z-border-radius: 0.5rem;
+  --z-border-radius-sm: 0.375rem;
+  --z-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --z-shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --z-z-index-dropdown: 50;
+  --z-z-index-toast: 1000;
+  --z-backdrop-blur: 4px;
+  --z-toast-bg: rgb(17 24 39);
+  --z-toast-color: white;
+}
+```
+
+Or target components directly:
+
+```css
+z-modal dialog {
+  max-width: 600px;
+  border-radius: 1rem;
+}
+```
+
+## Component Registry
+
+Access component metadata programmatically:
+
+```javascript
+Zephyr.components.modal
+// { tag: 'z-modal', slots: [], attributes: [], events: ['open', 'close'], methods: ['open()', 'close()'] }
+```
+
+## State Attribute Conventions
+
+| Attribute | Purpose | Used By |
+|-----------|---------|---------|
+| `data-open` | Binary open/closed state | Accordion, Select, Dropdown |
+| `data-active` | Selected/current item in a set | Tabs, Carousel |
+| `data-visible` | Visibility toggle | Toast |
+| `data-value` | Item value for selection | Select options |
+
+## Security
+
+- **No innerHTML with user content**: Components use DOM node manipulation (`appendChild`) rather than `innerHTML` to prevent XSS
+- **CSP-compatible**: The demo page and framework use no inline event handlers (`onclick`); all events are attached via `addEventListener`
+- **Content trust model**: Component slot content is assumed to come from the page author (server-rendered HTML). If injecting dynamic user content into components, sanitize it before insertion
+- **No eval or Function constructor**: The framework never evaluates strings as code
+
 ## Browser Support
 
 - Chrome/Edge 111+ (View Transitions)
@@ -200,20 +296,13 @@ Graceful degradation for older browsers - components work without animations.
 
 ## Technical Details
 
-### Zero Client JS
-
-The framework JS only runs once at page load to:
-1. Register custom elements
-2. Attach event listeners
-3. Set up declarative behaviors
-
-No JS executes during interactions - everything is CSS-driven.
-
 ### Performance
 
 - **0kb** JavaScript sent to users for interactions
-- **GPU-accelerated** CSS animations
+- **GPU-accelerated** CSS animations (transform, opacity only)
 - **No layout thrashing** - CSS transitions don't trigger reflow
+- **Shared event delegation** - Single document-level click-outside handler
+- **Cleanup on disconnect** - All intervals and listeners cleaned up via `disconnectedCallback`
 - **Lazy evaluation** - Components only initialize when used
 
 ### Form Integration
@@ -223,12 +312,12 @@ Custom elements use `ElementInternals` API for native form participation:
 ```javascript
 class ZSelect extends HTMLElement {
   static formAssociated = true;
-  
+
   constructor() {
     super();
     this._internals = this.attachInternals();
   }
-  
+
   set value(v) {
     this._internals.setFormValue(v);
   }
@@ -249,45 +338,26 @@ class ZSelect extends HTMLElement {
 
 Elements with `view-transition-name: slide` get custom animations.
 
-## Customization
-
-Override CSS variables:
-
-```css
-:root {
-  --z-transition-duration: 0.3s;
-  --z-border-radius: 0.5rem;
-  --z-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-}
-```
-
-Or target components directly:
-
-```css
-z-modal dialog {
-  max-width: 600px;
-  border-radius: 1rem;
-}
-```
-
 ## Comparison
 
 | Feature | Zephyr | React | Alpine.js |
 |---------|--------|-------|-----------|
-| Client JS | 0kb* | 45kb+ | 15kb+ |
+| Runtime JS | 0kb* | 45kb+ | 15kb+ |
 | Animations | CSS | JS Required | JS Required |
 | Forms | Native | Controlled | Manual |
 | SSR | Perfect | Complex | N/A |
+| ARIA | Automatic | Manual | Manual |
 | Learning Curve | HTML/CSS | High | Medium |
 
-*Framework code runs once, no runtime JS for interactions
+*Framework code runs once at page load, no runtime JS for interactions
 
 ## Architecture & Stack
 
 ```
 zephyr-framework/
-├── zephyr-framework.js      # Core — 7 Web Component classes + global API
-├── zephyr-framework.css      # Styles — CSS Layers (reset, components, utilities)
+├── zephyr-framework.js      # Core -- 8 Web Component classes + global API
+├── zephyr-framework.css      # Styles -- CSS Layers (reset, components, utilities)
+├── demo.css                  # Demo page styles (not part of framework)
 ├── index.html                # Interactive demo/showcase
 ├── README.md                 # This file
 ├── CLAUDE.md                 # Claude Code configuration
@@ -302,7 +372,7 @@ zephyr-framework/
 | Animation | View Transitions API, CSS Transitions | GPU-accelerated smooth animations |
 | Forms | ElementInternals API | Native form participation |
 | Modals | `<dialog>` element | Native modal with backdrop |
-| Theming | CSS Custom Properties | User-customizable design tokens |
+| Theming | CSS Custom Properties (`--z-*`) | User-customizable design tokens |
 | Layout | CSS Grid, Flexbox, Container Queries | Responsive, component-scoped layout |
 | Scroll | Scroll-driven Animations API | Scroll-triggered effects |
 

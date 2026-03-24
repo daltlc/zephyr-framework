@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Select</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <form id="test-form">
+    <z-select id="test-select" name="color">
+      <button slot="trigger">Choose</button>
+      <div slot="options">
+        <div data-value="red">Red</div>
+        <div data-value="blue">Blue</div>
+        <div data-value="green">Green</div>
+      </div>
+    </z-select>
+  </form>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Select');
+
+    t.test('z-select is registered', async (assert) => {
+      assert.ok(customElements.get('z-select'), 'z-select should be defined');
+    });
+
+    t.test('trigger has aria-expanded="false" initially', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('#test-select [slot="trigger"]');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+    });
+
+    t.test('trigger has aria-haspopup="listbox"', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('#test-select [slot="trigger"]');
+      assert.equal(trigger.getAttribute('aria-haspopup'), 'listbox');
+    });
+
+    t.test('options container has role="listbox"', async (assert) => {
+      await waitForElements();
+      const options = document.querySelector('#test-select [slot="options"]');
+      assert.hasRole(options, 'listbox');
+    });
+
+    t.test('option items have role="option"', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-select [data-value]');
+      items.forEach((item, i) => {
+        assert.hasRole(item, 'option', `item ${i} should have role="option"`);
+      });
+    });
+
+    t.test('clicking trigger toggles data-open', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('test-select');
+      const trigger = select.querySelector('[slot="trigger"]');
+
+      click(trigger);
+      assert.hasAttribute(select, 'data-open', 'should be open after click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+
+      click(trigger);
+      assert.notHasAttribute(select, 'data-open', 'should be closed after second click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+    });
+
+    t.test('clicking an option sets value and dispatches change', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('test-select');
+      const trigger = select.querySelector('[slot="trigger"]');
+      let changeFired = false;
+
+      select.addEventListener('change', () => { changeFired = true; }, { once: true });
+
+      click(trigger); // open
+      const redOption = select.querySelector('[data-value="red"]');
+      click(redOption);
+
+      assert.equal(select.value, 'red', 'value should be "red"');
+      assert.equal(trigger.textContent, 'Red', 'trigger text should update');
+      assert.ok(changeFired, 'change event should fire');
+      assert.notHasAttribute(select, 'data-open', 'should close after selection');
+    });
+
+    t.test('Escape key closes the select', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('test-select');
+      const trigger = select.querySelector('[slot="trigger"]');
+
+      click(trigger); // open
+      assert.hasAttribute(select, 'data-open', 'should be open');
+
+      keydown(select, 'Escape');
+      assert.notHasAttribute(select, 'data-open', 'should close after Escape');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

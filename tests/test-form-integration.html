@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Form Integration</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <form id="test-form">
+    <z-select id="form-select" name="fruit">
+      <button slot="trigger">Pick a fruit</button>
+      <div slot="options">
+        <div data-value="apple">Apple</div>
+        <div data-value="banana">Banana</div>
+        <div data-value="cherry">Cherry</div>
+      </div>
+    </z-select>
+    <button type="submit">Submit</button>
+  </form>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Form Integration');
+
+    t.test('z-select participates in FormData', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('form-select');
+      const form = document.getElementById('test-form');
+
+      // Select "banana"
+      const trigger = select.querySelector('[slot="trigger"]');
+      click(trigger);
+      const banana = select.querySelector('[data-value="banana"]');
+      click(banana);
+
+      const formData = new FormData(form);
+      assert.equal(formData.get('fruit'), 'banana', 'FormData should contain "banana" for "fruit"');
+    });
+
+    t.test('changing selection updates FormData', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('form-select');
+      const form = document.getElementById('test-form');
+
+      // Change to "cherry"
+      const trigger = select.querySelector('[slot="trigger"]');
+      click(trigger);
+      const cherry = select.querySelector('[data-value="cherry"]');
+      click(cherry);
+
+      const formData = new FormData(form);
+      assert.equal(formData.get('fruit'), 'cherry', 'FormData should update to "cherry"');
+    });
+
+    t.test('select value property matches FormData', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('form-select');
+      const form = document.getElementById('test-form');
+      const formData = new FormData(form);
+
+      assert.equal(select.value, formData.get('fruit'), 'select.value should match FormData');
+    });
+
+    t.test('only z-select has formAssociated (not other components)', async (assert) => {
+      // Create instances to verify
+      const accordion = document.createElement('z-accordion');
+      const modal = document.createElement('z-modal');
+      const tabs = document.createElement('z-tabs');
+
+      // Non-form components should not have internals
+      assert.ok(!accordion._internals, 'accordion should not have _internals');
+      assert.ok(!modal._internals, 'modal should not have _internals');
+      assert.ok(!tabs._internals, 'tabs should not have _internals');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

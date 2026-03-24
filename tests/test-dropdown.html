@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Dropdown</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <z-dropdown id="test-dropdown">
+    <button slot="trigger">Menu</button>
+    <div slot="content">
+      <a href="#one">Item 1</a>
+      <a href="#two">Item 2</a>
+    </div>
+  </z-dropdown>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Dropdown');
+
+    t.test('z-dropdown is registered', async (assert) => {
+      assert.ok(customElements.get('z-dropdown'), 'z-dropdown should be defined');
+    });
+
+    t.test('trigger has aria-haspopup="true"', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('#test-dropdown [slot="trigger"]');
+      assert.equal(trigger.getAttribute('aria-haspopup'), 'true');
+    });
+
+    t.test('trigger has aria-expanded="false" initially', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('#test-dropdown [slot="trigger"]');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+    });
+
+    t.test('clicking trigger toggles open state', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+      const trigger = dropdown.querySelector('[slot="trigger"]');
+
+      click(trigger);
+      assert.hasAttribute(dropdown, 'data-open', 'should open on click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'true');
+
+      click(trigger);
+      assert.notHasAttribute(dropdown, 'data-open', 'should close on second click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'false');
+    });
+
+    t.test('dispatches toggle event', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+      const trigger = dropdown.querySelector('[slot="trigger"]');
+      let eventDetail = null;
+
+      dropdown.addEventListener('toggle', (e) => {
+        eventDetail = e.detail;
+      }, { once: true });
+
+      click(trigger);
+      assert.ok(eventDetail, 'toggle event should fire');
+      assert.equal(eventDetail.open, true, 'detail.open should be true');
+
+      // Close for cleanup
+      click(trigger);
+    });
+
+    t.test('Escape key closes dropdown', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+      const trigger = dropdown.querySelector('[slot="trigger"]');
+
+      click(trigger);
+      assert.hasAttribute(dropdown, 'data-open', 'should be open');
+
+      keydown(dropdown, 'Escape');
+      assert.notHasAttribute(dropdown, 'data-open', 'should close after Escape');
+    });
+
+    t.test('click outside closes dropdown', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+      const trigger = dropdown.querySelector('[slot="trigger"]');
+
+      click(trigger);
+      assert.hasAttribute(dropdown, 'data-open', 'should be open');
+
+      // Click on document body (outside)
+      document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      assert.notHasAttribute(dropdown, 'data-open', 'should close on outside click');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

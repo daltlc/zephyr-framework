@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Toast</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Toast');
+
+    t.test('z-toast is registered', async (assert) => {
+      assert.ok(customElements.get('z-toast'), 'z-toast should be defined');
+    });
+
+    t.test('Zephyr.toast() creates and shows a toast', async (assert) => {
+      Zephyr.toast('Test message', 500);
+      await waitForElements();
+      const toast = document.querySelector('z-toast');
+      assert.ok(toast, 'toast element should exist');
+      assert.hasAttribute(toast, 'data-visible', 'toast should be visible');
+      assert.equal(toast.textContent, 'Test message', 'toast should show message');
+    });
+
+    t.test('toast has role="alert" and aria-live', async (assert) => {
+      await waitForElements();
+      const toast = document.querySelector('z-toast');
+      assert.equal(toast.getAttribute('role'), 'alert');
+      assert.equal(toast.getAttribute('aria-live'), 'polite');
+    });
+
+    t.test('toast dispatches show event', async (assert) => {
+      const toast = document.querySelector('z-toast') || document.createElement('z-toast');
+      if (!document.body.contains(toast)) document.body.appendChild(toast);
+
+      let eventDetail = null;
+      toast.addEventListener('show', (e) => { eventDetail = e.detail; }, { once: true });
+
+      toast.show('Event test', 500);
+      assert.ok(eventDetail, 'show event should fire');
+      assert.equal(eventDetail.message, 'Event test', 'detail should contain message');
+    });
+
+    t.test('toast auto-hides after duration', async (assert) => {
+      const toast = document.querySelector('z-toast');
+      toast.show('Auto hide', 100);
+      assert.hasAttribute(toast, 'data-visible', 'should be visible initially');
+
+      await new Promise(r => setTimeout(r, 200));
+      assert.notHasAttribute(toast, 'data-visible', 'should hide after duration');
+    });
+
+    t.test('toast dispatches hide event', async (assert) => {
+      const toast = document.querySelector('z-toast');
+      let hideFired = false;
+      toast.addEventListener('hide', () => { hideFired = true; }, { once: true });
+
+      toast.show('Hide event test', 100);
+      await new Promise(r => setTimeout(r, 200));
+      assert.ok(hideFired, 'hide event should fire');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

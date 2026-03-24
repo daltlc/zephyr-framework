@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Accordion</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <z-accordion id="test-accordion">
+    <z-accordion-item>
+      <button slot="trigger">Item 1</button>
+      <div slot="content"><div>Content 1</div></div>
+    </z-accordion-item>
+    <z-accordion-item>
+      <button slot="trigger">Item 2</button>
+      <div slot="content"><div>Content 2</div></div>
+    </z-accordion-item>
+  </z-accordion>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Accordion');
+
+    t.test('z-accordion is registered as a custom element', async (assert) => {
+      assert.ok(customElements.get('z-accordion'), 'z-accordion should be defined');
+    });
+
+    t.test('z-accordion-item is registered as a custom element', async (assert) => {
+      assert.ok(customElements.get('z-accordion-item'), 'z-accordion-item should be defined');
+    });
+
+    t.test('triggers have aria-expanded="false" initially', async (assert) => {
+      await waitForElements();
+      const triggers = document.querySelectorAll('z-accordion-item [slot="trigger"]');
+      triggers.forEach((trigger, i) => {
+        assert.equal(trigger.getAttribute('aria-expanded'), 'false',
+          `trigger ${i} should have aria-expanded="false"`);
+      });
+    });
+
+    t.test('triggers have aria-controls pointing to content id', async (assert) => {
+      await waitForElements();
+      const triggers = document.querySelectorAll('z-accordion-item [slot="trigger"]');
+      triggers.forEach((trigger, i) => {
+        const controlsId = trigger.getAttribute('aria-controls');
+        assert.ok(controlsId, `trigger ${i} should have aria-controls`);
+        const content = document.getElementById(controlsId);
+        assert.ok(content, `aria-controls should point to an existing element`);
+      });
+    });
+
+    t.test('content has role="region"', async (assert) => {
+      await waitForElements();
+      const contents = document.querySelectorAll('z-accordion-item [slot="content"]');
+      contents.forEach((content, i) => {
+        assert.hasRole(content, 'region', `content ${i} should have role="region"`);
+      });
+    });
+
+    t.test('clicking trigger opens content (sets data-open)', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('z-accordion-item [slot="trigger"]');
+      const contentId = trigger.getAttribute('aria-controls');
+      const content = document.getElementById(contentId);
+
+      click(trigger);
+      assert.hasAttribute(content, 'data-open', 'content should have data-open after click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'true',
+        'aria-expanded should be "true" after opening');
+    });
+
+    t.test('clicking trigger again closes content', async (assert) => {
+      await waitForElements();
+      const trigger = document.querySelector('z-accordion-item [slot="trigger"]');
+      const contentId = trigger.getAttribute('aria-controls');
+      const content = document.getElementById(contentId);
+
+      // Should already be open from previous test
+      click(trigger);
+      assert.notHasAttribute(content, 'data-open', 'content should not have data-open after second click');
+      assert.equal(trigger.getAttribute('aria-expanded'), 'false',
+        'aria-expanded should be "false" after closing');
+    });
+
+    t.test('dispatches toggle event on open/close', async (assert) => {
+      await waitForElements();
+      const accordion = document.getElementById('test-accordion');
+      const trigger = document.querySelector('z-accordion-item [slot="trigger"]');
+      let eventFired = false;
+      let eventDetail = null;
+
+      accordion.addEventListener('toggle', (e) => {
+        eventFired = true;
+        eventDetail = e.detail;
+      }, { once: true });
+
+      click(trigger);
+      assert.ok(eventFired, 'toggle event should fire');
+      assert.equal(eventDetail.index, 0, 'detail.index should be 0');
+      assert.ok(eventDetail.open !== undefined, 'detail.open should be defined');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

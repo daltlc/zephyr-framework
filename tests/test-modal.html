@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Modal</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <z-modal id="test-modal">
+    <h3>Test Modal</h3>
+    <p>Modal content here.</p>
+  </z-modal>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Modal');
+
+    t.test('z-modal is registered as a custom element', async (assert) => {
+      assert.ok(customElements.get('z-modal'), 'z-modal should be defined');
+    });
+
+    t.test('wraps content in a <dialog> element', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      const dialog = modal.querySelector('dialog');
+      assert.ok(dialog, 'should contain a <dialog> element');
+    });
+
+    t.test('moves children into dialog (no innerHTML)', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      const dialog = modal.querySelector('dialog');
+      assert.ok(dialog.querySelector('h3'), 'dialog should contain the heading');
+      assert.ok(dialog.querySelector('p'), 'dialog should contain the paragraph');
+    });
+
+    t.test('dialog has aria-labelledby pointing to heading', async (assert) => {
+      await waitForElements();
+      const dialog = document.querySelector('#test-modal dialog');
+      const labelId = dialog.getAttribute('aria-labelledby');
+      assert.ok(labelId, 'dialog should have aria-labelledby');
+      const heading = document.getElementById(labelId);
+      assert.ok(heading, 'aria-labelledby should point to an existing heading');
+      assert.equal(heading.tagName, 'H3', 'should reference the h3 element');
+    });
+
+    t.test('open() shows the dialog', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      const dialog = modal.querySelector('dialog');
+      modal.open();
+      assert.ok(dialog.open, 'dialog should be open after calling open()');
+      modal.close(); // cleanup
+    });
+
+    t.test('close() closes the dialog', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      const dialog = modal.querySelector('dialog');
+      modal.open();
+      modal.close();
+      // Dialog close may be async with View Transitions, check after a frame
+      await new Promise(r => setTimeout(r, 50));
+      assert.ok(!dialog.open, 'dialog should be closed after calling close()');
+    });
+
+    t.test('dispatches open event', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      let eventFired = false;
+      modal.addEventListener('open', () => { eventFired = true; }, { once: true });
+      modal.open();
+      assert.ok(eventFired, 'open event should fire');
+      modal.close();
+    });
+
+    t.test('dispatches close event', async (assert) => {
+      await waitForElements();
+      const modal = document.getElementById('test-modal');
+      let eventFired = false;
+      modal.addEventListener('close', () => { eventFired = true; }, { once: true });
+      modal.open();
+      modal.close();
+      await new Promise(r => setTimeout(r, 50));
+      assert.ok(eventFired, 'close event should fire');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

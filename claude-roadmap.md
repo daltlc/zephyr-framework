@@ -223,4 +223,34 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 
 ## Completed Items
 
-_None yet — items will be checked off as they are implemented._
+- [x] **1.1** Replace innerHTML in ZModal — now uses `while (this.firstChild) dialog.appendChild(this.firstChild)`
+- [x] **1.2** Remove inline onclick handlers — demo uses `data-action` + delegated event listener
+- [x] **1.3** Document security model — Security section added to README
+- [x] **2.1** Extract toggle pattern — `_toggleOpen()` method on `ZephyrElement` base class
+- [x] **2.2** Extract click-outside handler — shared `_attachClickOutside()` with `Set`-based registry
+- [x] **2.3** Extract view transition wrapper — `ZephyrElement.withTransition(fn)` static method
+- [x] **2.4** Unify floating panel CSS — shared `z-select [slot="options"], z-dropdown [slot="content"]` selector
+- [x] **3.1** Share document-level click listeners — single delegated listener iterates `_clickOutsideElements` Set
+- [x] **3.2** Clean up carousel autoplay — stored in `_autoplayInterval`, cleared in `_cleanup()`
+- [x] **3.3** Implement disconnectedCallback — base class calls `_cleanup()`, carousel clears interval, toast clears timeout
+- [x] **3.4** Implement CSS custom properties — `--z-*` tokens defined in `:root`, used throughout
+- [x] **4.1** Accordion ARIA — `aria-expanded`, `aria-controls`, `role="region"`, `aria-labelledby`
+- [x] **4.2** Tabs ARIA & keyboard nav — `aria-selected`, `aria-controls`, `tabindex`, ArrowLeft/Right/Home/End
+- [x] **4.3** Select ARIA — `role="listbox"`, `role="option"`, `aria-expanded`, `aria-haspopup`
+- [x] **4.4** Dropdown ARIA — `aria-expanded`, `aria-haspopup="true"`
+- [x] **4.5** Modal ARIA — `aria-labelledby` auto-detected from heading
+- [x] **4.6** Keyboard navigation — Escape/Enter/Space/Arrow keys implemented per component
+- [x] **5.1** Register z-accordion-item — `ZAccordionItem` class registered
+- [x] **5.2** Standardize lifecycle — ZCarousel now uses `attachTemplate()` instead of overriding `connectedCallback()`
+- [x] **5.3** Move formAssociated — removed from base class, added only to `ZSelect`
+- [x] **5.4** Add JSDoc comments — all public methods and classes documented
+- [x] **6.1** Document state attribute convention — added to README and AGENTS.md
+- [x] **6.2** Add event dispatching — all components dispatch events (toggle, open, close, slide, show, hide)
+- [x] **6.3** Demo page CSS — extracted to `demo.css`, documented that consumer styles override framework layers
+- [x] **7.1** Separate demo styles — extracted 360 lines to `demo.css`
+- [x] **7.2** CSS custom properties theming — 11 `--z-*` tokens defined and used throughout
+- [x] **7.3** Component event registry — `Zephyr.components` map with tags, slots, attributes, events, methods
+- [x] **8.1** Create test harness — `tests/harness.js` with `TestSuite`, `Assertions`, helpers
+- [x] **8.2** Component unit tests — test files for all 7 components
+- [x] **8.3** Form integration tests — `tests/test-form-integration.html` verifies FormData participation
+- [x] **5.5** Standardize private naming — convention documented in JS file header comment

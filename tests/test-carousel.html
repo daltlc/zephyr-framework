@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Carousel</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture -->
+  <z-carousel id="test-carousel">
+    <div slot="item">Slide 1</div>
+    <div slot="item">Slide 2</div>
+    <div slot="item">Slide 3</div>
+    <button data-prev>Prev</button>
+    <button data-next>Next</button>
+  </z-carousel>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Carousel');
+
+    t.test('z-carousel is registered', async (assert) => {
+      assert.ok(customElements.get('z-carousel'), 'z-carousel should be defined');
+    });
+
+    t.test('first slide is active by default', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+      assert.hasAttribute(items[0], 'data-active', 'first slide should be active');
+      assert.notHasAttribute(items[1], 'data-active', 'second slide should not be active');
+    });
+
+    t.test('slides have data-index attributes', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+      items.forEach((item, i) => {
+        assert.equal(item.getAttribute('data-index'), String(i), `slide ${i} should have data-index="${i}"`);
+      });
+    });
+
+    t.test('next() advances to next slide', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+
+      carousel.next();
+      await new Promise(r => setTimeout(r, 50));
+      assert.notHasAttribute(items[0], 'data-active', 'slide 0 should not be active');
+      assert.hasAttribute(items[1], 'data-active', 'slide 1 should be active');
+    });
+
+    t.test('prev() goes to previous slide', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+
+      carousel.prev();
+      await new Promise(r => setTimeout(r, 50));
+      assert.hasAttribute(items[0], 'data-active', 'slide 0 should be active again');
+    });
+
+    t.test('wraps around at the end', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+
+      // Go to slide 0, then prev should wrap to slide 2
+      carousel.prev();
+      await new Promise(r => setTimeout(r, 50));
+      assert.hasAttribute(items[2], 'data-active', 'should wrap to last slide');
+      // Reset
+      carousel.next();
+    });
+
+    t.test('dispatches slide event', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      let eventDetail = null;
+
+      carousel.addEventListener('slide', (e) => {
+        eventDetail = e.detail;
+      }, { once: true });
+
+      carousel.next();
+      assert.ok(eventDetail, 'slide event should fire');
+      assert.ok(eventDetail.index !== undefined, 'detail should have index');
+      assert.equal(eventDetail.direction, 'next', 'direction should be "next"');
+    });
+
+    t.test('ArrowRight triggers next()', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      const items = document.querySelectorAll('#test-carousel [slot="item"]');
+
+      // Find current index, then press ArrowRight
+      const currentActive = document.querySelector('#test-carousel [slot="item"][data-active]');
+      const currentIdx = parseInt(currentActive.getAttribute('data-index'));
+      const expectedNext = (currentIdx + 1) % items.length;
+
+      keydown(carousel, 'ArrowRight');
+      await new Promise(r => setTimeout(r, 50));
+      assert.hasAttribute(items[expectedNext], 'data-active',
+        `slide ${expectedNext} should be active after ArrowRight`);
+    });
+
+    t.test('carousel is focusable (tabindex)', async (assert) => {
+      await waitForElements();
+      const carousel = document.getElementById('test-carousel');
+      assert.equal(carousel.getAttribute('tabindex'), '0', 'carousel should have tabindex="0"');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

@@ -151,6 +151,88 @@
         </div>
       </z-modal>
     </div>
+    <!-- Combobox Demo -->
+    <div class="demo-card">
+      <h2>Combobox</h2>
+      <z-combobox>
+        <input type="text" placeholder="Search languages...">
+        <div slot="listbox">
+          <div data-value="javascript">JavaScript</div>
+          <div data-value="typescript">TypeScript</div>
+          <div data-value="python">Python</div>
+          <div data-value="rust">Rust</div>
+          <div data-value="go">Go</div>
+          <div data-value="ruby">Ruby</div>
+          <div data-value="swift">Swift</div>
+          <div data-value="kotlin">Kotlin</div>
+        </div>
+      </z-combobox>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Filterable dropdown with keyboard navigation.
+        Type to filter, arrow keys to navigate, Enter to select.
+      </p>
+    </div>
+
+    <!-- Date Picker Demo -->
+    <div class="demo-card">
+      <h2>Date Picker</h2>
+      <z-datepicker>
+        <button slot="display">Choose a date</button>
+      </z-datepicker>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Enhanced native <code>&lt;input type="date"&gt;</code> with styled trigger
+        and formatted display. Fully accessible.
+      </p>
+    </div>
+
+    <!-- Infinite Scroll Demo -->
+    <div class="demo-card">
+      <h2>Infinite Scroll</h2>
+      <z-infinite-scroll id="demo-infinite" style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(155,163,191,0.2); border-radius: 0.5rem; padding: 0.5rem;">
+        <div class="infinite-content" id="infinite-items"></div>
+      </z-infinite-scroll>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Uses IntersectionObserver to load more content as you scroll.
+        No external libraries needed.
+      </p>
+    </div>
+
+    <!-- Sortable Demo -->
+    <div class="demo-card">
+      <h2>Drag &amp; Drop</h2>
+      <z-sortable id="demo-sortable">
+        <div data-sortable="1" class="sortable-item">Item 1 - Drag me</div>
+        <div data-sortable="2" class="sortable-item">Item 2 - Drag me</div>
+        <div data-sortable="3" class="sortable-item">Item 3 - Drag me</div>
+        <div data-sortable="4" class="sortable-item">Item 4 - Drag me</div>
+      </z-sortable>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Native HTML Drag and Drop API. Dispatches <code>sort</code> event with new order.
+      </p>
+    </div>
+
+    <!-- File Upload Demo -->
+    <div class="demo-card">
+      <h2>File Upload</h2>
+      <z-file-upload data-multiple>
+        <div slot="dropzone">Drop files here or click to browse</div>
+        <div slot="filelist"></div>
+      </z-file-upload>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Drag-and-drop zone with progress bars.
+        Uses native <code>&lt;input type="file"&gt;</code> under the hood.
+      </p>
+    </div>
+
+    <!-- Virtual List Demo -->
+    <div class="demo-card">
+      <h2>Virtual Scroll</h2>
+      <z-virtual-list id="demo-virtual" data-item-height="36" style="height: 200px; border: 1px solid rgba(155,163,191,0.2); border-radius: 0.5rem;"></z-virtual-list>
+      <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
+        Renders 10,000 rows with only ~20 DOM nodes.
+        GPU-accelerated scrolling via <code>will-change: transform</code>.
+      </p>
+    </div>
   </div>
 
   <footer>
@@ -188,6 +270,47 @@
           Zephyr.toast('Framework features: Form-associated elements, View Transitions, Container Queries, CSS :has()', 5000);
           break;
       }
+    });
+
+    // Infinite Scroll demo — load batches of items
+    let infinitePage = 0;
+    const loadItems = () => {
+      const container = document.getElementById('infinite-items');
+      const scroller = document.getElementById('demo-infinite');
+      scroller.setAttribute('data-loading', '');
+      // Simulate async loading
+      setTimeout(() => {
+        for (let i = 0; i < 10; i++) {
+          const item = document.createElement('div');
+          item.className = 'infinite-item';
+          item.textContent = `Item ${infinitePage * 10 + i + 1}`;
+          container.appendChild(item);
+        }
+        infinitePage++;
+        scroller.removeAttribute('data-loading');
+        if (infinitePage >= 5) scroller.complete();
+      }, 300);
+    };
+    document.getElementById('demo-infinite').addEventListener('loadmore', loadItems);
+    loadItems(); // initial load
+
+    // Virtual List demo — 10,000 items
+    const virtualList = document.getElementById('demo-virtual');
+    const bigData = Array.from({ length: 10000 }, (_, i) => ({ id: i + 1, name: `Row ${i + 1}` }));
+    virtualList.setRenderer((item) => `<span style="padding: 0 0.75rem;">${item.name}</span>`);
+    virtualList.setItems(bigData);
+
+    // File Upload demo — simulate progress
+    document.querySelector('z-file-upload').addEventListener('upload', (e) => {
+      const upload = e.target;
+      e.detail.files.forEach((file, idx) => {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 30;
+          upload.setProgress(idx, progress);
+          if (progress >= 100) clearInterval(interval);
+        }, 200);
+      });
     });
   </script>
 </body>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Infinite Scroll</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <z-infinite-scroll id="test-infinite" data-root-margin="50px" style="max-height: 150px; overflow-y: auto;">
+    <div id="infinite-content"></div>
+  </z-infinite-scroll>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Infinite Scroll');
+
+    t.test('z-infinite-scroll is registered', async (assert) => {
+      assert.ok(customElements.get('z-infinite-scroll'), 'should be defined');
+    });
+
+    t.test('creates a sentinel element', async (assert) => {
+      await waitForElements();
+      const scroller = document.getElementById('test-infinite');
+      const sentinel = scroller.querySelector('.z-infinite-sentinel');
+      assert.ok(sentinel, 'should have a sentinel');
+      assert.equal(sentinel.getAttribute('aria-hidden'), 'true');
+    });
+
+    t.test('dispatches loadmore event when sentinel is visible', async (assert) => {
+      await waitForElements();
+      const scroller = document.getElementById('test-infinite');
+      let loadmoreFired = false;
+
+      scroller.addEventListener('loadmore', () => { loadmoreFired = true; }, { once: true });
+
+      // The sentinel should be immediately visible since container is empty
+      await new Promise(r => setTimeout(r, 200));
+      assert.ok(loadmoreFired, 'loadmore should fire when sentinel is visible');
+    });
+
+    t.test('does not dispatch while data-loading is set', async (assert) => {
+      await waitForElements();
+      const scroller = document.getElementById('test-infinite');
+      scroller.setAttribute('data-loading', '');
+
+      let loadmoreFired = false;
+      scroller.addEventListener('loadmore', () => { loadmoreFired = true; }, { once: true });
+
+      await new Promise(r => setTimeout(r, 200));
+      assert.ok(!loadmoreFired, 'loadmore should NOT fire while data-loading is set');
+      scroller.removeAttribute('data-loading');
+    });
+
+    t.test('complete() stops further events', async (assert) => {
+      await waitForElements();
+      const scroller = document.getElementById('test-infinite');
+      scroller.complete();
+
+      assert.hasAttribute(scroller, 'data-done', 'should have data-done');
+
+      let loadmoreFired = false;
+      scroller.addEventListener('loadmore', () => { loadmoreFired = true; }, { once: true });
+
+      await new Promise(r => setTimeout(r, 200));
+      assert.ok(!loadmoreFired, 'loadmore should NOT fire after complete()');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Sortable</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <z-sortable id="test-sortable">
+    <div data-sortable="a">Item A</div>
+    <div data-sortable="b">Item B</div>
+    <div data-sortable="c">Item C</div>
+  </z-sortable>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Sortable');
+
+    t.test('z-sortable is registered', async (assert) => {
+      assert.ok(customElements.get('z-sortable'), 'should be defined');
+    });
+
+    t.test('has role="list"', async (assert) => {
+      await waitForElements();
+      const sortable = document.getElementById('test-sortable');
+      assert.hasRole(sortable, 'list');
+    });
+
+    t.test('items have draggable="true"', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-sortable [data-sortable]');
+      items.forEach((item, i) => {
+        assert.equal(item.getAttribute('draggable'), 'true', `item ${i} should be draggable`);
+      });
+    });
+
+    t.test('items have role="listitem"', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-sortable [data-sortable]');
+      items.forEach((item, i) => {
+        assert.hasRole(item, 'listitem', `item ${i} should have role="listitem"`);
+      });
+    });
+
+    t.test('dragstart sets data-dragging', async (assert) => {
+      await waitForElements();
+      const item = document.querySelector('#test-sortable [data-sortable="a"]');
+      const dragEvent = new Event('dragstart', { bubbles: true });
+      dragEvent.dataTransfer = { effectAllowed: '', setData() {} };
+      item.dispatchEvent(dragEvent);
+      assert.hasAttribute(item, 'data-dragging', 'should have data-dragging');
+
+      // Clean up
+      item.dispatchEvent(new Event('dragend', { bubbles: true }));
+    });
+
+    t.test('dragend removes data-dragging and dispatches sort', async (assert) => {
+      await waitForElements();
+      const sortable = document.getElementById('test-sortable');
+      const item = document.querySelector('#test-sortable [data-sortable="a"]');
+      let sortFired = false;
+
+      sortable.addEventListener('sort', (e) => {
+        sortFired = true;
+        assert.ok(e.detail.order, 'sort event should have order in detail');
+      }, { once: true });
+
+      const dragEvent = new Event('dragstart', { bubbles: true });
+      dragEvent.dataTransfer = { effectAllowed: '', setData() {} };
+      item.dispatchEvent(dragEvent);
+      item.dispatchEvent(new Event('dragend', { bubbles: true }));
+
+      assert.notHasAttribute(item, 'data-dragging', 'data-dragging should be removed');
+      assert.ok(sortFired, 'sort event should fire');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

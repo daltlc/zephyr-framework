@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Date Picker</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <form id="test-form">
+    <z-datepicker id="test-datepicker" name="date">
+      <button slot="display">Choose a date</button>
+    </z-datepicker>
+  </form>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Date Picker');
+
+    t.test('z-datepicker is registered', async (assert) => {
+      assert.ok(customElements.get('z-datepicker'), 'should be defined');
+    });
+
+    t.test('creates a hidden native date input', async (assert) => {
+      await waitForElements();
+      const picker = document.getElementById('test-datepicker');
+      const input = picker.querySelector('input[type="date"]');
+      assert.ok(input, 'should have a date input');
+    });
+
+    t.test('display button has role="button" and tabindex', async (assert) => {
+      await waitForElements();
+      const display = document.querySelector('#test-datepicker [slot="display"]');
+      assert.equal(display.getAttribute('role'), 'button');
+      assert.equal(display.getAttribute('tabindex'), '0');
+    });
+
+    t.test('setting native input value dispatches change', async (assert) => {
+      await waitForElements();
+      const picker = document.getElementById('test-datepicker');
+      const input = picker.querySelector('input[type="date"]');
+      let changeFired = false;
+
+      picker.addEventListener('change', () => { changeFired = true; }, { once: true });
+
+      input.value = '2026-03-23';
+      input.dispatchEvent(new Event('change'));
+
+      assert.equal(picker.value, '2026-03-23', 'value should be set');
+      assert.ok(changeFired, 'change event should fire');
+    });
+
+    t.test('display updates with formatted date', async (assert) => {
+      await waitForElements();
+      const display = document.querySelector('#test-datepicker [slot="display"]');
+      // The display should have been updated by the previous test
+      assert.notEqual(display.textContent, 'Choose a date', 'display should show formatted date');
+      assert.hasAttribute(display, 'data-has-value', 'should have data-has-value');
+    });
+
+    t.test('is form-associated', async (assert) => {
+      await waitForElements();
+      const form = document.getElementById('test-form');
+      const formData = new FormData(form);
+      assert.equal(formData.get('date'), '2026-03-23', 'FormData should contain the date');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

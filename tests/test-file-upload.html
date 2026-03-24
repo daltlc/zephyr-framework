@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: File Upload</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <z-file-upload id="test-upload" data-multiple>
+    <div slot="dropzone">Drop files here</div>
+    <div slot="filelist"></div>
+  </z-file-upload>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('File Upload');
+
+    t.test('z-file-upload is registered', async (assert) => {
+      assert.ok(customElements.get('z-file-upload'), 'should be defined');
+    });
+
+    t.test('creates a hidden file input', async (assert) => {
+      await waitForElements();
+      const upload = document.getElementById('test-upload');
+      const input = upload.querySelector('input[type="file"]');
+      assert.ok(input, 'should have a file input');
+      assert.ok(input.multiple, 'should support multiple files');
+    });
+
+    t.test('dropzone has role="button" and tabindex', async (assert) => {
+      await waitForElements();
+      const dropzone = document.querySelector('#test-upload [slot="dropzone"]');
+      assert.equal(dropzone.getAttribute('role'), 'button');
+      assert.equal(dropzone.getAttribute('tabindex'), '0');
+    });
+
+    t.test('dragover sets data-dragover', async (assert) => {
+      await waitForElements();
+      const upload = document.getElementById('test-upload');
+      const dropzone = upload.querySelector('[slot="dropzone"]');
+
+      const dragEvent = new Event('dragover', { bubbles: true, cancelable: true });
+      dragEvent.dataTransfer = { dropEffect: '' };
+      dragEvent.preventDefault = () => {};
+      dropzone.dispatchEvent(dragEvent);
+
+      assert.hasAttribute(upload, 'data-dragover', 'should have data-dragover');
+    });
+
+    t.test('dispatches upload event with files', async (assert) => {
+      await waitForElements();
+      const upload = document.getElementById('test-upload');
+      let eventFiles = null;
+
+      upload.addEventListener('upload', (e) => {
+        eventFiles = e.detail.files;
+      }, { once: true });
+
+      // Simulate a drop with mock files
+      const mockFile = new File(['content'], 'test.txt', { type: 'text/plain' });
+      upload._handleFiles([mockFile], upload.querySelector('[slot="filelist"]'));
+
+      assert.ok(eventFiles, 'upload event should fire');
+      assert.equal(eventFiles.length, 1, 'should have 1 file');
+      assert.equal(eventFiles[0].name, 'test.txt', 'file name should match');
+    });
+
+    t.test('renders file list with name and size', async (assert) => {
+      await waitForElements();
+      const fileList = document.querySelector('#test-upload [slot="filelist"]');
+      const item = fileList.querySelector('.z-file-item');
+      assert.ok(item, 'should render a file item');
+      assert.ok(item.querySelector('.z-file-name'), 'should have file name');
+      assert.ok(item.querySelector('.z-file-size'), 'should have file size');
+    });
+
+    t.test('setProgress updates progress bar', async (assert) => {
+      await waitForElements();
+      const upload = document.getElementById('test-upload');
+      upload.setProgress(0, 50);
+
+      const bar = upload.querySelector('.z-file-progress-bar');
+      assert.equal(bar.style.width, '50%', 'progress bar should be 50%');
+    });
+
+    t.test('100% progress sets data-complete', async (assert) => {
+      await waitForElements();
+      const upload = document.getElementById('test-upload');
+      upload.setProgress(0, 100);
+
+      const item = upload.querySelector('.z-file-item');
+      assert.hasAttribute(item, 'data-complete', 'should have data-complete at 100%');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

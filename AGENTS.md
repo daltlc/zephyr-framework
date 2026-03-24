@@ -98,6 +98,12 @@ zephyr-framework/
 │   ├── ZCarousel              # Slide viewer with autoplay + keyboard nav
 │   ├── ZToast                 # Notification system (role=alert)
 │   ├── ZDropdown              # Menu dropdown with click-outside + ARIA
+│   ├── ZCombobox              # Filterable combobox with keyboard nav + ARIA
+│   ├── ZDatepicker            # Enhanced native date input + formatted display
+│   ├── ZInfiniteScroll        # IntersectionObserver-based infinite loading
+│   ├── ZSortable              # Native Drag & Drop reorderable list
+│   ├── ZFileUpload            # Drag-and-drop file upload with progress
+│   ├── ZVirtualList           # Virtual scrolling for large datasets
 │   └── window.Zephyr          # Global utility API + component registry
 │
 ├── zephyr-framework.css      # Core styles (CSS custom properties for theming)
@@ -113,6 +119,12 @@ zephyr-framework/
 │   │   ├── Carousel           # Slide transitions
 │   │   ├── Toast              # Fixed-position notification
 │   │   ├── Dropdown           # Dropdown-specific overrides
+│   │   ├── Combobox           # Filterable dropdown listbox
+│   │   ├── Date Picker        # Hidden native input + styled trigger
+│   │   ├── Infinite Scroll    # Sentinel + loading spinner
+│   │   ├── Sortable           # Drag states (dragging, drag-over)
+│   │   ├── File Upload        # Drop zone + progress bars
+│   │   ├── Virtual List       # Spacer + viewport positioning
 │   │   ├── Dark Mode          # :has([data-theme="dark"]) theming
 │   │   ├── Loading States     # Spinner animation
 │   │   ├── Form Validation    # :user-invalid/:user-valid styling

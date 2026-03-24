@@ -551,6 +551,572 @@ class ZDropdown extends ZephyrElement {
 }
 
 // ---------------------------------------------------------------------------
+// Combobox
+// ---------------------------------------------------------------------------
+
+/**
+ * Combobox component with filterable options and keyboard navigation.
+ * Combines a text input with a dropdown listbox.
+ * Dispatches 'change' events on selection, 'input' events on filter.
+ * Supports ArrowUp/Down, Enter, Escape.
+ */
+class ZCombobox extends ZephyrElement {
+  static formAssociated = true;
+
+  constructor() {
+    super();
+    this._internals = this.attachInternals();
+    this._value = '';
+  }
+
+  get value() { return this._value; }
+  set value(v) {
+    this._value = v;
+    this._internals.setFormValue(v);
+  }
+
+  attachTemplate() {
+    const input = this.querySelector('input');
+    const listbox = this.querySelector('[slot="listbox"]');
+    const items = Array.from(listbox.querySelectorAll('[data-value]'));
+
+    // ARIA setup
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-haspopup', 'listbox');
+    listbox.setAttribute('role', 'listbox');
+    items.forEach(item => {
+      item.setAttribute('role', 'option');
+      item.setAttribute('tabindex', '-1');
+    });
+
+    let activeIdx = -1;
+
+    const showList = () => {
+      this.setAttribute('data-open', '');
+      input.setAttribute('aria-expanded', 'true');
+    };
+
+    const hideList = () => {
+      this.removeAttribute('data-open');
+      input.setAttribute('aria-expanded', 'false');
+      activeIdx = -1;
+      items.forEach(i => i.removeAttribute('data-highlighted'));
+    };
+
+    const selectItem = (item) => {
+      this.value = item.dataset.value;
+      input.value = item.textContent.trim();
+      hideList();
+      this.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const filterItems = (query) => {
+      const q = query.toLowerCase();
+      let visibleCount = 0;
+      items.forEach(item => {
+        const matches = item.textContent.toLowerCase().includes(q);
+        item.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+      });
+      if (visibleCount > 0 && query.length > 0) {
+        showList();
+      } else if (query.length === 0) {
+        items.forEach(i => i.style.display = '');
+        showList();
+      }
+      activeIdx = -1;
+    };
+
+    const highlightIdx = (idx) => {
+      const visible = items.filter(i => i.style.display !== 'none');
+      if (visible.length === 0) return;
+      activeIdx = ((idx % visible.length) + visible.length) % visible.length;
+      items.forEach(i => i.removeAttribute('data-highlighted'));
+      visible[activeIdx].setAttribute('data-highlighted', '');
+      visible[activeIdx].scrollIntoView({ block: 'nearest' });
+    };
+
+    input.addEventListener('focus', () => {
+      filterItems(input.value);
+    });
+
+    input.addEventListener('input', () => {
+      filterItems(input.value);
+      this.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const visible = items.filter(i => i.style.display !== 'none');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!this.hasAttribute('data-open')) showList();
+        highlightIdx(activeIdx + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!this.hasAttribute('data-open')) showList();
+        highlightIdx(activeIdx - 1);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (activeIdx >= 0 && visible[activeIdx]) {
+          selectItem(visible[activeIdx]);
+        }
+      } else if (e.key === 'Escape') {
+        hideList();
+        input.focus();
+      }
+    });
+
+    items.forEach(item => {
+      item.addEventListener('click', () => selectItem(item));
+    });
+
+    this._attachClickOutside();
+    this._hideList = hideList;
+  }
+
+  _cleanup() {
+    super._cleanup();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Date Picker
+// ---------------------------------------------------------------------------
+
+/**
+ * Enhanced date picker wrapping native <input type="date">.
+ * Provides a styled trigger that displays the formatted date.
+ * Dispatches 'change' events on date selection.
+ */
+class ZDatepicker extends ZephyrElement {
+  static formAssociated = true;
+
+  constructor() {
+    super();
+    this._internals = this.attachInternals();
+    this._value = '';
+  }
+
+  get value() { return this._value; }
+  set value(v) {
+    this._value = v;
+    this._internals.setFormValue(v);
+  }
+
+  attachTemplate() {
+    const display = this.querySelector('[slot="display"]');
+    let input = this.querySelector('input[type="date"]');
+
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'date';
+      input.setAttribute('aria-hidden', 'true');
+      input.tabIndex = -1;
+      this.appendChild(input);
+    }
+
+    // Style the native input to be visually hidden but functional
+    input.classList.add('z-datepicker-native');
+
+    const placeholder = display?.textContent || 'Select date';
+
+    if (display) {
+      display.setAttribute('role', 'button');
+      display.setAttribute('tabindex', '0');
+      display.setAttribute('aria-label', 'Choose date');
+
+      display.addEventListener('click', () => {
+        input.showPicker?.() || input.focus();
+      });
+
+      display.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          input.showPicker?.() || input.focus();
+        }
+      });
+    }
+
+    input.addEventListener('change', () => {
+      this.value = input.value;
+      if (display && input.value) {
+        const date = new Date(input.value + 'T00:00:00');
+        display.textContent = date.toLocaleDateString(undefined, {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        display.setAttribute('data-has-value', '');
+      } else if (display) {
+        display.textContent = placeholder;
+        display.removeAttribute('data-has-value');
+      }
+      this.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    // Initialize from existing value
+    if (input.value) {
+      input.dispatchEvent(new Event('change'));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Infinite Scroll
+// ---------------------------------------------------------------------------
+
+/**
+ * Infinite scroll container using IntersectionObserver.
+ * Watches a sentinel element at the bottom and dispatches 'loadmore'
+ * when it becomes visible, signaling the consumer to append content.
+ * Set data-loading attribute while fetching to prevent duplicate events.
+ */
+class ZInfiniteScroll extends ZephyrElement {
+  attachTemplate() {
+    // Create sentinel element
+    this._sentinel = document.createElement('div');
+    this._sentinel.classList.add('z-infinite-sentinel');
+    this._sentinel.setAttribute('aria-hidden', 'true');
+    this.appendChild(this._sentinel);
+
+    this._observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !this.hasAttribute('data-loading') && !this.hasAttribute('data-done')) {
+          this.dispatchEvent(new CustomEvent('loadmore', { bubbles: true }));
+        }
+      });
+    }, {
+      root: this.hasAttribute('data-root') ? this : null,
+      rootMargin: this.dataset.rootMargin || '200px',
+      threshold: 0
+    });
+
+    this._observer.observe(this._sentinel);
+  }
+
+  /** Call when all data has been loaded to stop observing. */
+  complete() {
+    this.setAttribute('data-done', '');
+    if (this._observer) {
+      this._observer.disconnect();
+    }
+  }
+
+  _cleanup() {
+    super._cleanup();
+    if (this._observer) {
+      this._observer.disconnect();
+      this._observer = null;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sortable (Drag & Drop)
+// ---------------------------------------------------------------------------
+
+/**
+ * Drag & drop sortable list using the native HTML Drag and Drop API.
+ * Children with [data-sortable] become draggable.
+ * Dispatches 'sort' event with detail: { order } after reorder.
+ */
+class ZSortable extends ZephyrElement {
+  attachTemplate() {
+    this._draggedEl = null;
+
+    const items = () => Array.from(this.querySelectorAll('[data-sortable]'));
+
+    const setupItem = (item) => {
+      item.setAttribute('draggable', 'true');
+      item.setAttribute('role', 'listitem');
+
+      item.addEventListener('dragstart', (e) => {
+        this._draggedEl = item;
+        item.setAttribute('data-dragging', '');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+
+      item.addEventListener('dragend', () => {
+        item.removeAttribute('data-dragging');
+        this._draggedEl = null;
+        // Remove all drop indicators
+        items().forEach(i => i.removeAttribute('data-drag-over'));
+        this._emitOrder();
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (this._draggedEl && this._draggedEl !== item) {
+          item.setAttribute('data-drag-over', '');
+        }
+      });
+
+      item.addEventListener('dragleave', () => {
+        item.removeAttribute('data-drag-over');
+      });
+
+      item.addEventListener('drop', (e) => {
+        e.preventDefault();
+        item.removeAttribute('data-drag-over');
+        if (this._draggedEl && this._draggedEl !== item) {
+          const allItems = items();
+          const fromIdx = allItems.indexOf(this._draggedEl);
+          const toIdx = allItems.indexOf(item);
+          if (fromIdx < toIdx) {
+            item.after(this._draggedEl);
+          } else {
+            item.before(this._draggedEl);
+          }
+        }
+      });
+    };
+
+    this.setAttribute('role', 'list');
+    items().forEach(setupItem);
+
+    // Observe for dynamically added items
+    this._mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType === 1 && node.hasAttribute('data-sortable')) {
+            setupItem(node);
+          }
+        });
+      });
+    });
+    this._mutationObserver.observe(this, { childList: true });
+  }
+
+  _emitOrder() {
+    const order = Array.from(this.querySelectorAll('[data-sortable]'))
+      .map((el, idx) => ({ index: idx, value: el.dataset.sortable || el.textContent.trim() }));
+    this.dispatchEvent(new CustomEvent('sort', { bubbles: true, detail: { order } }));
+  }
+
+  _cleanup() {
+    super._cleanup();
+    if (this._mutationObserver) {
+      this._mutationObserver.disconnect();
+      this._mutationObserver = null;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File Upload
+// ---------------------------------------------------------------------------
+
+/**
+ * File upload component with drag-and-drop zone and progress display.
+ * Wraps a native <input type="file"> with a styled drop zone.
+ * Dispatches 'upload' event with detail: { files } when files are selected.
+ * Handles drag-over visual state via data-dragover attribute.
+ */
+class ZFileUpload extends ZephyrElement {
+  attachTemplate() {
+    const dropZone = this.querySelector('[slot="dropzone"]') || this;
+    let fileInput = this.querySelector('input[type="file"]');
+    const fileList = this.querySelector('[slot="filelist"]');
+
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.multiple = this.hasAttribute('data-multiple');
+      fileInput.accept = this.dataset.accept || '';
+      fileInput.classList.add('z-file-input-hidden');
+      this.appendChild(fileInput);
+    }
+
+    // ARIA
+    dropZone.setAttribute('role', 'button');
+    dropZone.setAttribute('tabindex', '0');
+    dropZone.setAttribute('aria-label', 'Drop files here or click to browse');
+
+    // Click to browse
+    dropZone.addEventListener('click', (e) => {
+      if (e.target === fileInput) return;
+      fileInput.click();
+    });
+
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      this.setAttribute('data-dragover', '');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+      if (!this.contains(e.relatedTarget)) {
+        this.removeAttribute('data-dragover');
+      }
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      this.removeAttribute('data-dragover');
+      const files = Array.from(e.dataTransfer.files);
+      this._handleFiles(files, fileList);
+    });
+
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files);
+      this._handleFiles(files, fileList);
+    });
+  }
+
+  _handleFiles(files, fileList) {
+    if (files.length === 0) return;
+
+    // Render file list if container exists
+    if (fileList) {
+      fileList.innerHTML = '';
+      files.forEach(file => {
+        const item = document.createElement('div');
+        item.classList.add('z-file-item');
+        item.innerHTML = `
+          <span class="z-file-name">${this._escapeHtml(file.name)}</span>
+          <span class="z-file-size">${this._formatSize(file.size)}</span>
+          <div class="z-file-progress"><div class="z-file-progress-bar"></div></div>
+        `;
+        fileList.appendChild(item);
+      });
+    }
+
+    this.dispatchEvent(new CustomEvent('upload', {
+      bubbles: true,
+      detail: { files }
+    }));
+  }
+
+  /**
+   * Updates the progress bar for a specific file.
+   * @param {number} index - File index in the list
+   * @param {number} percent - Progress percentage (0-100)
+   */
+  setProgress(index, percent) {
+    const bars = this.querySelectorAll('.z-file-progress-bar');
+    if (bars[index]) {
+      bars[index].style.width = `${Math.min(100, Math.max(0, percent))}%`;
+      if (percent >= 100) {
+        bars[index].closest('.z-file-item')?.setAttribute('data-complete', '');
+      }
+    }
+  }
+
+  _formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  _escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Virtual List
+// ---------------------------------------------------------------------------
+
+/**
+ * Virtual scrolling list for efficiently rendering large datasets.
+ * Only renders items visible in the viewport plus a buffer.
+ * Set data-item-height for fixed row height, data-buffer for overscan count.
+ * Call setItems(array) to provide data, provide a render function via setRenderer(fn).
+ *
+ * @example
+ *   const list = document.querySelector('z-virtual-list');
+ *   list.setRenderer((item, idx) => `<div class="row">${item.name}</div>`);
+ *   list.setItems(arrayOf10000Items);
+ */
+class ZVirtualList extends ZephyrElement {
+  attachTemplate() {
+    this._items = [];
+    this._renderer = (item, idx) => `<div>${item}</div>`;
+    this._itemHeight = parseInt(this.dataset.itemHeight) || 40;
+    this._buffer = parseInt(this.dataset.buffer) || 5;
+
+    // Create inner structure
+    this._spacer = document.createElement('div');
+    this._spacer.classList.add('z-virtual-spacer');
+    this._viewport = document.createElement('div');
+    this._viewport.classList.add('z-virtual-viewport');
+
+    this.appendChild(this._spacer);
+    this._spacer.appendChild(this._viewport);
+
+    this.setAttribute('role', 'list');
+    this.style.overflow = 'auto';
+
+    this._onScroll = () => this._render();
+    this.addEventListener('scroll', this._onScroll, { passive: true });
+  }
+
+  /**
+   * Sets the data items for the list.
+   * @param {Array} items - Array of data objects to render
+   */
+  setItems(items) {
+    this._items = items;
+    this._spacer.style.height = `${items.length * this._itemHeight}px`;
+    this._render();
+  }
+
+  /**
+   * Sets the render function that converts a data item to HTML.
+   * @param {function(item: *, index: number): string} fn - Renderer function
+   */
+  setRenderer(fn) {
+    this._renderer = fn;
+    this._render();
+  }
+
+  _render() {
+    if (!this._items.length) return;
+
+    const scrollTop = this.scrollTop;
+    const viewportHeight = this.clientHeight;
+
+    const startIdx = Math.max(0, Math.floor(scrollTop / this._itemHeight) - this._buffer);
+    const endIdx = Math.min(
+      this._items.length,
+      Math.ceil((scrollTop + viewportHeight) / this._itemHeight) + this._buffer
+    );
+
+    this._viewport.style.transform = `translateY(${startIdx * this._itemHeight}px)`;
+
+    const fragment = document.createDocumentFragment();
+    for (let i = startIdx; i < endIdx; i++) {
+      const el = document.createElement('div');
+      el.classList.add('z-virtual-item');
+      el.setAttribute('role', 'listitem');
+      el.style.height = `${this._itemHeight}px`;
+      el.innerHTML = this._renderer(this._items[i], i);
+      fragment.appendChild(el);
+    }
+
+    this._viewport.innerHTML = '';
+    this._viewport.appendChild(fragment);
+  }
+
+  _cleanup() {
+    super._cleanup();
+    this.removeEventListener('scroll', this._onScroll);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
 
@@ -562,6 +1128,12 @@ customElements.define('z-select', ZSelect);
 customElements.define('z-carousel', ZCarousel);
 customElements.define('z-toast', ZToast);
 customElements.define('z-dropdown', ZDropdown);
+customElements.define('z-combobox', ZCombobox);
+customElements.define('z-datepicker', ZDatepicker);
+customElements.define('z-infinite-scroll', ZInfiniteScroll);
+customElements.define('z-sortable', ZSortable);
+customElements.define('z-file-upload', ZFileUpload);
+customElements.define('z-virtual-list', ZVirtualList);
 
 // ---------------------------------------------------------------------------
 // Global Utilities
@@ -647,6 +1219,48 @@ window.Zephyr = {
       attributes: ['data-open'],
       events: ['toggle'],
       methods: []
+    },
+    combobox: {
+      tag: 'z-combobox',
+      slots: ['listbox'],
+      attributes: ['data-open', 'data-value', 'name'],
+      events: ['change', 'input'],
+      methods: ['value']
+    },
+    datepicker: {
+      tag: 'z-datepicker',
+      slots: ['display'],
+      attributes: ['name'],
+      events: ['change'],
+      methods: ['value']
+    },
+    infiniteScroll: {
+      tag: 'z-infinite-scroll',
+      slots: [],
+      attributes: ['data-loading', 'data-done', 'data-root-margin'],
+      events: ['loadmore'],
+      methods: ['complete()']
+    },
+    sortable: {
+      tag: 'z-sortable',
+      slots: [],
+      attributes: ['data-sortable'],
+      events: ['sort'],
+      methods: []
+    },
+    fileUpload: {
+      tag: 'z-file-upload',
+      slots: ['dropzone', 'filelist'],
+      attributes: ['data-multiple', 'data-accept', 'data-dragover'],
+      events: ['upload'],
+      methods: ['setProgress(index, percent)']
+    },
+    virtualList: {
+      tag: 'z-virtual-list',
+      slots: [],
+      attributes: ['data-item-height', 'data-buffer'],
+      events: [],
+      methods: ['setItems(array)', 'setRenderer(fn)']
     }
   }
 };

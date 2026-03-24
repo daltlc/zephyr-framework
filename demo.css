@@ -84,6 +84,12 @@ h1 {
 .demo-card:nth-child(4) { animation-delay: 0.4s; }
 .demo-card:nth-child(5) { animation-delay: 0.5s; }
 .demo-card:nth-child(6) { animation-delay: 0.6s; }
+.demo-card:nth-child(7) { animation-delay: 0.7s; }
+.demo-card:nth-child(8) { animation-delay: 0.8s; }
+.demo-card:nth-child(9) { animation-delay: 0.9s; }
+.demo-card:nth-child(10) { animation-delay: 1.0s; }
+.demo-card:nth-child(11) { animation-delay: 1.1s; }
+.demo-card:nth-child(12) { animation-delay: 1.2s; }
 
 @keyframes card-enter {
   from {
@@ -365,4 +371,120 @@ code {
   border-radius: 0.25rem;
   color: var(--accent-soft);
   font-size: 0.875em;
+}
+
+/* Combobox Styles */
+z-combobox {
+  display: block;
+}
+
+z-combobox input {
+  background: var(--slate);
+  border: 1px solid rgba(155, 163, 191, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--ice);
+  width: 100%;
+}
+
+z-combobox input::placeholder {
+  color: var(--silver);
+}
+
+z-combobox [slot="listbox"] {
+  background: var(--slate);
+  border: 1px solid rgba(155, 163, 191, 0.2);
+}
+
+z-combobox [slot="listbox"] [data-value] {
+  padding: 0.625rem 1rem;
+  color: var(--ice);
+}
+
+z-combobox [slot="listbox"] [data-value]:hover,
+z-combobox [slot="listbox"] [data-value][data-highlighted] {
+  background: var(--charcoal);
+  color: var(--accent-soft);
+}
+
+/* Date Picker Styles */
+z-datepicker [slot="display"] {
+  background: var(--slate);
+  border: 1px solid rgba(155, 163, 191, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  color: var(--silver);
+  display: inline-block;
+}
+
+z-datepicker [slot="display"][data-has-value] {
+  color: var(--ice);
+}
+
+/* Infinite Scroll Styles */
+.infinite-item {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(155, 163, 191, 0.1);
+  color: var(--silver);
+  font-size: 0.875rem;
+}
+
+/* Sortable Styles */
+.sortable-item {
+  background: var(--slate);
+  border: 1px solid rgba(155, 163, 191, 0.2);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--ice);
+  font-size: 0.875rem;
+}
+
+.sortable-item[data-dragging] {
+  opacity: 0.4;
+}
+
+.sortable-item[data-drag-over] {
+  border-top-color: var(--accent);
+}
+
+/* File Upload Styles */
+z-file-upload [slot="dropzone"] {
+  border-color: var(--silver);
+  color: var(--silver);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+z-file-upload[data-dragover] [slot="dropzone"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 157, 0.05);
+}
+
+z-file-upload .z-file-item {
+  color: var(--ice);
+}
+
+z-file-upload .z-file-size {
+  color: var(--silver);
+}
+
+z-file-upload .z-file-progress {
+  background: var(--slate);
+}
+
+z-file-upload .z-file-progress-bar {
+  background: var(--accent);
+}
+
+/* Virtual List Styles */
+z-virtual-list .z-virtual-item {
+  color: var(--silver);
+  font-size: 0.875rem;
+  border-bottom: 1px solid rgba(155, 163, 191, 0.05);
+}
+
+z-virtual-list .z-virtual-item:hover {
+  background: rgba(155, 163, 191, 0.05);
 }

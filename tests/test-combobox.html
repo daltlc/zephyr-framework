@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Combobox</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <form id="test-form">
+    <z-combobox id="test-combobox" name="lang">
+      <input type="text" placeholder="Search...">
+      <div slot="listbox">
+        <div data-value="js">JavaScript</div>
+        <div data-value="py">Python</div>
+        <div data-value="rs">Rust</div>
+        <div data-value="go">Go</div>
+      </div>
+    </z-combobox>
+  </form>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Combobox');
+
+    t.test('z-combobox is registered', async (assert) => {
+      assert.ok(customElements.get('z-combobox'), 'should be defined');
+    });
+
+    t.test('input has role="combobox"', async (assert) => {
+      await waitForElements();
+      const input = document.querySelector('#test-combobox input');
+      assert.equal(input.getAttribute('role'), 'combobox');
+    });
+
+    t.test('input has aria-autocomplete="list"', async (assert) => {
+      await waitForElements();
+      const input = document.querySelector('#test-combobox input');
+      assert.equal(input.getAttribute('aria-autocomplete'), 'list');
+    });
+
+    t.test('listbox has role="listbox"', async (assert) => {
+      await waitForElements();
+      const listbox = document.querySelector('#test-combobox [slot="listbox"]');
+      assert.hasRole(listbox, 'listbox');
+    });
+
+    t.test('options have role="option"', async (assert) => {
+      await waitForElements();
+      const items = document.querySelectorAll('#test-combobox [data-value]');
+      items.forEach((item, i) => {
+        assert.hasRole(item, 'option', `item ${i} should have role="option"`);
+      });
+    });
+
+    t.test('focusing input opens listbox', async (assert) => {
+      await waitForElements();
+      const combobox = document.getElementById('test-combobox');
+      const input = combobox.querySelector('input');
+      input.focus();
+      input.dispatchEvent(new Event('focus'));
+      assert.hasAttribute(combobox, 'data-open', 'should open on focus');
+    });
+
+    t.test('typing filters options', async (assert) => {
+      await waitForElements();
+      const input = document.querySelector('#test-combobox input');
+      input.value = 'rust';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const items = document.querySelectorAll('#test-combobox [data-value]');
+      const visible = Array.from(items).filter(i => i.style.display !== 'none');
+      assert.equal(visible.length, 1, 'should show only Rust');
+      assert.equal(visible[0].dataset.value, 'rs');
+
+      // Reset
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    t.test('clicking option selects value and dispatches change', async (assert) => {
+      await waitForElements();
+      const combobox = document.getElementById('test-combobox');
+      const input = combobox.querySelector('input');
+      let changeFired = false;
+
+      combobox.addEventListener('change', () => { changeFired = true; }, { once: true });
+
+      input.focus();
+      input.dispatchEvent(new Event('focus'));
+      const pyOption = combobox.querySelector('[data-value="py"]');
+      click(pyOption);
+
+      assert.equal(combobox.value, 'py', 'value should be "py"');
+      assert.equal(input.value, 'Python', 'input should show "Python"');
+      assert.ok(changeFired, 'change event should fire');
+    });
+
+    t.test('ArrowDown highlights next option', async (assert) => {
+      await waitForElements();
+      const combobox = document.getElementById('test-combobox');
+      const input = combobox.querySelector('input');
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+      input.dispatchEvent(new Event('focus'));
+
+      keydown(input, 'ArrowDown');
+      const highlighted = combobox.querySelector('[data-highlighted]');
+      assert.ok(highlighted, 'an option should be highlighted');
+    });
+
+    t.test('Escape closes listbox', async (assert) => {
+      await waitForElements();
+      const combobox = document.getElementById('test-combobox');
+      const input = combobox.querySelector('input');
+      input.focus();
+      input.dispatchEvent(new Event('focus'));
+      assert.hasAttribute(combobox, 'data-open', 'should be open');
+
+      keydown(input, 'Escape');
+      assert.notHasAttribute(combobox, 'data-open', 'should close on Escape');
+    });
+
+    t.test('is form-associated', async (assert) => {
+      await waitForElements();
+      const combobox = document.getElementById('test-combobox');
+      const form = document.getElementById('test-form');
+      // Set a value first
+      const input = combobox.querySelector('input');
+      input.focus();
+      input.dispatchEvent(new Event('focus'));
+      click(combobox.querySelector('[data-value="go"]'));
+
+      const formData = new FormData(form);
+      assert.equal(formData.get('lang'), 'go', 'FormData should contain "go"');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

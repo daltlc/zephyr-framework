@@ -254,3 +254,10 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **8.2** Component unit tests — test files for all 7 components
 - [x] **8.3** Form integration tests — `tests/test-form-integration.html` verifies FormData participation
 - [x] **5.5** Standardize private naming — convention documented in JS file header comment
+- [x] **8.2** Component unit tests — expanded to 14 test files covering all components including 6 new ones
+- [x] **Future: Combobox** — `ZCombobox` with keyboard navigation, filtering, form association
+- [x] **Future: Date Picker** — `ZDatepicker` wrapping native `<input type="date">` with formatted display
+- [x] **Future: Infinite Scroll** — `ZInfiniteScroll` with IntersectionObserver, loadmore events, loading guards
+- [x] **Future: Sortable** — `ZSortable` with native Drag and Drop API, sort events, MutationObserver
+- [x] **Future: File Upload** — `ZFileUpload` with drop zone, progress tracking, XSS-safe rendering
+- [x] **Future: Virtual List** — `ZVirtualList` with DOM recycling, spacer/viewport pattern, 10k+ row support

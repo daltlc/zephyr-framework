@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Virtual List</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <z-virtual-list id="test-virtual" data-item-height="30" data-buffer="3" style="height: 150px;"></z-virtual-list>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Virtual List');
+
+    t.test('z-virtual-list is registered', async (assert) => {
+      assert.ok(customElements.get('z-virtual-list'), 'should be defined');
+    });
+
+    t.test('has role="list"', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      assert.hasRole(list, 'list');
+    });
+
+    t.test('creates spacer and viewport elements', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      assert.ok(list.querySelector('.z-virtual-spacer'), 'should have spacer');
+      assert.ok(list.querySelector('.z-virtual-viewport'), 'should have viewport');
+    });
+
+    t.test('setItems sets spacer height', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      const items = Array.from({ length: 1000 }, (_, i) => ({ name: `Item ${i}` }));
+      list.setRenderer((item) => `<span>${item.name}</span>`);
+      list.setItems(items);
+
+      const spacer = list.querySelector('.z-virtual-spacer');
+      assert.equal(spacer.style.height, '30000px', 'spacer should be 1000 * 30px');
+    });
+
+    t.test('renders only visible items (not all 1000)', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      const rendered = list.querySelectorAll('.z-virtual-item');
+
+      // 150px height / 30px per item = 5 visible + 3 buffer each side = ~11 max
+      assert.ok(rendered.length < 20, `should render few items, got ${rendered.length}`);
+      assert.ok(rendered.length > 0, 'should render some items');
+    });
+
+    t.test('rendered items have role="listitem"', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      const items = list.querySelectorAll('.z-virtual-item');
+      items.forEach((item, i) => {
+        assert.hasRole(item, 'listitem', `item ${i} should have role="listitem"`);
+      });
+    });
+
+    t.test('items have correct height', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      const item = list.querySelector('.z-virtual-item');
+      assert.equal(item.style.height, '30px', 'item height should match data-item-height');
+    });
+
+    t.test('setRenderer changes content', async (assert) => {
+      await waitForElements();
+      const list = document.getElementById('test-virtual');
+      list.setRenderer((item) => `<b>${item.name.toUpperCase()}</b>`);
+      list.setItems(Array.from({ length: 100 }, (_, i) => ({ name: `Row ${i}` })));
+
+      const firstItem = list.querySelector('.z-virtual-item');
+      assert.ok(firstItem.querySelector('b'), 'should render bold element from new renderer');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

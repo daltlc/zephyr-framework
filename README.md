@@ -39,6 +39,12 @@ The framework JavaScript (~7kb) runs **once at page load** to register custom el
 - Form validation styling
 - Loading states
 - Scroll-driven animations
+- Combobox with filterable keyboard navigation
+- Date picker with formatted display
+- Infinite scroll via IntersectionObserver
+- Drag & drop sortable lists
+- File upload with drag-and-drop and progress
+- Virtual scrolling for large datasets (10,000+ rows)
 - Full ARIA support and keyboard navigation
 
 ## Installation
@@ -153,6 +159,95 @@ Zephyr.toast('Message', 3000); // duration in ms
 
 **How it works:** Fixed position element with transform animation. Auto-removes after duration. Uses `role="alert"` and `aria-live="polite"`.
 
+### Combobox
+
+```html
+<z-combobox name="language">
+  <input type="text" placeholder="Search...">
+  <div slot="listbox">
+    <div data-value="js">JavaScript</div>
+    <div data-value="py">Python</div>
+    <div data-value="rs">Rust</div>
+  </div>
+</z-combobox>
+```
+
+**How it works:** Filterable dropdown with `role="combobox"` and `aria-autocomplete="list"`. Type to filter, ArrowUp/Down to navigate, Enter to select, Escape to close.
+
+### Date Picker
+
+```html
+<z-datepicker name="birthday">
+  <button slot="display">Choose a date</button>
+</z-datepicker>
+```
+
+**How it works:** Wraps native `<input type="date">` with a styled trigger. Calls `showPicker()` on click. Formats the selected date as locale string (e.g., "March 23, 2026"). Form-associated via `ElementInternals`.
+
+### Infinite Scroll
+
+```html
+<z-infinite-scroll data-root-margin="200px">
+  <div id="content"></div>
+</z-infinite-scroll>
+
+<script>
+  document.querySelector('z-infinite-scroll').addEventListener('loadmore', () => {
+    // Fetch and append more items
+    // Set data-loading while fetching to prevent duplicates
+    // Call .complete() when all data is loaded
+  });
+</script>
+```
+
+**How it works:** Uses `IntersectionObserver` to watch a sentinel element. Dispatches `loadmore` when the sentinel enters the viewport. Set `data-loading` during async fetches, call `complete()` when done.
+
+### Sortable (Drag & Drop)
+
+```html
+<z-sortable>
+  <div data-sortable="1">Item 1</div>
+  <div data-sortable="2">Item 2</div>
+  <div data-sortable="3">Item 3</div>
+</z-sortable>
+```
+
+**How it works:** Native HTML Drag and Drop API. Children with `[data-sortable]` become draggable. Visual indicators via `data-dragging` and `data-drag-over` attributes. Dispatches `sort` event with `detail: { order }`.
+
+### File Upload
+
+```html
+<z-file-upload data-multiple data-accept="image/*">
+  <div slot="dropzone">Drop files here or click to browse</div>
+  <div slot="filelist"></div>
+</z-file-upload>
+
+<script>
+  document.querySelector('z-file-upload').addEventListener('upload', (e) => {
+    e.detail.files.forEach((file, idx) => {
+      // Upload file, update progress:
+      // e.target.setProgress(idx, percentComplete);
+    });
+  });
+</script>
+```
+
+**How it works:** Styled drag-and-drop zone wrapping native `<input type="file">`. Shows file names, sizes, and progress bars. `data-dragover` attribute for drag hover styling. `setProgress(index, percent)` updates individual progress bars.
+
+### Virtual List
+
+```html
+<z-virtual-list data-item-height="40" data-buffer="5" style="height: 400px;"></z-virtual-list>
+
+<script>
+  const list = document.querySelector('z-virtual-list');
+  list.setRenderer((item, idx) => `<div>${item.name}</div>`);
+  list.setItems(arrayOf10000Items);
+</script>
+```
+
+**How it works:** Renders only visible items plus a buffer zone. Uses a tall spacer div for correct scrollbar size and `will-change: transform` for GPU-accelerated repositioning. Handles 10,000+ items with ~20 DOM nodes.
+
 ## Events
 
 All components dispatch DOM events for state changes:
@@ -167,6 +262,12 @@ All components dispatch DOM events for state changes:
 | `z-dropdown` | `toggle` | `{ open }` |
 | `z-toast` | `show` | `{ message }` |
 | `z-toast` | `hide` | -- |
+| `z-combobox` | `change` | -- |
+| `z-combobox` | `input` | -- |
+| `z-datepicker` | `change` | -- |
+| `z-infinite-scroll` | `loadmore` | -- |
+| `z-sortable` | `sort` | `{ order }` |
+| `z-file-upload` | `upload` | `{ files }` |
 
 ```javascript
 document.querySelector('z-carousel').addEventListener('slide', (e) => {
@@ -355,7 +456,7 @@ Elements with `view-transition-name: slide` get custom animations.
 
 ```
 zephyr-framework/
-├── zephyr-framework.js      # Core -- 8 Web Component classes + global API
+├── zephyr-framework.js      # Core -- 14 Web Component classes + global API
 ├── zephyr-framework.css      # Styles -- CSS Layers (reset, components, utilities)
 ├── demo.css                  # Demo page styles (not part of framework)
 ├── index.html                # Interactive demo/showcase
@@ -388,15 +489,6 @@ This project follows strict engineering principles:
 - **Accessible**: ARIA attributes, keyboard navigation, focus management on all components.
 
 See `AGENTS.md` for the full engineering standards and `claude-roadmap.md` for the improvement roadmap.
-
-## Future Enhancements
-
-- Combobox with keyboard navigation
-- Date picker using `<input type="date">` enhancement
-- Infinite scroll with Intersection Observer
-- Drag & drop with native API
-- File upload with progress
-- Virtual scrolling for large lists
 
 ## License
 

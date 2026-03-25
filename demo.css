@@ -218,13 +218,15 @@ z-select [slot="trigger"]::after {
   transition: transform 0.2s ease;
 }
 
-z-select:has([data-open]) [slot="trigger"]::after {
+z-select[data-open] [slot="trigger"]::after {
   transform: rotate(180deg);
 }
 
 z-select [slot="options"] {
   background: var(--slate);
   border: 1px solid rgba(155, 163, 191, 0.2);
+  width: 100%;
+  border-radius: 0.5rem;
 }
 
 z-select [slot="options"] [data-value] {

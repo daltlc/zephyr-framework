@@ -222,8 +222,8 @@
     z-index: var(--z-z-index-dropdown);
   }
 
-  z-select:has([data-open]) [slot="options"],
-  z-dropdown:has([data-open]) [slot="content"] {
+  z-select[data-open] [slot="options"],
+  z-dropdown[data-open] [slot="content"] {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
@@ -233,7 +233,7 @@
 
   z-select {
     position: relative;
-    display: inline-block;
+    display: block;
     container-type: inline-size;
   }
 
@@ -440,7 +440,7 @@
     z-index: var(--z-z-index-dropdown);
   }
 
-  z-combobox:has([data-open]) [slot="listbox"] {
+  z-combobox[data-open] [slot="listbox"] {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);

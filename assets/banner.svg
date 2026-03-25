@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e27"/>
+      <stop offset="100%" stop-color="#1a1d35"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6b9d"/>
+      <stop offset="100%" stop-color="#ffa5c3"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <text x="600" y="155" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="96" font-weight="900" fill="url(#pink)" letter-spacing="-2">Zephyr</text>
+  <line x1="480" y1="180" x2="720" y2="180" stroke="#ff6b9d" stroke-width="1.5" opacity="0.4"/>
+  <text x="600" y="215" text-anchor="middle" font-family="'Courier New', Courier, monospace" font-size="18" fill="#9ba3bf" letter-spacing="3">ZERO-JAVASCRIPT INTERACTIVE FRAMEWORK</text>
+</svg>

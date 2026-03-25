@@ -9,6 +9,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # Minified output (generated)
 *.min.js
 *.min.css

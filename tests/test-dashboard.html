@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Dashboard</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <z-dashboard id="test-dash" data-columns="3">
+    <z-dashboard-panel data-panel="panel-1" data-colspan="2" data-title="Chart">
+      <div>Panel 1 content</div>
+    </z-dashboard-panel>
+    <z-dashboard-panel data-panel="panel-2">
+      <div>Panel 2 content</div>
+    </z-dashboard-panel>
+  </z-dashboard>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Dashboard');
+
+    t.test('z-dashboard is registered', async (assert) => {
+      assert.ok(customElements.get('z-dashboard'), 'z-dashboard should be defined');
+    });
+
+    t.test('z-dashboard-panel is registered', async (assert) => {
+      assert.ok(customElements.get('z-dashboard-panel'), 'z-dashboard-panel should be defined');
+    });
+
+    t.test('dashboard has role="region"', async (assert) => {
+      await waitForElements();
+      const dash = document.getElementById('test-dash');
+      assert.equal(dash.getAttribute('role'), 'region');
+    });
+
+    t.test('panels have role="group"', async (assert) => {
+      const panel = document.querySelector('[data-panel="panel-1"]');
+      assert.equal(panel.getAttribute('role'), 'group');
+    });
+
+    t.test('panel with data-title renders title', async (assert) => {
+      const panel = document.querySelector('[data-panel="panel-1"]');
+      const title = panel.querySelector('.z-panel-title');
+      assert.ok(title, 'title element should exist');
+      assert.equal(title.textContent, 'Chart');
+    });
+
+    t.test('addPanel creates a new panel', async (assert) => {
+      const dash = document.getElementById('test-dash');
+      let eventFired = false;
+      dash.addEventListener('panel-add', () => { eventFired = true; }, { once: true });
+
+      const panel = dash.addPanel({ id: 'panel-3', colspan: 1, title: 'New Panel' });
+
+      assert.ok(panel, 'addPanel should return element');
+      assert.equal(panel.dataset.panel, 'panel-3');
+      assert.ok(eventFired, 'panel-add event should fire');
+      assert.ok(dash.querySelector('[data-panel="panel-3"]'), 'new panel should be in DOM');
+    });
+
+    t.test('removePanel removes a panel', async (assert) => {
+      const dash = document.getElementById('test-dash');
+      let eventFired = false;
+      dash.addEventListener('panel-remove', () => { eventFired = true; }, { once: true });
+
+      dash.removePanel('panel-3');
+      assert.ok(!dash.querySelector('[data-panel="panel-3"]'), 'panel should be removed');
+      assert.ok(eventFired, 'panel-remove event should fire');
+    });
+
+    t.test('movePanel reorders panels', async (assert) => {
+      const dash = document.getElementById('test-dash');
+      dash.movePanel('panel-2', 0);
+      assert.equal(dash.children[0].dataset.panel, 'panel-2', 'panel-2 should be first');
+    });
+
+    t.test('registered in Zephyr.components', async (assert) => {
+      assert.ok(Zephyr.components.dashboard, 'dashboard should be in components');
+      assert.equal(Zephyr.components.dashboard.tag, 'z-dashboard');
+    });
+
+    t.test('agent act addPanel works', async (assert) => {
+      const result = Zephyr.agent.act('#test-dash', 'addPanel', { id: 'agent-panel' });
+      assert.ok(result.success, 'act should succeed');
+      const dash = document.getElementById('test-dash');
+      assert.ok(dash.querySelector('[data-panel="agent-panel"]'), 'agent panel should exist');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

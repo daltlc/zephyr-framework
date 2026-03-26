@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zephyr Agent Dashboard</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="zephyr-dashboard.css">
+  <link rel="stylesheet" href="dashboard-demo.css">
+
+</head>
+<body>
+
+  <header class="dash-header">
+    <div class="dash-title">
+      Zephyr Agent Dashboard
+      <a href="../index.html">&larr; Framework Demo</a>
+    </div>
+
+    <div class="dash-themes">
+      <button class="dash-theme-btn" data-active data-theme-id="crypto">Crypto</button>
+      <button class="dash-theme-btn" data-theme-id="server">Servers</button>
+      <button class="dash-theme-btn" data-theme-id="iot">IoT</button>
+    </div>
+
+    <div class="dash-agent-badge">
+      <span class="dash-agent-dot"></span>
+      Agent-Composed UI
+    </div>
+  </header>
+
+  <div class="dash-container" id="dashboard-root">
+    <div class="dash-loading">Loading dashboard...</div>
+  </div>
+
+  <!-- Core framework -->
+  <script src="../zephyr-framework.js"></script>
+  <!-- Dashboard add-on -->
+  <script src="zephyr-dashboard.js"></script>
+  <!-- Mock data (demo only) -->
+  <script src="dashboard-data.js"></script>
+  <!-- Agent widget (optional) -->
+  <script src="../zephyr-agent-widget.js"></script>
+
+  <z-agent
+    data-provider="anthropic"
+    data-endpoint="/api/chat"
+    data-position="bottom-right"
+    data-greeting="I can control this dashboard. Try: 'Switch to server monitoring' or 'Sort the table by price'"
+  ></z-agent>
+
+  <script>
+    const container = '#dashboard-root';
+    let currentTheme = 'crypto';
+
+    function loadTheme(themeName) {
+      ZephyrDashboardData.stopAll();
+      const root = document.querySelector(container);
+      root.textContent = '';
+      currentTheme = themeName;
+
+      // Update active tab
+      document.querySelectorAll('.dash-theme-btn').forEach(btn => {
+        if (btn.dataset.themeId === themeName) {
+          btn.setAttribute('data-active', '');
+        } else {
+          btn.removeAttribute('data-active');
+        }
+      });
+
+      // Build the theme
+      const theme = ZephyrDashboardData.themes[themeName];
+      if (theme) {
+        theme.build(container);
+      }
+    }
+
+    // Theme tab click handlers
+    document.querySelectorAll('.dash-theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        loadTheme(btn.dataset.themeId);
+      });
+    });
+
+    // Initial load
+    loadTheme('crypto');
+  </script>
+
+</body>
+</html>

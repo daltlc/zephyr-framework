@@ -1909,6 +1909,169 @@ window.Zephyr = {
           el.setAttribute('data-z-description', Zephyr.agent._descriptions[name]);
         }
       });
+    },
+
+    // -----------------------------------------------------------------------
+    // Render API — Programmatic component creation for agents
+    // -----------------------------------------------------------------------
+
+    /** @private Allowed HTML tags for render() beyond registered z-* components. */
+    _safeTags: new Set(['div', 'span', 'button', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'label', 'ul', 'ol', 'li', 'section', 'header', 'footer', 'nav', 'main', 'article', 'aside']),
+
+    /** @private Allowed attribute prefixes/names for render(). */
+    _safeAttr(name) {
+      return name.startsWith('data-') || name.startsWith('aria-') ||
+        ['id', 'class', 'role', 'name', 'slot', 'type', 'placeholder', 'tabindex'].includes(name);
+    },
+
+    /** @private Checks if a tag is allowed in render(). */
+    _allowedTag(tag) {
+      if (Zephyr.agent._safeTags.has(tag)) return true;
+      const registeredTags = Object.values(Zephyr.components).map(c => c.tag);
+      return registeredTags.includes(tag) || tag === 'z-dashboard-panel';
+    },
+
+    /** @private Recursively builds a DOM tree from a spec object. */
+    _buildElement(spec) {
+      const tag = (spec.tag || '').toLowerCase();
+      if (!tag || !Zephyr.agent._allowedTag(tag)) {
+        return { error: 'Disallowed tag: ' + tag };
+      }
+
+      const el = document.createElement(tag);
+
+      if (spec.id) el.id = spec.id;
+
+      if (spec.attributes) {
+        for (const [key, val] of Object.entries(spec.attributes)) {
+          if (Zephyr.agent._safeAttr(key)) {
+            el.setAttribute(key, String(val));
+          }
+        }
+      }
+
+      if (spec.text) {
+        el.textContent = spec.text;
+      }
+
+      if (Array.isArray(spec.children)) {
+        for (const child of spec.children) {
+          const result = Zephyr.agent._buildElement(child);
+          if (result.error) return result;
+          el.appendChild(result.element);
+        }
+      }
+
+      return { element: el };
+    },
+
+    /**
+     * Safely creates and inserts a Zephyr component into the DOM.
+     * Uses DOM manipulation (no innerHTML) with a tag whitelist for security.
+     * @param {string} containerSelector - CSS selector for the target container
+     * @param {Object} spec - Component specification
+     * @param {string} spec.tag - Element tag name (must be registered z-* or safe HTML tag)
+     * @param {string} [spec.id] - Element ID
+     * @param {Object} [spec.attributes] - Attributes to set (only data-*, aria-*, and safe attrs allowed)
+     * @param {string} [spec.text] - Text content (set via textContent, safe from XSS)
+     * @param {Array} [spec.children] - Child element specs (recursive)
+     * @param {Object} [spec.setup] - Post-insert method call: { method, params }
+     * @param {number} [spec.position] - Insert position index (default: append)
+     * @returns {{success: boolean, selector?: string, error?: string}}
+     */
+    render(containerSelector, spec) {
+      const container = document.querySelector(containerSelector);
+      if (!container) return { success: false, error: 'Container not found: ' + containerSelector };
+
+      const result = Zephyr.agent._buildElement(spec);
+      if (result.error) return { success: false, error: result.error };
+
+      const el = result.element;
+
+      // Insert at position or append
+      if (typeof spec.position === 'number' && spec.position < container.children.length) {
+        container.insertBefore(el, container.children[spec.position]);
+      } else {
+        container.appendChild(el);
+      }
+
+      // Post-insert setup call (e.g., setData on a chart after it connects to DOM)
+      if (spec.setup && spec.setup.method && typeof el[spec.setup.method] === 'function') {
+        try {
+          el[spec.setup.method](spec.setup.params);
+        } catch (e) {
+          // Element was inserted but setup failed — still return success with warning
+          return { success: true, selector: el.id ? '#' + el.id : el.tagName.toLowerCase(), warning: 'Setup failed: ' + e.message };
+        }
+      }
+
+      const selector = el.id ? '#' + el.id : el.tagName.toLowerCase();
+      return { success: true, selector };
+    },
+
+    /**
+     * Composes a complete dashboard layout from a declarative spec.
+     * Sugar over render() that understands the dashboard/panel nesting pattern.
+     * @param {string} containerSelector - CSS selector for the target container
+     * @param {Object} layout - Dashboard layout specification
+     * @param {string} layout.tag - Dashboard tag (typically 'z-dashboard')
+     * @param {string} [layout.id] - Dashboard ID
+     * @param {Object} [layout.attributes] - Dashboard attributes
+     * @param {Array} layout.panels - Array of panel specs
+     * @param {string} layout.panels[].id - Panel ID (set as data-panel)
+     * @param {number} [layout.panels[].colspan] - Column span
+     * @param {number} [layout.panels[].rowspan] - Row span
+     * @param {string} [layout.panels[].title] - Panel title (set as data-title)
+     * @param {Object} layout.panels[].component - Component spec for render()
+     * @returns {{success: boolean, selector?: string, error?: string, panels?: string[]}}
+     */
+    compose(containerSelector, layout) {
+      const container = document.querySelector(containerSelector);
+      if (!container) return { success: false, error: 'Container not found: ' + containerSelector };
+
+      // Clear existing content
+      container.textContent = '';
+
+      // Build the dashboard spec with panels as children
+      const dashboardSpec = {
+        tag: layout.tag || 'z-dashboard',
+        id: layout.id,
+        attributes: layout.attributes || {},
+        children: (layout.panels || []).map(panel => ({
+          tag: 'z-dashboard-panel',
+          attributes: {
+            'data-panel': panel.id,
+            ...(panel.colspan ? { 'data-colspan': String(panel.colspan) } : {}),
+            ...(panel.rowspan ? { 'data-rowspan': String(panel.rowspan) } : {}),
+            ...(panel.title ? { 'data-title': panel.title } : {})
+          },
+          children: panel.component ? [panel.component] : []
+        }))
+      };
+
+      const result = Zephyr.agent.render(containerSelector, dashboardSpec);
+      if (!result.success) return result;
+
+      // Run setup calls on individual components after they're in the DOM
+      const panelSelectors = [];
+      for (const panel of (layout.panels || [])) {
+        const panelSelector = '[data-panel="' + panel.id + '"]';
+        panelSelectors.push(panelSelector);
+
+        if (panel.component && panel.component.setup) {
+          const panelEl = document.querySelector(panelSelector);
+          if (panelEl) {
+            const componentEl = panelEl.firstElementChild;
+            if (componentEl && panel.component.setup.method && typeof componentEl[panel.component.setup.method] === 'function') {
+              try {
+                componentEl[panel.component.setup.method](panel.component.setup.params);
+              } catch (_) { /* non-fatal */ }
+            }
+          }
+        }
+      }
+
+      return { success: true, selector: result.selector, panels: panelSelectors };
     }
   }
 };

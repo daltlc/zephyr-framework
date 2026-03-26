@@ -131,6 +131,11 @@ declare global {
     'z-sortable': ZSortable;
     'z-file-upload': ZFileUpload;
     'z-virtual-list': ZVirtualList;
+    'z-stat': ZStat;
+    'z-dashboard-panel': ZDashboardPanel;
+    'z-dashboard': ZDashboard;
+    'z-data-grid': ZDataGrid;
+    'z-chart': ZChart;
   }
 }
 
@@ -319,6 +324,95 @@ interface ZephyrAgentAPI {
 
   /** Annotates all Zephyr components with data-z-actions for agent discovery. */
   annotate(): void;
+
+  /**
+   * Safely creates and inserts a Zephyr component into the DOM.
+   * Uses DOM manipulation (no innerHTML) with a tag whitelist.
+   */
+  render(containerSelector: string, spec: ZephyrRenderSpec): ZephyrRenderResult;
+
+  /**
+   * Composes a complete dashboard layout from a declarative spec.
+   * Sugar over render() for dashboard/panel patterns.
+   */
+  compose(containerSelector: string, layout: ZephyrComposeLayout): ZephyrComposeResult;
+}
+
+// ---------------------------------------------------------------------------
+// Render API Types
+// ---------------------------------------------------------------------------
+
+interface ZephyrRenderSpec {
+  tag: string;
+  id?: string;
+  attributes?: Record<string, string>;
+  text?: string;
+  children?: ZephyrRenderSpec[];
+  setup?: { method: string; params?: any };
+  position?: number;
+}
+
+interface ZephyrRenderResult {
+  success: boolean;
+  selector?: string;
+  error?: string;
+  warning?: string;
+}
+
+interface ZephyrComposePanelSpec {
+  id: string;
+  colspan?: number;
+  rowspan?: number;
+  title?: string;
+  component?: ZephyrRenderSpec;
+}
+
+interface ZephyrComposeLayout {
+  tag?: string;
+  id?: string;
+  attributes?: Record<string, string>;
+  panels: ZephyrComposePanelSpec[];
+}
+
+interface ZephyrComposeResult extends ZephyrRenderResult {
+  panels?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard Add-on Components (zephyr-dashboard.js)
+// ---------------------------------------------------------------------------
+
+/** KPI stat card with label, value, and trend indicator. */
+export declare class ZStat extends ZephyrElement {
+  static observedAttributes: string[];
+  setValue(value?: string, trend?: string, trendValue?: string): void;
+}
+
+/** Dashboard panel container. */
+export declare class ZDashboardPanel extends HTMLElement {}
+
+/** Responsive grid layout container for dashboard panels. */
+export declare class ZDashboard extends ZephyrElement {
+  addPanel(config: { id: string; colspan?: number; rowspan?: number; title?: string; position?: number }): ZDashboardPanel;
+  removePanel(id: string): void;
+  movePanel(id: string, position: number): void;
+}
+
+/** Sortable, filterable data table. */
+export declare class ZDataGrid extends ZephyrElement {
+  setColumns(columns: Array<{ key: string; label: string; sortable?: boolean; width?: string; align?: string }>): void;
+  setRows(rows: Array<Record<string, any>>): void;
+  sort(column: string, direction?: string): void;
+  filter(query: string): void;
+}
+
+/** Chart component wrapping lightweight-charts. */
+export declare class ZChart extends ZephyrElement {
+  setType(type: 'line' | 'candlestick' | 'area' | 'histogram'): void;
+  setData(data: Array<{ time: number; value?: number; open?: number; high?: number; low?: number; close?: number }>): void;
+  addPoint(point: { time: number; value?: number; open?: number; high?: number; low?: number; close?: number }): void;
+  addSeries(config: { type?: string; data?: any[]; options?: any }): any;
+  setTimeRange(from: number, to: number): void;
 }
 
 // ---------------------------------------------------------------------------

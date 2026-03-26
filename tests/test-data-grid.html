@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Data Grid</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <z-data-grid id="test-grid"></z-data-grid>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Data Grid');
+
+    const columns = [
+      { key: 'name', label: 'Name', sortable: true },
+      { key: 'age', label: 'Age', sortable: true, align: 'right' },
+      { key: 'city', label: 'City' }
+    ];
+    const rows = [
+      { name: 'Alice', age: 30, city: 'New York' },
+      { name: 'Bob', age: 25, city: 'London' },
+      { name: 'Charlie', age: 35, city: 'Paris' },
+      { name: 'Diana', age: 28, city: 'Tokyo' }
+    ];
+
+    t.test('z-data-grid is registered', async (assert) => {
+      assert.ok(customElements.get('z-data-grid'), 'z-data-grid should be defined');
+    });
+
+    t.test('has role="table"', async (assert) => {
+      await waitForElements();
+      const grid = document.getElementById('test-grid');
+      assert.equal(grid.getAttribute('role'), 'table');
+    });
+
+    t.test('setColumns renders header cells', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      grid.setColumns(columns);
+      const headers = grid.querySelectorAll('.z-grid-header-cell');
+      assert.equal(headers.length, 3, 'should have 3 header cells');
+      assert.equal(headers[0].textContent, 'Name');
+      assert.equal(headers[1].textContent, 'Age');
+    });
+
+    t.test('setRows renders data rows', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      grid.setRows(rows);
+      const gridRows = grid.querySelectorAll('.z-grid-row');
+      assert.equal(gridRows.length, 4, 'should have 4 rows');
+      assert.equal(grid.getAttribute('data-row-count'), '4');
+    });
+
+    t.test('cell content uses textContent (XSS safe)', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      grid.setRows([{ name: '<script>alert(1)</script>', age: 0, city: 'Test' }]);
+      const firstCell = grid.querySelector('.z-grid-row .z-grid-cell');
+      assert.ok(!firstCell.innerHTML.includes('<script>'), 'should not contain script tag');
+      assert.ok(firstCell.textContent.includes('<script>'), 'should show escaped text');
+      grid.setRows(rows); // restore
+    });
+
+    t.test('sort dispatches event and updates attributes', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      let eventDetail = null;
+      grid.addEventListener('sort', (e) => { eventDetail = e.detail; }, { once: true });
+
+      grid.sort('age', 'asc');
+      assert.equal(grid.getAttribute('data-sort-column'), 'age');
+      assert.equal(grid.getAttribute('data-sort-direction'), 'asc');
+      assert.ok(eventDetail, 'sort event should fire');
+      assert.equal(eventDetail.column, 'age');
+
+      // Verify rows are sorted
+      const firstRow = grid.querySelector('.z-grid-row');
+      const cells = firstRow.querySelectorAll('.z-grid-cell');
+      assert.equal(cells[0].textContent, 'Bob', 'youngest should be first');
+    });
+
+    t.test('sort desc reverses order', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      grid.sort('age', 'desc');
+      const firstRow = grid.querySelector('.z-grid-row');
+      const cells = firstRow.querySelectorAll('.z-grid-cell');
+      assert.equal(cells[0].textContent, 'Charlie', 'oldest should be first');
+    });
+
+    t.test('filter reduces visible rows', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      grid.filter('alice');
+      const gridRows = grid.querySelectorAll('.z-grid-row');
+      assert.equal(gridRows.length, 1, 'should show 1 row');
+      assert.equal(grid.getAttribute('data-row-count'), '1');
+      grid.filter(''); // reset
+    });
+
+    t.test('header click toggles sort', async (assert) => {
+      const grid = document.getElementById('test-grid');
+      const nameHeader = grid.querySelector('[data-column="name"]');
+      nameHeader.click();
+      assert.equal(grid.getAttribute('data-sort-column'), 'name');
+      assert.equal(grid.getAttribute('data-sort-direction'), 'asc');
+    });
+
+    t.test('registered in Zephyr.components', async (assert) => {
+      assert.ok(Zephyr.components.dataGrid, 'dataGrid should be in components');
+      assert.equal(Zephyr.components.dataGrid.tag, 'z-data-grid');
+    });
+
+    t.test('agent act sort works', async (assert) => {
+      const result = Zephyr.agent.act('#test-grid', 'sort', { column: 'city', direction: 'asc' });
+      assert.ok(result.success, 'act should succeed');
+      assert.equal(document.getElementById('test-grid').getAttribute('data-sort-column'), 'city');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

@@ -390,6 +390,122 @@
       "keyboard": [],
       "cssProperties": [],
       "example": "<z-virtual-list data-item-height=\"40\" data-buffer=\"5\" style=\"height: 400px;\"></z-virtual-list>\n<script>\n  const list = document.querySelector('z-virtual-list');\n  list.setRenderer((item, i) => `<div>${item.name}</div>`);\n  list.setItems(data);\n</script>"
+    },
+
+    "_comment_dashboard": "Dashboard add-on components (loaded via zephyr-dashboard.js)",
+
+    "stat": {
+      "tag": "z-stat",
+      "description": "KPI stat card displaying a label, value, and trend indicator (up/down/neutral). Ideal for dashboard metrics.",
+      "category": "data-display",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-label", "type": "string", "description": "The KPI label text" },
+          { "name": "data-value", "type": "string", "description": "The displayed value" },
+          { "name": "data-trend", "type": "enum", "values": ["up", "down", "neutral"], "description": "Trend direction" },
+          { "name": "data-trend-value", "type": "string", "description": "Trend change text (e.g., '+2.4%')" }
+        ],
+        "managed": []
+      },
+      "events": [
+        { "name": "change", "bubbles": true, "detail": { "value": "string", "trend": "string", "trendValue": "string" }, "description": "Fired when value is updated" }
+      ],
+      "methods": [
+        { "name": "setValue", "params": [
+          { "name": "value", "type": "string" },
+          { "name": "trend", "type": "string" },
+          { "name": "trendValue", "type": "string" }
+        ], "returns": "void", "description": "Updates value, trend, and trend text" }
+      ],
+      "aria": { "role": "status", "aria-live": "polite" },
+      "keyboard": [],
+      "cssProperties": ["--z-stat-trend-up", "--z-stat-trend-down", "--z-stat-trend-neutral"],
+      "example": "<z-stat data-label=\"BTC Price\" data-value=\"$67,234\" data-trend=\"up\" data-trend-value=\"+2.4%\"></z-stat>"
+    },
+
+    "dashboard": {
+      "tag": "z-dashboard",
+      "description": "Responsive CSS Grid layout container for dashboard panels. Arranges z-dashboard-panel children with configurable columns and responsive breakpoints.",
+      "category": "layout",
+      "childTag": "z-dashboard-panel",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-columns", "type": "number", "default": "3", "description": "Number of grid columns" },
+          { "name": "data-gap", "type": "string", "default": "1rem", "description": "Grid gap" }
+        ],
+        "managed": []
+      },
+      "events": [
+        { "name": "panel-add", "bubbles": true, "detail": { "id": "string" }, "description": "Fired when a panel is added" },
+        { "name": "panel-remove", "bubbles": true, "detail": { "id": "string" }, "description": "Fired when a panel is removed" }
+      ],
+      "methods": [
+        { "name": "addPanel", "params": [{ "name": "config", "type": "{ id, colspan?, rowspan?, title?, position? }" }], "returns": "ZDashboardPanel", "description": "Adds a new panel" },
+        { "name": "removePanel", "params": [{ "name": "id", "type": "string" }], "returns": "void", "description": "Removes a panel by ID" },
+        { "name": "movePanel", "params": [{ "name": "id", "type": "string" }, { "name": "position", "type": "number" }], "returns": "void", "description": "Moves a panel to a new position" }
+      ],
+      "aria": { "role": "region", "aria-label": "Dashboard" },
+      "keyboard": [],
+      "cssProperties": ["--z-dashboard-columns", "--z-dashboard-gap"],
+      "example": "<z-dashboard data-columns=\"3\">\n  <z-dashboard-panel data-panel=\"chart\" data-colspan=\"2\">\n    <z-chart data-type=\"line\"></z-chart>\n  </z-dashboard-panel>\n  <z-dashboard-panel data-panel=\"stats\">\n    <z-stat data-label=\"Users\" data-value=\"1,234\"></z-stat>\n  </z-dashboard-panel>\n</z-dashboard>"
+    },
+
+    "dataGrid": {
+      "tag": "z-data-grid",
+      "description": "Sortable, filterable data table. Columns and rows set programmatically. All cell content uses textContent (XSS-safe).",
+      "category": "data-display",
+      "slots": [],
+      "attributes": {
+        "developer": [],
+        "managed": [
+          { "name": "data-sort-column", "type": "string", "description": "Currently sorted column key" },
+          { "name": "data-sort-direction", "type": "enum", "values": ["asc", "desc"], "description": "Sort direction" },
+          { "name": "data-row-count", "type": "number", "description": "Number of visible rows" }
+        ]
+      },
+      "events": [
+        { "name": "sort", "bubbles": true, "detail": { "column": "string", "direction": "string" }, "description": "Fired when column sort changes" },
+        { "name": "filter", "bubbles": true, "detail": { "query": "string", "count": "number" }, "description": "Fired when filter is applied" }
+      ],
+      "methods": [
+        { "name": "setColumns", "params": [{ "name": "columns", "type": "Array<{ key, label, sortable?, width?, align? }>" }], "returns": "void", "description": "Sets column definitions" },
+        { "name": "setRows", "params": [{ "name": "rows", "type": "Array<Object>" }], "returns": "void", "description": "Sets row data" },
+        { "name": "sort", "params": [{ "name": "column", "type": "string" }, { "name": "direction", "type": "string" }], "returns": "void", "description": "Sorts by column" },
+        { "name": "filter", "params": [{ "name": "query", "type": "string" }], "returns": "void", "description": "Filters rows by text" }
+      ],
+      "aria": { "table": { "role": "table" }, "header": { "role": "columnheader" }, "row": { "role": "row" }, "cell": { "role": "cell" } },
+      "keyboard": [],
+      "cssProperties": ["--z-grid-border", "--z-grid-header-bg", "--z-grid-hover-bg"],
+      "example": "<z-data-grid id=\"my-grid\"></z-data-grid>\n<script>\n  const grid = document.getElementById('my-grid');\n  grid.setColumns([{ key: 'name', label: 'Name', sortable: true }]);\n  grid.setRows([{ name: 'Alice' }, { name: 'Bob' }]);\n</script>"
+    },
+
+    "chart": {
+      "tag": "z-chart",
+      "description": "Chart component wrapping TradingView lightweight-charts. Supports candlestick, line, area, and histogram types. Library loaded lazily from CDN.",
+      "category": "data-visualization",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-type", "type": "enum", "values": ["line", "candlestick", "area", "histogram"], "default": "line", "description": "Chart type" },
+          { "name": "data-title", "type": "string", "description": "Chart title" },
+          { "name": "data-height", "type": "number", "default": "300", "description": "Chart height in pixels" }
+        ],
+        "managed": []
+      },
+      "events": [],
+      "methods": [
+        { "name": "setType", "params": [{ "name": "type", "type": "string" }], "returns": "void", "description": "Changes chart type" },
+        { "name": "setData", "params": [{ "name": "data", "type": "Array<{ time, value } | { time, open, high, low, close }>" }], "returns": "void", "description": "Sets chart data" },
+        { "name": "addPoint", "params": [{ "name": "point", "type": "object" }], "returns": "void", "description": "Appends a data point (real-time)" },
+        { "name": "addSeries", "params": [{ "name": "config", "type": "{ type, data?, options? }" }], "returns": "object", "description": "Adds an overlay series" },
+        { "name": "setTimeRange", "params": [{ "name": "from", "type": "number" }, { "name": "to", "type": "number" }], "returns": "void", "description": "Sets visible time range" }
+      ],
+      "aria": {},
+      "keyboard": [],
+      "cssProperties": [],
+      "example": "<z-chart data-type=\"line\" data-height=\"300\"></z-chart>\n<script>\n  const chart = document.querySelector('z-chart');\n  chart.setData([{ time: 1700000000, value: 42 }, { time: 1700003600, value: 45 }]);\n</script>"
     }
   }
 }

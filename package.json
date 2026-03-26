@@ -22,6 +22,10 @@
     "zephyr-schema.json",
     "zephyr-prompt.md",
     "zephyr-a2ui-catalog.json",
+    "dashboard/zephyr-dashboard.js",
+    "dashboard/zephyr-dashboard.min.js",
+    "dashboard/zephyr-dashboard.css",
+    "dashboard/zephyr-dashboard.min.css",
     "LICENSE"
   ],
   "keywords": [
@@ -34,7 +38,9 @@
     "zero-js",
     "custom-elements",
     "model-context-protocol",
-    "llm"
+    "llm",
+    "dashboard",
+    "charts"
   ],
   "author": "Dalton Carr",
   "license": "MIT",

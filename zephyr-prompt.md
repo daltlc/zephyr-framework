@@ -196,6 +196,56 @@ Override CSS custom properties:
 }
 ```
 
+## Dashboard Components (optional add-on: zephyr-dashboard.js)
+
+### z-stat — KPI Card
+```html
+<z-stat data-label="Users" data-value="1,234" data-trend="up" data-trend-value="+5%"></z-stat>
+```
+Actions: `setValue({ value, trend, trendValue })`, `setLabel({ label })`
+
+### z-dashboard — Grid Layout
+```html
+<z-dashboard data-columns="3">
+  <z-dashboard-panel data-panel="chart" data-colspan="2">...</z-dashboard-panel>
+  <z-dashboard-panel data-panel="stats">...</z-dashboard-panel>
+</z-dashboard>
+```
+Actions: `addPanel({ id, colspan, rowspan })`, `removePanel({ id })`, `movePanel({ id, position })`, `setColumns({ columns })`
+
+### z-data-grid — Data Table
+```js
+const grid = document.querySelector('z-data-grid');
+grid.setColumns([{ key: 'name', label: 'Name', sortable: true }]);
+grid.setRows([{ name: 'Alice' }, { name: 'Bob' }]);
+```
+Actions: `setColumns({ columns })`, `setRows({ rows })`, `sort({ column, direction })`, `filter({ query })`
+
+### z-chart — Charts (lightweight-charts)
+```html
+<z-chart data-type="candlestick" data-height="300"></z-chart>
+```
+Actions: `setType({ type })`, `setData({ data })`, `addPoint({ point })`, `addSeries({ type, data })`, `setTimeRange({ from, to })`
+
+## Render API — Dynamic Component Creation
+
+```js
+// Create a single component
+Zephyr.agent.render('#container', {
+  tag: 'z-stat', id: 'my-stat',
+  attributes: { 'data-label': 'Revenue', 'data-value': '$1.2M', 'data-trend': 'up' }
+});
+
+// Compose an entire dashboard
+Zephyr.agent.compose('#container', {
+  tag: 'z-dashboard', id: 'dash', attributes: { 'data-columns': '3' },
+  panels: [
+    { id: 'chart', colspan: 2, component: { tag: 'z-chart', id: 'main-chart', attributes: { 'data-type': 'line' } } },
+    { id: 'kpi', component: { tag: 'z-stat', id: 'users', attributes: { 'data-label': 'Users', 'data-value': '1,234' } } }
+  ]
+});
+```
+
 ## Common Agent Patterns
 
 ```js
@@ -205,15 +255,12 @@ const state = Zephyr.agent.getState('z-select, z-combobox, z-datepicker');
 // Open a modal, wait for close
 Zephyr.agent.act('#confirm-dialog', 'open');
 
-// Build a UI from scratch
-document.body.innerHTML = `
-  <z-tabs>
-    <div role="tablist">
-      <button data-tab="info" role="tab">Info</button>
-      <button data-tab="settings" role="tab">Settings</button>
-    </div>
-    <div data-tab-panel="info" role="tabpanel">Information here</div>
-    <div data-tab-panel="settings" role="tabpanel">Settings here</div>
-  </z-tabs>
-`;
+// Build a dashboard dynamically
+Zephyr.agent.compose('#app', {
+  tag: 'z-dashboard', id: 'dash', attributes: { 'data-columns': '3' },
+  panels: [
+    { id: 'chart', colspan: 2, component: { tag: 'z-chart', attributes: { 'data-type': 'line' } } },
+    { id: 'stats', component: { tag: 'z-stat', attributes: { 'data-label': 'KPI', 'data-value': '42' } } }
+  ]
+});
 ```

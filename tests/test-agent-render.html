@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Agent Render API</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <div id="render-target"></div>
+  <div id="compose-target"></div>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Agent Render API');
+
+    t.test('render() creates a z-stat element', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'z-stat',
+        id: 'rendered-stat',
+        attributes: { 'data-label': 'Test', 'data-value': '42' }
+      });
+      assert.ok(result.success, 'render should succeed');
+      assert.equal(result.selector, '#rendered-stat');
+      const stat = document.getElementById('rendered-stat');
+      assert.ok(stat, 'element should exist in DOM');
+      assert.equal(stat.tagName.toLowerCase(), 'z-stat');
+      assert.equal(stat.dataset.label, 'Test');
+    });
+
+    t.test('render() rejects disallowed tags', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', { tag: 'script' });
+      assert.ok(!result.success, 'script tag should be rejected');
+      assert.ok(result.error.includes('Disallowed'), 'error should mention disallowed');
+    });
+
+    t.test('render() rejects iframe', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', { tag: 'iframe' });
+      assert.ok(!result.success, 'iframe should be rejected');
+    });
+
+    t.test('render() allows safe HTML tags', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'div', id: 'safe-div',
+        attributes: { 'data-info': 'test', 'class': 'my-class' }
+      });
+      assert.ok(result.success, 'div should be allowed');
+      const div = document.getElementById('safe-div');
+      assert.equal(div.dataset.info, 'test');
+      assert.equal(div.className, 'my-class');
+    });
+
+    t.test('render() sets text via textContent (XSS safe)', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'p', id: 'safe-text',
+        text: '<img onerror=alert(1) src=x>'
+      });
+      assert.ok(result.success);
+      const p = document.getElementById('safe-text');
+      assert.ok(!p.innerHTML.includes('<img'), 'should not parse HTML');
+      assert.ok(p.textContent.includes('<img'), 'should contain text literally');
+    });
+
+    t.test('render() builds nested children', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'div', id: 'parent',
+        children: [
+          { tag: 'span', id: 'child-1', text: 'Hello' },
+          { tag: 'span', id: 'child-2', text: 'World' }
+        ]
+      });
+      assert.ok(result.success);
+      const parent = document.getElementById('parent');
+      assert.equal(parent.children.length, 2);
+      assert.equal(document.getElementById('child-1').textContent, 'Hello');
+    });
+
+    t.test('render() supports position parameter', async (assert) => {
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'div', id: 'positioned',
+        position: 0
+      });
+      assert.ok(result.success);
+      const target = document.getElementById('render-target');
+      assert.equal(target.children[0].id, 'positioned', 'should be first child');
+    });
+
+    t.test('render() returns error for missing container', async (assert) => {
+      const result = Zephyr.agent.render('#nonexistent', { tag: 'div' });
+      assert.ok(!result.success);
+      assert.ok(result.error.includes('not found'));
+    });
+
+    t.test('render() calls setup method', async (assert) => {
+      await waitForElements();
+      const result = Zephyr.agent.render('#render-target', {
+        tag: 'z-stat', id: 'setup-stat',
+        attributes: { 'data-label': 'Before' },
+        setup: { method: 'setValue', params: { value: '99', trend: 'up', trendValue: '+10%' } }
+      });
+      // setup calls setValue which sets data-value
+      const stat = document.getElementById('setup-stat');
+      // Give it a tick to run setup
+      await waitForElements();
+      assert.equal(stat.dataset.value, '99', 'setup should have called setValue');
+    });
+
+    t.test('compose() creates dashboard with panels', async (assert) => {
+      const result = Zephyr.agent.compose('#compose-target', {
+        tag: 'z-dashboard', id: 'composed-dash',
+        attributes: { 'data-columns': '2' },
+        panels: [
+          { id: 'p1', colspan: 2, title: 'Wide Panel', component: { tag: 'z-stat', id: 'cs1', attributes: { 'data-label': 'KPI', 'data-value': '100' } } },
+          { id: 'p2', component: { tag: 'z-stat', id: 'cs2', attributes: { 'data-label': 'Other', 'data-value': '200' } } }
+        ]
+      });
+      assert.ok(result.success, 'compose should succeed');
+      assert.ok(result.panels, 'should return panel selectors');
+      assert.equal(result.panels.length, 2);
+
+      const dash = document.getElementById('composed-dash');
+      assert.ok(dash, 'dashboard should exist');
+      assert.equal(dash.tagName.toLowerCase(), 'z-dashboard');
+
+      const panels = dash.querySelectorAll('z-dashboard-panel');
+      assert.equal(panels.length, 2, 'should have 2 panels');
+      assert.equal(panels[0].getAttribute('data-colspan'), '2');
+
+      const stat1 = document.getElementById('cs1');
+      assert.ok(stat1, 'first stat should exist inside panel');
+    });
+
+    t.test('compose() clears container before building', async (assert) => {
+      // Compose again into same target
+      Zephyr.agent.compose('#compose-target', {
+        id: 'new-dash',
+        panels: [{ id: 'only-panel', component: { tag: 'z-stat', attributes: { 'data-label': 'Solo', 'data-value': '1' } } }]
+      });
+      const dashboards = document.querySelectorAll('#compose-target z-dashboard');
+      assert.equal(dashboards.length, 1, 'should only have one dashboard (old one cleared)');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

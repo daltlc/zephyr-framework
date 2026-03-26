@@ -36,11 +36,29 @@ async function run() {
     banner: { css: `/* Zephyr Framework v${pkg.version} | MIT License */` },
   });
 
+  // Minify dashboard add-on JS
+  await build({
+    entryPoints: ['dashboard/zephyr-dashboard.js'],
+    outfile: 'dashboard/zephyr-dashboard.min.js',
+    minify: true,
+    banner: { js: `/* Zephyr Dashboard v${pkg.version} | MIT License */` },
+  });
+
+  // Minify dashboard add-on CSS
+  await build({
+    entryPoints: ['dashboard/zephyr-dashboard.css'],
+    outfile: 'dashboard/zephyr-dashboard.min.css',
+    minify: true,
+    banner: { css: `/* Zephyr Dashboard v${pkg.version} | MIT License */` },
+  });
+
   // Report sizes
   const files = [
     ['zephyr-framework.js', 'zephyr-framework.min.js'],
     ['zephyr-agent-widget.js', 'zephyr-agent-widget.min.js'],
     ['zephyr-framework.css', 'zephyr-framework.min.css'],
+    ['dashboard/zephyr-dashboard.js', 'dashboard/zephyr-dashboard.min.js'],
+    ['dashboard/zephyr-dashboard.css', 'dashboard/zephyr-dashboard.min.css'],
   ];
 
   console.log('\nZephyr Framework — Build Complete\n');

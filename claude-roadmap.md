@@ -307,6 +307,7 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **13.3** Agent action recordings — `record()` captures `act()` calls, `replay()` replays with delay/realtime options
 - [x] **13.4** Multi-agent coordination — `lock()`/`unlock()` with agent ownership, `locks()` to list, force unlock, `data-z-locked` attribute
 - [x] **12.5** GitHub Pages docs site — `.github/workflows/pages.yml` deploys demo + framework files to daltlc.github.io/zephyr-framework
+- [x] **15.1–15.10** Dashboard add-on — `zephyr-dashboard.js` with z-stat, z-dashboard, z-data-grid, z-chart + `Zephyr.agent.render()`/`compose()` + demo with 3 data themes
 
 ---
 
@@ -398,3 +399,18 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - **File**: `create-zephyr-framework/`
 - **Issue**: Single basic starter template limits perceived versatility
 - **Fix**: Add dashboard template and form-heavy template options to `create-zephyr-framework`. Shows the framework handles real app patterns, not just demos
+
+---
+
+## Priority 15 — Dashboard Add-on & Agent Render API
+
+- [x] **15.1** `Zephyr.agent.render()` — Safe DOM-based component creation with tag whitelist, attribute sanitization, recursive child building
+- [x] **15.2** `Zephyr.agent.compose()` — Dashboard composition sugar over render() for z-dashboard/panel patterns
+- [x] **15.3** `z-stat` component — KPI stat card with label, value, trend indicator (up/down/neutral), ARIA role="status"
+- [x] **15.4** `z-dashboard` + `z-dashboard-panel` — CSS Grid layout with container queries, responsive breakpoints, addPanel/removePanel/movePanel
+- [x] **15.5** `z-data-grid` — Sortable/filterable data table with textContent cells (XSS-safe), column headers, sort indicators
+- [x] **15.6** `z-chart` — TradingView lightweight-charts wrapper with lazy CDN loading, candlestick/line/area/histogram, ResizeObserver, dark mode
+- [x] **15.7** Dashboard demo page — `dashboard-demo.html` with 3 swappable data themes (crypto, server monitoring, IoT sensors)
+- [x] **15.8** Mock data system — `dashboard-data.js` with time-series/candlestick/stat generators and real-time simulation
+- [x] **15.9** Integration updates — Schema, A2UI catalog, prompt template, TypeScript declarations, widget tools, MCP tools all updated
+- [x] **15.10** Architecture — Dashboard components in separate `zephyr-dashboard.js` + `zephyr-dashboard.css` to keep core lightweight

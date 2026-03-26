@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Chart</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <z-chart id="test-chart" data-type="line" data-height="200"></z-chart>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Chart');
+
+    t.test('z-chart is registered', async (assert) => {
+      assert.ok(customElements.get('z-chart'), 'z-chart should be defined');
+    });
+
+    t.test('creates chart container', async (assert) => {
+      await waitForElements();
+      const chart = document.getElementById('test-chart');
+      const container = chart.querySelector('.z-chart-container');
+      assert.ok(container, 'chart container should exist');
+    });
+
+    t.test('registered in Zephyr.components', async (assert) => {
+      assert.ok(Zephyr.components.chart, 'chart should be in components');
+      assert.equal(Zephyr.components.chart.tag, 'z-chart');
+    });
+
+    t.test('setData stores pending data before library loads', async (assert) => {
+      const chart = document.getElementById('test-chart');
+      // If library hasn't loaded yet, data should be stored as pending
+      chart.setData([{ time: 1700000000, value: 42 }]);
+      // This test just verifies no error is thrown
+      assert.ok(true, 'setData should not throw');
+    });
+
+    t.test('setType updates data-type attribute', async (assert) => {
+      const chart = document.getElementById('test-chart');
+      chart.setType('area');
+      assert.equal(chart.dataset.type, 'area');
+    });
+
+    t.test('library loads lazily', async (assert) => {
+      // Wait for the library to load (or timeout)
+      await new Promise(r => setTimeout(r, 3000));
+      const chart = document.getElementById('test-chart');
+      // Check if chart was initialized (it will have a canvas or svg child)
+      const hasChart = chart.querySelector('.z-chart-container').children.length > 0 ||
+                       chart.querySelector('.z-chart-fallback') !== null;
+      assert.ok(hasChart, 'chart should initialize or show fallback');
+    });
+
+    t.test('agent description includes chart', async (assert) => {
+      assert.ok(Zephyr.agent._descriptions.chart, 'chart should have a description');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

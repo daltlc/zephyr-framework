@@ -4,7 +4,7 @@
   "catalogId": "org.zephyrframework",
   "version": "0.8.0",
   "name": "Zephyr Framework",
-  "description": "Agent-native zero-JS web component framework. 14 interactive components driven by CSS state selectors. No runtime JavaScript for interactions.",
+  "description": "Agent-native zero-JS web component framework. 14 core components + 4 dashboard add-on components. Driven by CSS state selectors. No runtime JavaScript for interactions.",
 
   "themeTokens": {
     "_comment": "CSS custom properties that control the visual appearance of all components. Override these in your CSS :root to theme the entire framework.",
@@ -513,6 +513,115 @@
       "aria": { "list": { "role": "list" }, "item": { "role": "listitem" } },
       "keyboard": [],
       "example": "<z-virtual-list data-item-height=\"40\" data-buffer=\"5\" style=\"height: 400px;\"></z-virtual-list>\n<script>\n  const list = document.querySelector('z-virtual-list');\n  list.setRenderer((item, i) => `<div>${item.name}</div>`);\n  list.setItems(data);\n</script>"
+    },
+
+    "_comment_dashboard": "Dashboard add-on components (loaded via zephyr-dashboard.js + zephyr-dashboard.css)",
+
+    "ZStat": {
+      "type": "object",
+      "tag": "z-stat",
+      "description": "KPI stat card with label, value, and trend indicator",
+      "category": "data-display",
+      "properties": {
+        "label": { "type": "string", "description": "KPI label text" },
+        "value": { "type": "string", "description": "Displayed value" },
+        "trend": { "type": "string", "enum": ["up", "down", "neutral"], "description": "Trend direction" },
+        "trendValue": { "type": "string", "description": "Trend change text" }
+      },
+      "stateAttributes": {
+        "data-label": { "type": "string" },
+        "data-value": { "type": "string" },
+        "data-trend": { "type": "string" },
+        "data-trend-value": { "type": "string" }
+      },
+      "actions": {
+        "setValue": {
+          "description": "Update the stat value and trend",
+          "parameters": { "value": { "type": "string" }, "trend": { "type": "string" }, "trendValue": { "type": "string" } }
+        }
+      },
+      "events": { "change": { "description": "Fired when value updates", "detail": { "value": "string", "trend": "string" } } },
+      "aria": { "role": "status", "aria-live": "polite" },
+      "keyboard": [],
+      "example": "<z-stat data-label=\"Users\" data-value=\"1,234\" data-trend=\"up\" data-trend-value=\"+5%\"></z-stat>"
+    },
+
+    "ZDashboard": {
+      "type": "object",
+      "tag": "z-dashboard",
+      "childTag": "z-dashboard-panel",
+      "description": "Responsive grid layout for dashboard panels",
+      "category": "layout",
+      "properties": {
+        "columns": { "type": "number", "default": 3, "description": "Grid column count" },
+        "gap": { "type": "string", "default": "1rem", "description": "Grid gap" }
+      },
+      "stateAttributes": {
+        "data-columns": { "type": "number" },
+        "data-gap": { "type": "string" }
+      },
+      "actions": {
+        "addPanel": { "description": "Add a panel to the dashboard", "parameters": { "id": { "type": "string" }, "colspan": { "type": "number" }, "rowspan": { "type": "number" } } },
+        "removePanel": { "description": "Remove a panel", "parameters": { "id": { "type": "string" } } },
+        "movePanel": { "description": "Move a panel", "parameters": { "id": { "type": "string" }, "position": { "type": "number" } } }
+      },
+      "events": { "panel-add": { "description": "Panel added" }, "panel-remove": { "description": "Panel removed" } },
+      "aria": { "role": "region" },
+      "keyboard": [],
+      "example": "<z-dashboard data-columns=\"3\">\n  <z-dashboard-panel data-panel=\"chart\" data-colspan=\"2\">...</z-dashboard-panel>\n</z-dashboard>"
+    },
+
+    "ZDataGrid": {
+      "type": "object",
+      "tag": "z-data-grid",
+      "description": "Sortable, filterable data table",
+      "category": "data-display",
+      "properties": {
+        "columns": { "type": "array", "description": "Column definitions" },
+        "rows": { "type": "array", "description": "Row data objects" }
+      },
+      "stateAttributes": {
+        "data-sort-column": { "type": "string" },
+        "data-sort-direction": { "type": "string" },
+        "data-row-count": { "type": "number" }
+      },
+      "actions": {
+        "setColumns": { "description": "Set column definitions", "parameters": { "columns": { "type": "array" } } },
+        "setRows": { "description": "Set row data", "parameters": { "rows": { "type": "array" } } },
+        "sort": { "description": "Sort by column", "parameters": { "column": { "type": "string" }, "direction": { "type": "string" } } },
+        "filter": { "description": "Filter rows", "parameters": { "query": { "type": "string" } } }
+      },
+      "events": { "sort": { "description": "Sort changed" }, "filter": { "description": "Filter applied" } },
+      "aria": { "role": "table" },
+      "keyboard": [],
+      "example": "<z-data-grid id=\"grid\"></z-data-grid>"
+    },
+
+    "ZChart": {
+      "type": "object",
+      "tag": "z-chart",
+      "description": "Chart component (candlestick, line, area, histogram) via lightweight-charts",
+      "category": "data-visualization",
+      "properties": {
+        "type": { "type": "string", "enum": ["line", "candlestick", "area", "histogram"], "default": "line" },
+        "height": { "type": "number", "default": 300 }
+      },
+      "stateAttributes": {
+        "data-type": { "type": "string" },
+        "data-title": { "type": "string" },
+        "data-height": { "type": "number" }
+      },
+      "actions": {
+        "setType": { "description": "Change chart type", "parameters": { "type": { "type": "string" } } },
+        "setData": { "description": "Set chart data", "parameters": { "data": { "type": "array" } } },
+        "addPoint": { "description": "Add real-time data point", "parameters": { "point": { "type": "object" } } },
+        "addSeries": { "description": "Add overlay series", "parameters": { "type": { "type": "string" }, "data": { "type": "array" } } },
+        "setTimeRange": { "description": "Set visible range", "parameters": { "from": { "type": "number" }, "to": { "type": "number" } } }
+      },
+      "events": {},
+      "aria": {},
+      "keyboard": [],
+      "example": "<z-chart data-type=\"line\" data-height=\"300\"></z-chart>"
     }
   }
 }

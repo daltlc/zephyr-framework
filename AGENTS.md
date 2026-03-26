@@ -105,7 +105,14 @@ zephyr-framework/
 │   ├── ZFileUpload            # Drag-and-drop file upload with progress
 │   ├── ZVirtualList           # Virtual scrolling for large datasets
 │   ├── window.Zephyr          # Global utility API + component registry
-│   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt)
+│   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt, render, compose)
+│
+├── dashboard/               # Dashboard add-on (optional)
+│   ├── zephyr-dashboard.js    # Components: ZStat, ZDashboard, ZDashboardPanel, ZDataGrid, ZChart
+│   ├── zephyr-dashboard.css   # Styles (dark mode, container queries)
+│   ├── dashboard-demo.html    # Agent Dashboard demo (3 data themes)
+│   ├── dashboard-demo.css     # Dashboard demo styles
+│   └── dashboard-data.js      # Mock data generators + simulation (demo only)
 │
 ├── zephyr-agent-widget.js   # <z-agent> embedded chat widget (separate from core)
 │   └── ZAgent                 # LLM-powered chat with Zephyr.agent tool execution

@@ -11,7 +11,7 @@
 
 <p align="center">
   The first UI framework built for AI agents.<br>
-  14 components. Pure CSS interactions. Zero runtime JavaScript.<br><br>
+  14 core components + dashboard add-on. Pure CSS interactions. Zero runtime JavaScript.<br><br>
   <strong>MCP server</strong> lets Claude Desktop, Cursor, and any AI agent control your UI with typed tools.<br>
   <strong>A2UI catalog</strong> makes your components discoverable across Google's agent ecosystem.<br>
   <strong>Agent API</strong> gives LLMs structured access to every component on the page.
@@ -412,6 +412,35 @@ This is fundamentally different from React, Vue, or Alpine.js, where JavaScript 
 ```
 
 That's it. No build step, no npm, no config files.
+
+---
+
+## Dashboard Add-on
+
+Optional add-on for data-dense, agent-composed dashboards. Load alongside the core framework:
+
+```html
+<link rel="stylesheet" href="zephyr-dashboard.css">
+<script src="zephyr-dashboard.js"></script>
+```
+
+**4 new components**: `z-stat` (KPI cards), `z-dashboard` (grid layout), `z-data-grid` (sortable tables), `z-chart` (candlestick/line/area/histogram via lightweight-charts).
+
+**Agent Render API**: Agents can dynamically create components with `Zephyr.agent.render()` and compose full dashboards with `Zephyr.agent.compose()`.
+
+```js
+// Agent builds a dashboard from natural language
+Zephyr.agent.compose('#app', {
+  tag: 'z-dashboard', id: 'dash', attributes: { 'data-columns': '3' },
+  panels: [
+    { id: 'chart', colspan: 2, title: 'Revenue', component: { tag: 'z-chart', attributes: { 'data-type': 'area' } } },
+    { id: 'users', title: 'Users', component: { tag: 'z-stat', attributes: { 'data-label': 'Active Users', 'data-value': '12,345', 'data-trend': 'up' } } },
+    { id: 'table', colspan: 3, title: 'Data', component: { tag: 'z-data-grid', id: 'grid' } }
+  ]
+});
+```
+
+See the [Agent Dashboard Demo](dashboard-demo.html) for a live example with crypto, server monitoring, and IoT sensor themes.
 
 ---
 

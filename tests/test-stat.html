@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Stat</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <z-stat id="test-stat" data-label="Users" data-value="1,234" data-trend="up" data-trend-value="+5%"></z-stat>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Stat');
+
+    t.test('z-stat is registered', async (assert) => {
+      assert.ok(customElements.get('z-stat'), 'z-stat should be defined');
+    });
+
+    t.test('renders label, value, and trend', async (assert) => {
+      await waitForElements();
+      const stat = document.getElementById('test-stat');
+      const label = stat.querySelector('.z-stat-label');
+      const value = stat.querySelector('.z-stat-value');
+      const trend = stat.querySelector('.z-stat-trend');
+      assert.ok(label, 'label element should exist');
+      assert.ok(value, 'value element should exist');
+      assert.ok(trend, 'trend element should exist');
+      assert.equal(label.textContent, 'Users');
+      assert.equal(value.textContent, '1,234');
+      assert.ok(trend.textContent.includes('+5%'), 'trend should include +5%');
+    });
+
+    t.test('has role="status" and aria-live', async (assert) => {
+      const stat = document.getElementById('test-stat');
+      assert.equal(stat.getAttribute('role'), 'status');
+      assert.equal(stat.getAttribute('aria-live'), 'polite');
+    });
+
+    t.test('setValue() updates display and dispatches change', async (assert) => {
+      const stat = document.getElementById('test-stat');
+      let eventDetail = null;
+      stat.addEventListener('change', (e) => { eventDetail = e.detail; }, { once: true });
+
+      stat.setValue('2,000', 'down', '-3%');
+
+      assert.equal(stat.dataset.value, '2,000');
+      assert.equal(stat.dataset.trend, 'down');
+      assert.equal(stat.dataset.trendValue, '-3%');
+      assert.ok(eventDetail, 'change event should fire');
+      assert.equal(eventDetail.value, '2,000');
+    });
+
+    t.test('attributeChangedCallback syncs display', async (assert) => {
+      const stat = document.getElementById('test-stat');
+      stat.setAttribute('data-value', '$99.99');
+      await waitForElements();
+      const value = stat.querySelector('.z-stat-value');
+      assert.equal(value.textContent, '$99.99');
+    });
+
+    t.test('registered in Zephyr.components', async (assert) => {
+      assert.ok(Zephyr.components.stat, 'stat should be in components');
+      assert.equal(Zephyr.components.stat.tag, 'z-stat');
+    });
+
+    t.test('agent act setValue works', async (assert) => {
+      const result = Zephyr.agent.act('#test-stat', 'setValue', { value: '42', trend: 'neutral', trendValue: '0%' });
+      assert.ok(result.success, 'act should succeed');
+      const stat = document.getElementById('test-stat');
+      assert.equal(stat.dataset.value, '42');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

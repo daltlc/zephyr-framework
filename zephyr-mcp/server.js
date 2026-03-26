@@ -549,6 +549,44 @@ mcpServer.tool(
   }
 );
 
+/**
+ * Tool: zephyr_render
+ *
+ * Safely creates and inserts a Zephyr component into the page DOM.
+ * Uses DOM manipulation (no innerHTML) with a tag whitelist for security.
+ */
+mcpServer.tool(
+  'zephyr_render',
+  'Create and insert a Zephyr component into the page. Spec: { tag, id?, attributes?, text?, children?, setup? }. Only registered z-* tags and safe HTML tags allowed.',
+  {
+    container: { type: 'string', description: 'CSS selector for the target container' },
+    spec: { type: 'object', description: 'Component specification (tag, id, attributes, children, setup)' }
+  },
+  async ({ container, spec }) => {
+    const result = await callBrowser('render', [container, spec]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_compose
+ *
+ * Composes a complete dashboard layout from a declarative spec.
+ * Creates a z-dashboard with panels, each containing a Zephyr component.
+ */
+mcpServer.tool(
+  'zephyr_compose',
+  'Compose a full dashboard layout. Layout: { tag?, id?, attributes?, panels: [{ id, colspan?, rowspan?, title?, component: spec }] }.',
+  {
+    container: { type: 'string', description: 'CSS selector for the target container' },
+    layout: { type: 'object', description: 'Dashboard layout with panels array' }
+  },
+  async ({ container, layout }) => {
+    const result = await callBrowser('compose', [container, layout]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
 // ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------

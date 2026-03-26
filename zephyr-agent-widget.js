@@ -118,6 +118,53 @@ const ZEPHYR_TOOLS = [
       type: 'object',
       properties: {}
     }
+  },
+  {
+    name: 'zephyr_render',
+    description: 'Create and insert a new Zephyr component into the page. Use this to dynamically build UI elements. The spec object defines the component tag, id, attributes, and children. Only registered z-* tags and safe HTML tags are allowed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        container: { type: 'string', description: 'CSS selector for the container to insert into' },
+        spec: {
+          type: 'object',
+          description: 'Component spec: { tag, id?, attributes?, text?, children?, setup?, position? }',
+          properties: {
+            tag: { type: 'string', description: 'Element tag name (z-stat, z-chart, z-dashboard, etc.)' },
+            id: { type: 'string', description: 'Element ID' },
+            attributes: { type: 'object', description: 'data-* and aria-* attributes' },
+            text: { type: 'string', description: 'Text content' },
+            children: { type: 'array', description: 'Child element specs' },
+            setup: { type: 'object', description: '{ method, params } to call after insertion' },
+            position: { type: 'number', description: 'Insert position index' }
+          },
+          required: ['tag']
+        }
+      },
+      required: ['container', 'spec']
+    }
+  },
+  {
+    name: 'zephyr_compose',
+    description: 'Compose a complete dashboard layout from a declarative spec. Creates a z-dashboard with panels, each containing a component. Use this to build data dashboards dynamically.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        container: { type: 'string', description: 'CSS selector for the container' },
+        layout: {
+          type: 'object',
+          description: '{ tag?, id?, attributes?, panels: [{ id, colspan?, rowspan?, title?, component: spec }] }',
+          properties: {
+            tag: { type: 'string', description: 'Dashboard tag (default: z-dashboard)' },
+            id: { type: 'string', description: 'Dashboard ID' },
+            attributes: { type: 'object', description: 'Dashboard attributes' },
+            panels: { type: 'array', description: 'Panel definitions with components' }
+          },
+          required: ['panels']
+        }
+      },
+      required: ['container', 'layout']
+    }
   }
 ];
 
@@ -968,7 +1015,9 @@ class ZAgent extends HTMLElement {
       zephyr_describe: () => Zephyr.agent.describe(input.selector),
       zephyr_act: () => Zephyr.agent.act(input.selector, input.action, input.params),
       zephyr_set_state: () => Zephyr.agent.setState(input.selector, input.attributes),
-      zephyr_get_schema: () => Zephyr.agent.getSchema()
+      zephyr_get_schema: () => Zephyr.agent.getSchema(),
+      zephyr_render: () => Zephyr.agent.render(input.container, input.spec),
+      zephyr_compose: () => Zephyr.agent.compose(input.container, input.layout)
     };
 
     const handler = handlers[name];

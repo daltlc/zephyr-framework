@@ -1,0 +1,254 @@
+/**
+ * Zephyr Dashboard — Styles for dashboard add-on components
+ * Optional: only load alongside zephyr-dashboard.js
+ *
+ * Components: z-stat, z-dashboard, z-dashboard-panel, z-data-grid, z-chart
+ */
+
+/* ----- Dashboard tokens ----- */
+:root {
+  --z-dashboard-columns: 3;
+  --z-dashboard-gap: 1rem;
+  --z-stat-trend-up: rgb(34 197 94);
+  --z-stat-trend-down: rgb(239 68 68);
+  --z-stat-trend-neutral: rgb(156 163 175);
+  --z-grid-border: rgba(0, 0, 0, 0.08);
+  --z-grid-header-bg: rgba(0, 0, 0, 0.02);
+  --z-grid-hover-bg: rgba(0, 0, 0, 0.03);
+  --z-grid-stripe-bg: rgba(0, 0, 0, 0.015);
+  --z-panel-bg: rgba(255, 255, 255, 0.6);
+  --z-panel-border: rgba(0, 0, 0, 0.08);
+}
+
+/* ----- z-stat ----- */
+
+z-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+}
+
+.z-stat-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.z-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.z-stat-trend {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+z-stat[data-trend="up"] .z-stat-trend {
+  color: var(--z-stat-trend-up);
+}
+
+z-stat[data-trend="down"] .z-stat-trend {
+  color: var(--z-stat-trend-down);
+}
+
+z-stat[data-trend="neutral"] .z-stat-trend {
+  color: var(--z-stat-trend-neutral);
+}
+
+/* ----- z-dashboard ----- */
+
+z-dashboard {
+  display: grid;
+  grid-template-columns: repeat(var(--z-dashboard-columns), 1fr);
+  gap: var(--z-dashboard-gap);
+  container-type: inline-size;
+  width: 100%;
+}
+
+/* ----- z-dashboard-panel ----- */
+
+z-dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--z-panel-bg);
+  border: 1px solid var(--z-panel-border);
+  border-radius: var(--z-border-radius, 0.5rem);
+  overflow: hidden;
+  min-width: 0;
+}
+
+z-dashboard-panel[data-colspan="2"] { grid-column: span 2; }
+z-dashboard-panel[data-colspan="3"] { grid-column: span 3; }
+z-dashboard-panel[data-colspan="4"] { grid-column: span 4; }
+z-dashboard-panel[data-rowspan="2"] { grid-row: span 2; }
+z-dashboard-panel[data-rowspan="3"] { grid-row: span 3; }
+
+.z-panel-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem 0;
+  opacity: 0.6;
+}
+
+/* Responsive: collapse to single column on small containers */
+@container (max-width: 640px) {
+  z-dashboard {
+    grid-template-columns: 1fr;
+  }
+  z-dashboard-panel[data-colspan] {
+    grid-column: span 1;
+  }
+}
+
+@container (min-width: 641px) and (max-width: 1024px) {
+  z-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  z-dashboard-panel[data-colspan="3"],
+  z-dashboard-panel[data-colspan="4"] {
+    grid-column: span 2;
+  }
+}
+
+/* ----- z-data-grid ----- */
+
+z-data-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-size: 0.875rem;
+  overflow: hidden;
+}
+
+.z-grid-toolbar {
+  padding: 0.5rem;
+}
+
+.z-grid-filter {
+  width: 100%;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--z-grid-border);
+  border-radius: var(--z-border-radius-sm, 0.375rem);
+  font-size: 0.8125rem;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  transition: border-color var(--z-transition-duration, 0.3s);
+}
+
+.z-grid-filter:focus {
+  border-color: rgb(99 102 241);
+}
+
+.z-grid-header {
+  display: flex;
+  background: var(--z-grid-header-bg);
+  border-bottom: 2px solid var(--z-grid-border);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.z-grid-header-cell {
+  user-select: none;
+}
+
+.z-grid-header-cell[data-sort="asc"]::after {
+  content: ' \25B2';
+  font-size: 0.625rem;
+}
+
+.z-grid-header-cell[data-sort="desc"]::after {
+  content: ' \25BC';
+  font-size: 0.625rem;
+}
+
+.z-grid-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.z-grid-row {
+  display: flex;
+  border-bottom: 1px solid var(--z-grid-border);
+  transition: background-color 0.15s;
+}
+
+.z-grid-row:hover {
+  background-color: var(--z-grid-hover-bg);
+}
+
+.z-grid-row:nth-child(even) {
+  background-color: var(--z-grid-stripe-bg);
+}
+
+.z-grid-row:nth-child(even):hover {
+  background-color: var(--z-grid-hover-bg);
+}
+
+.z-grid-cell {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.z-grid-footer {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  border-top: 1px solid var(--z-grid-border);
+}
+
+/* ----- z-chart ----- */
+
+z-chart {
+  display: block;
+  width: 100%;
+  min-height: 200px;
+}
+
+.z-chart-container {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.z-chart-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: inherit;
+  opacity: 0.5;
+  font-size: 0.875rem;
+}
+
+/* ----- Dark Mode ----- */
+
+html:has([data-theme="dark"]),
+html[data-theme="dark"] {
+  --z-grid-border: rgba(255, 255, 255, 0.08);
+  --z-grid-header-bg: rgba(255, 255, 255, 0.03);
+  --z-grid-hover-bg: rgba(255, 255, 255, 0.05);
+  --z-grid-stripe-bg: rgba(255, 255, 255, 0.02);
+  --z-panel-bg: rgba(255, 255, 255, 0.03);
+  --z-panel-border: rgba(255, 255, 255, 0.08);
+}
+
+html:has([data-theme="dark"]) .z-grid-filter,
+html[data-theme="dark"] .z-grid-filter {
+  border-color: rgba(255, 255, 255, 0.15);
+}

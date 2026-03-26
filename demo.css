@@ -184,7 +184,7 @@ h2 {
   font-weight: 700;
 }
 
-button, .button {
+button:not(z-agent button), .button {
   background: var(--accent);
   color: white;
   border: none;
@@ -197,13 +197,13 @@ button, .button {
   display: inline-block;
 }
 
-button:hover, .button:hover {
+button:not(z-agent button):hover, .button:hover {
   background: var(--accent-soft);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
-button:active, .button:active {
+button:not(z-agent button):active, .button:active {
   transform: translateY(0);
 }
 

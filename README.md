@@ -12,6 +12,49 @@
 
 ---
 
+## Install
+
+The fastest way to get started — scaffolds a project with the framework, MCP server, and a starter page:
+
+```bash
+npx create-zephyr-app my-app
+cd my-app
+npm start
+```
+
+Open `http://localhost:3456` in your browser. Connect Claude Desktop. Start talking to your UI.
+
+Or add to an existing project:
+
+```bash
+npm install zephyr-framework
+```
+
+This gives you `zephyr-framework.js`, `zephyr-framework.css`, the component schema, prompt template, and A2UI catalog. Drop the CSS and JS into your HTML:
+
+```html
+<link rel="stylesheet" href="node_modules/zephyr-framework/zephyr-framework.css">
+<script src="node_modules/zephyr-framework/zephyr-framework.js"></script>
+```
+
+To add MCP agent support:
+
+```bash
+npm install @zephyr-framework/mcp
+npx zephyr-mcp  # starts the bridge server on localhost:3456
+```
+
+Or with zero install — just grab the two files:
+
+```html
+<link rel="stylesheet" href="zephyr-framework.css">
+<script src="zephyr-framework.js"></script>
+```
+
+No build step, no npm, no config files. Copy the files, open the HTML.
+
+---
+
 ## Why agents choose Zephyr
 
 Every UI framework today was built for humans writing code. Zephyr was built for **AI agents driving interfaces**.

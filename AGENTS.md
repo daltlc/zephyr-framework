@@ -136,12 +136,19 @@ zephyr-framework/
 │   │   └── Scroll Animations  # animation-timeline: view()
 │   └── @layer utilities       # Container query grid utilities
 │
-├── zephyr-mcp/               # Optional MCP server package (separate deps)
+├── zephyr-mcp/               # @zephyr-framework/mcp — MCP server package
 │   ├── server.js              # MCP stdio server + HTTP/WebSocket bridge
 │   ├── bridge-client.js       # Browser-side WebSocket bridge script
 │   ├── package.json           # npm deps: @modelcontextprotocol/sdk, zod, ws
 │   └── README.md              # MCP setup and tool reference
 │
+├── create-zephyr-app/        # CLI scaffolder for new projects
+│   ├── index.js               # npx create-zephyr-app CLI entry point
+│   ├── template/
+│   │   └── index.html         # Starter page with example components
+│   └── package.json           # Zero deps — uses only Node built-ins
+│
+├── package.json              # Root npm package: zephyr-framework
 ├── demo.css                  # Demo page styles (NOT part of framework)
 ├── index.html                # Demo/showcase page
 ├── README.md                 # Documentation + usage guide

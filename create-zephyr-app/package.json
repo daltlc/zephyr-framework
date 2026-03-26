@@ -1,0 +1,36 @@
+{
+  "name": "create-zephyr-app",
+  "version": "0.1.0",
+  "description": "Scaffold a new Zephyr Framework project with MCP server integration. The fastest way to build agent-controlled UIs. Run with: npx create-zephyr-app my-app",
+  "bin": {
+    "create-zephyr-app": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "template/"
+  ],
+  "keywords": [
+    "zephyr",
+    "create",
+    "scaffold",
+    "web-components",
+    "ai-agent",
+    "mcp",
+    "ui-framework",
+    "model-context-protocol"
+  ],
+  "author": "Dalton Carr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daltlc/zephyr-framework.git",
+    "directory": "create-zephyr-app"
+  },
+  "homepage": "https://github.com/daltlc/zephyr-framework#readme",
+  "bugs": {
+    "url": "https://github.com/daltlc/zephyr-framework/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

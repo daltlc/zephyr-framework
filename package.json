@@ -1,0 +1,41 @@
+{
+  "name": "zephyr-framework",
+  "version": "0.1.0",
+  "description": "The first UI framework built for AI agents. 14 web components with pure CSS interactions, zero runtime JavaScript. Built-in MCP server, A2UI catalog, and structured Agent API.",
+  "main": "zephyr-framework.js",
+  "module": "zephyr-framework.js",
+  "sideEffects": true,
+  "files": [
+    "zephyr-framework.js",
+    "zephyr-framework.css",
+    "zephyr-schema.json",
+    "zephyr-prompt.md",
+    "zephyr-a2ui-catalog.json",
+    "LICENSE"
+  ],
+  "keywords": [
+    "web-components",
+    "css",
+    "ui-framework",
+    "ai-agent",
+    "mcp",
+    "a2ui",
+    "zero-js",
+    "custom-elements",
+    "model-context-protocol",
+    "llm"
+  ],
+  "author": "Dalton Carr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daltlc/zephyr-framework.git"
+  },
+  "homepage": "https://github.com/daltlc/zephyr-framework#readme",
+  "bugs": {
+    "url": "https://github.com/daltlc/zephyr-framework/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

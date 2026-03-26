@@ -276,3 +276,14 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **9.8** Agent API demo — interactive demo card in `index.html`
 - [x] **9.9** MCP Server — `zephyr-mcp/` package with stdio MCP server, HTTP file server, WebSocket bridge to browser, 6 MCP tools mapping to Zephyr.agent API
 - [x] **9.10** A2UI Compatibility — `zephyr-a2ui-catalog.json` exporting all 13 components in Google's Agent-to-UI catalog format with properties, actions, events, state attributes, and ARIA
+
+---
+
+## Priority 10 — npm Packaging & Distribution
+
+- [x] **10.1** Root `package.json` for `zephyr-framework` npm package — zero deps, `files` whitelist, `sideEffects: true`, proper metadata and keywords
+- [x] **10.2** Updated `@zephyr-framework/mcp` package — `peerDependencies` on `zephyr-framework`, `files` field, `repository` field
+- [x] **10.3** Framework root resolution in MCP server — `resolveFrameworkRoot()` with ZEPHYR_ROOT env var, cwd detection, monorepo fallback; `node_modules/zephyr-framework/` fallback in HTTP handler
+- [x] **10.4** `create-zephyr-app` CLI scaffolder — `npx create-zephyr-app my-app` creates project with deps, starter page, and `npm start` wired to MCP server
+- [x] **10.5** Starter template — `create-zephyr-app/template/index.html` with 5 example components (accordion, tabs, modal, select, dropdown) and MCP integration comments
+- [x] **10.6** Updated documentation — Install section in README, npm setup in MCP README, stack layout in AGENTS.md

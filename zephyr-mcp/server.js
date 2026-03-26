@@ -31,14 +31,21 @@
  *     ↕ direct JavaScript calls
  *   Zephyr.agent API (in browser context)
  *
- * Usage:
- *   1. cd zephyr-mcp && npm install
- *   2. node server.js
+ * Usage (standalone — when installed via npm):
+ *   1. npx create-zephyr-app my-app && cd my-app
+ *   2. npm start
  *   3. Open http://localhost:3456 in your browser
  *   4. Add to Claude Desktop config (see README.md)
  *
+ * Usage (from the framework repo):
+ *   1. cd zephyr-mcp && npm install
+ *   2. node server.js
+ *   3. Open http://localhost:3456 in your browser
+ *
  * Environment variables:
  *   ZEPHYR_MCP_PORT — HTTP/WebSocket port (default: 3456)
+ *   ZEPHYR_ROOT     — Override the directory to serve files from
+ *                     (default: auto-detected from cwd or monorepo layout)
  */
 
 'use strict';
@@ -67,11 +74,60 @@ const { z } = require('zod');                                                // 
 // Configurable via ZEPHYR_MCP_PORT environment variable
 const PORT = parseInt(process.env.ZEPHYR_MCP_PORT || '3456', 10);
 
-// Root directory of the Zephyr framework (one level up from zephyr-mcp/)
-// This is where index.html, zephyr-framework.js, etc. live
-const FRAMEWORK_ROOT = path.resolve(__dirname, '..');
+/**
+ * Resolve the directory containing the user's project files (index.html, etc.)
+ * and Zephyr framework files (zephyr-framework.js, zephyr-framework.css).
+ *
+ * The server needs to find these files regardless of how it was installed:
+ *
+ * Strategy (checked in order):
+ *   1. ZEPHYR_ROOT env var — explicit override, always wins. Useful for
+ *      Claude Desktop configs where the working directory might not be
+ *      the project root.
+ *
+ *   2. Current working directory (cwd) — the standard npm case. When a
+ *      user runs `npm start` or `npx zephyr-mcp` from their project,
+ *      cwd is the project root where index.html lives. Framework files
+ *      are in node_modules/zephyr-framework/ (resolved via fallback in
+ *      the HTTP handler).
+ *
+ *   3. Monorepo sibling — when running from the zephyr-mcp/ subdirectory
+ *      of the framework repo during development, framework files and
+ *      index.html are in the parent directory.
+ *
+ * @returns {string} Absolute path to the directory to serve files from
+ */
+function resolveFrameworkRoot() {
+  // Strategy 1: Explicit environment variable — always wins
+  if (process.env.ZEPHYR_ROOT) {
+    return path.resolve(process.env.ZEPHYR_ROOT);
+  }
+
+  // Strategy 2: Current working directory (npm start / npx zephyr-mcp)
+  // When the user runs `npm start` from their project, cwd has their index.html.
+  // Framework files may be in cwd directly or in node_modules/zephyr-framework/.
+  const cwd = process.cwd();
+  if (fs.existsSync(path.join(cwd, 'index.html'))) {
+    return cwd;
+  }
+
+  // Strategy 3: Monorepo layout — server.js is in zephyr-mcp/, framework is in ../
+  // This is the development case when working on the framework itself
+  const monorepoRoot = path.resolve(__dirname, '..');
+  if (fs.existsSync(path.join(monorepoRoot, 'zephyr-framework.js'))) {
+    return monorepoRoot;
+  }
+
+  // Fallback: use cwd even if index.html wasn't found there
+  // The user might have a different entry point or haven't created their page yet
+  return cwd;
+}
+
+// Resolve the root directory and log it so users can debug path issues
+const FRAMEWORK_ROOT = resolveFrameworkRoot();
 
 // Path to the bridge client script that gets injected into HTML pages
+// This is always relative to server.js itself (in the same npm package)
 const BRIDGE_CLIENT_PATH = path.join(__dirname, 'bridge-client.js');
 
 // MIME types for serving static files
@@ -149,7 +205,36 @@ const httpServer = http.createServer((req, res) => {
   // Attempt to read and serve the file
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      // File not found — return 404
+      // File not found at the primary path — try node_modules fallback.
+      // When the user installs zephyr-framework via npm, their index.html
+      // references "/zephyr-framework.js" but the actual file lives in
+      // node_modules/zephyr-framework/zephyr-framework.js. This fallback
+      // checks that location before returning 404.
+      const nodeModulesPath = path.join(
+        FRAMEWORK_ROOT, 'node_modules', 'zephyr-framework',
+        urlPath.replace(/^\//, '')
+      );
+
+      // Security check: ensure the fallback path stays within the project
+      const resolvedFallback = path.resolve(nodeModulesPath);
+      if (resolvedFallback.startsWith(path.join(FRAMEWORK_ROOT, 'node_modules', 'zephyr-framework'))) {
+        return fs.readFile(resolvedFallback, (err2, data2) => {
+          if (err2) {
+            // Not in node_modules either — genuinely not found
+            res.writeHead(404);
+            res.end('Not Found: ' + urlPath);
+            return;
+          }
+
+          // Serve the framework file from node_modules
+          const fallbackExt = path.extname(resolvedFallback);
+          const fallbackType = MIME_TYPES[fallbackExt] || 'application/octet-stream';
+          res.writeHead(200, { 'Content-Type': fallbackType });
+          res.end(data2);
+        });
+      }
+
+      // Fallback path failed security check — 404
       res.writeHead(404);
       res.end('Not Found: ' + urlPath);
       return;
@@ -481,6 +566,7 @@ async function main() {
   // This allows the browser to connect and receive Zephyr.agent calls
   httpServer.listen(PORT, () => {
     // Log to stderr (stdout is reserved for MCP JSON-RPC protocol)
+    log(`Serving files from: ${FRAMEWORK_ROOT}`);
     log(`Bridge server running at http://localhost:${PORT}`);
     log('Open that URL in your browser to connect the Zephyr bridge.');
     log('MCP stdio transport is ready for connections.');

@@ -9,14 +9,44 @@
   "scripts": {
     "start": "node server.js"
   },
+  "files": [
+    "server.js",
+    "bridge-client.js",
+    "README.md"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.22.0",
     "ws": "^8.16.0"
   },
+  "peerDependencies": {
+    "zephyr-framework": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "zephyr-framework": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daltlc/zephyr-framework.git",
+    "directory": "zephyr-mcp"
+  },
+  "homepage": "https://github.com/daltlc/zephyr-framework/tree/main/zephyr-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/daltlc/zephyr-framework/issues"
+  },
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["mcp", "zephyr", "web-components", "ai-agent", "ui-framework"],
+  "keywords": [
+    "mcp",
+    "zephyr",
+    "web-components",
+    "ai-agent",
+    "ui-framework",
+    "model-context-protocol",
+    "claude-desktop"
+  ],
   "license": "MIT"
 }

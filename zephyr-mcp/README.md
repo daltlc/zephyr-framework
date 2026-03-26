@@ -51,9 +51,31 @@ The server is a single Node.js process with three responsibilities:
 
 ## Setup
 
+**Option A: Via `create-zephyr-app` (recommended)**
+
+```bash
+npx create-zephyr-app my-app
+cd my-app
+npm start
+```
+
+This scaffolds a project with the framework, MCP server, and a starter page — all wired up.
+
+**Option B: Add to an existing project**
+
+```bash
+npm install @zephyr-framework/mcp
+npx zephyr-mcp
+```
+
+Run `npx zephyr-mcp` from your project directory (where your `index.html` lives). The server automatically finds your HTML files and framework assets.
+
+**Option C: From the framework repo (development)**
+
 ```bash
 cd zephyr-mcp
 npm install
+node server.js
 ```
 
 ## Usage
@@ -61,10 +83,12 @@ npm install
 ### 1. Start the server
 
 ```bash
-node server.js
+npm start        # if using create-zephyr-app
+npx zephyr-mcp   # if installed standalone
+node server.js   # if running from the repo
 ```
 
-This starts both the MCP stdio transport and the HTTP bridge on port 3456.
+This starts both the MCP stdio transport and the HTTP bridge on port 3456. The server logs which directory it's serving files from so you can verify it found your project.
 
 ### 2. Open the bridge page
 

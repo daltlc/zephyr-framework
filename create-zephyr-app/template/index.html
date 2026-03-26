@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Zephyr App</title>
+
+  <!-- Zephyr Framework — CSS-driven components, zero runtime JS -->
+  <link rel="stylesheet" href="zephyr-framework.css">
+
+  <style>
+    /* -----------------------------------------------------------------------
+     * App styles — customize these for your project.
+     * Zephyr components inherit from CSS custom properties, so you can theme
+     * everything from :root without touching component internals.
+     * ----------------------------------------------------------------------- */
+
+    :root {
+      /* Override any Zephyr design token here — see the README for the full list */
+      /* --z-transition-duration: 0.3s; */
+      /* --z-border-radius: 0.5rem; */
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+      color: #1a1a2e;
+      background: #fafafa;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      background: white;
+      font-size: 0.875rem;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: #f3f4f6;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>My Zephyr App</h1>
+  <p class="subtitle">
+    Edit <code>index.html</code> to build your app. Run <code>npm start</code>
+    to start the MCP server and connect Claude Desktop.
+  </p>
+
+  <!-- -------------------------------------------------------------------
+   * Accordion — Collapsible sections driven by CSS Grid transitions.
+   * State attribute: data-open (set/removed automatically)
+   * Agent action: zephyr_act({ selector: 'z-accordion-item', action: 'toggle' })
+   * ------------------------------------------------------------------- -->
+  <section>
+    <h2>Accordion</h2>
+    <z-accordion>
+      <z-accordion-item>
+        <button slot="trigger">Getting Started</button>
+        <div slot="content">
+          <div style="padding: 1rem 0;">
+            This page is served by the Zephyr MCP server. Every component here
+            can be discovered and controlled by an AI agent using the MCP tools.
+            Try connecting Claude Desktop — it can open this accordion, switch
+            tabs, and trigger the modal without touching a mouse.
+          </div>
+        </div>
+      </z-accordion-item>
+      <z-accordion-item>
+        <button slot="trigger">How MCP Works</button>
+        <div slot="content">
+          <div style="padding: 1rem 0;">
+            The MCP server bridges Claude Desktop to this page via WebSocket.
+            When an agent calls <code>zephyr_act('#my-modal', 'open')</code>,
+            the server forwards it to the browser, which calls
+            <code>Zephyr.agent.act()</code> on the live DOM. No screenshots,
+            no DOM parsing — just typed function calls.
+          </div>
+        </div>
+      </z-accordion-item>
+      <z-accordion-item>
+        <button slot="trigger">Available Components</button>
+        <div slot="content">
+          <div style="padding: 1rem 0;">
+            Zephyr ships 14 components: Accordion, Tabs, Carousel, Modal,
+            Dropdown, Toast, Select, Combobox, Date Picker, File Upload,
+            Infinite Scroll, Sortable, and Virtual List. All driven by CSS
+            after page load — zero runtime JavaScript.
+          </div>
+        </div>
+      </z-accordion-item>
+    </z-accordion>
+  </section>
+
+  <!-- -------------------------------------------------------------------
+   * Tabs — Panel switching via CSS :has() + View Transitions API.
+   * State attribute: data-active (on the selected tab button)
+   * Agent action: zephyr_act({ selector: 'z-tabs', action: 'select', params: { tab: 'id' } })
+   * ------------------------------------------------------------------- -->
+  <section>
+    <h2>Tabs</h2>
+    <z-tabs>
+      <div role="tablist">
+        <button data-tab="overview" role="tab">Overview</button>
+        <button data-tab="agent" role="tab">Agent API</button>
+        <button data-tab="theming" role="tab">Theming</button>
+      </div>
+      <div data-tab-panel="overview" role="tabpanel">
+        <p style="padding: 1rem 0;">
+          Zephyr gives you 14 interactive components with zero runtime JS.
+          Every animation, state change, and transition is pure CSS. The
+          framework JS runs once at page load to register custom elements
+          and attach event listeners — after that, CSS takes over.
+        </p>
+      </div>
+      <div data-tab-panel="agent" role="tabpanel">
+        <p style="padding: 1rem 0;">
+          The <code>Zephyr.agent</code> API lets AI agents discover and
+          control every component on the page. Call <code>getState()</code>
+          to snapshot all components, <code>describe('#id')</code> to
+          deep-inspect one, and <code>act('#id', 'action')</code> to
+          interact — all without DOM knowledge.
+        </p>
+      </div>
+      <div data-tab-panel="theming" role="tabpanel">
+        <p style="padding: 1rem 0;">
+          Override <code>--z-*</code> CSS custom properties to theme
+          everything. Change <code>--z-transition-duration</code>,
+          <code>--z-border-radius</code>, <code>--z-shadow</code>, and
+          more. Components inherit from these tokens automatically.
+        </p>
+      </div>
+    </z-tabs>
+  </section>
+
+  <!-- -------------------------------------------------------------------
+   * Modal — Native <dialog> element with View Transitions + backdrop blur.
+   * Agent actions: zephyr_act({ selector: '#my-modal', action: 'open' | 'close' })
+   * ------------------------------------------------------------------- -->
+  <section>
+    <h2>Modal</h2>
+    <div class="actions">
+      <button data-action="open-modal" data-target="my-modal">Open Modal</button>
+    </div>
+
+    <z-modal id="my-modal">
+      <h2>Welcome to Zephyr</h2>
+      <p style="margin: 1rem 0;">
+        This modal uses the native <code>&lt;dialog&gt;</code> element with
+        CSS backdrop blur and View Transitions. An agent can open and close it
+        with <code>zephyr_act('#my-modal', 'open')</code>.
+      </p>
+      <button data-action="close-modal" data-target="my-modal">Close</button>
+    </z-modal>
+  </section>
+
+  <!-- -------------------------------------------------------------------
+   * Select — Form-associated custom select with ElementInternals.
+   * Participates in native <form> submission via FormData.
+   * Agent action: zephyr_act({ selector: '#color', action: 'select', params: { value: 'blue' } })
+   * ------------------------------------------------------------------- -->
+  <section>
+    <h2>Select</h2>
+    <form id="demo-form">
+      <z-select name="color" id="color">
+        <button slot="trigger">Choose a color</button>
+        <div slot="options">
+          <div data-value="red">Red</div>
+          <div data-value="blue">Blue</div>
+          <div data-value="green">Green</div>
+          <div data-value="purple">Purple</div>
+        </div>
+      </z-select>
+    </form>
+  </section>
+
+  <!-- -------------------------------------------------------------------
+   * Dropdown — Menu overlay with click-outside dismiss.
+   * Agent actions: zephyr_act({ selector: 'z-dropdown', action: 'open' | 'close' })
+   * ------------------------------------------------------------------- -->
+  <section>
+    <h2>Dropdown</h2>
+    <z-dropdown>
+      <button slot="trigger">Options Menu</button>
+      <div slot="content">
+        <a href="#" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:inherit;">Edit</a>
+        <a href="#" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:inherit;">Duplicate</a>
+        <a href="#" style="display:block; padding:0.5rem 1rem; text-decoration:none; color:inherit;">Archive</a>
+      </div>
+    </z-dropdown>
+  </section>
+
+  <!-- Zephyr Framework — registers custom elements and attaches listeners -->
+  <script src="zephyr-framework.js"></script>
+
+</body>
+</html>

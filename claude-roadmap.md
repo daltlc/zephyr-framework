@@ -287,3 +287,15 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **10.4** `create-zephyr-app` CLI scaffolder — `npx create-zephyr-app my-app` creates project with deps, starter page, and `npm start` wired to MCP server
 - [x] **10.5** Starter template — `create-zephyr-app/template/index.html` with 5 example components (accordion, tabs, modal, select, dropdown) and MCP integration comments
 - [x] **10.6** Updated documentation — Install section in README, npm setup in MCP README, stack layout in AGENTS.md
+
+---
+
+## Priority 11 — Embedded Agent Chat Widget
+
+- [x] **11.1** `<z-agent>` CSS — FAB button, chat panel, messages, typing indicator, input row, pulse animation, position variants, dark mode. All in `@layer components`.
+- [x] **11.2** `zephyr-agent-widget.js` — ZAgent custom element with DOM construction (no innerHTML), provider abstraction (Anthropic/OpenAI), tool definitions, conversation loop with tool call handling, message rendering, component pulse feedback, open/close/send/clear methods, ARIA, keyboard nav, cleanup
+- [x] **11.3** Provider adapters — Anthropic Messages API and OpenAI Chat Completions API normalized behind a common interface. Direct mode (data-api-key) and proxy mode (data-endpoint)
+- [x] **11.4** Tool execution sandbox — Only 5 predefined Zephyr.agent methods callable. No eval, no arbitrary JS, no DOM access outside the agent API
+- [x] **11.5** Tests — `tests/test-agent-widget.html` covering registration, DOM structure, attributes, open/close, tool sandboxing, message rendering, XSS prevention, component pulse
+- [x] **11.6** Demo page — Agent widget demo card in `index.html` with open/close buttons
+- [x] **11.7** Documentation — README section, AGENTS.md stack layout, roadmap update

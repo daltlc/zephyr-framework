@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Agent Widget</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixture: a few Zephyr components for the agent to interact with -->
+  <z-accordion id="test-accordion">
+    <z-accordion-item>
+      <button slot="trigger">Item 1</button>
+      <div slot="content"><div>Content 1</div></div>
+    </z-accordion-item>
+  </z-accordion>
+
+  <z-modal id="test-modal">
+    <h2>Test Modal</h2>
+    <p>Modal content</p>
+  </z-modal>
+
+  <z-tabs id="test-tabs">
+    <div role="tablist">
+      <button data-tab="a" role="tab">A</button>
+      <button data-tab="b" role="tab">B</button>
+    </div>
+    <div data-tab-panel="a" role="tabpanel">Panel A</div>
+    <div data-tab-panel="b" role="tabpanel">Panel B</div>
+  </z-tabs>
+
+  <!-- Agent widget under test — no API key since we test structure, not API calls -->
+  <z-agent id="test-agent"
+    data-greeting="Test greeting"
+    data-placeholder="Test placeholder..."
+    data-position="bottom-left">
+  </z-agent>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../zephyr-agent-widget.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Agent Widget');
+
+    /**
+     * Helper: wait for custom elements to be defined and connected.
+     * The widget builds its DOM in connectedCallback, so we need to
+     * wait a tick for that to complete.
+     */
+    function waitForReady() {
+      return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }
+
+    // --- Registration ---
+
+    t.test('z-agent custom element is registered', async (assert) => {
+      assert.ok(customElements.get('z-agent'), 'z-agent should be defined');
+    });
+
+    t.test('ZAgent instance is created in the DOM', async (assert) => {
+      const el = document.getElementById('test-agent');
+      assert.ok(el, 'test-agent element should exist');
+      assert.ok(el instanceof HTMLElement, 'should be an HTMLElement');
+    });
+
+    // --- DOM Structure ---
+
+    t.test('Widget builds FAB button', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      const fab = agent.querySelector('.z-agent-fab');
+      assert.ok(fab, 'FAB button should exist');
+      assert.equal(fab.getAttribute('aria-label'), 'Open agent chat', 'FAB should have aria-label');
+    });
+
+    t.test('Widget builds panel with header, messages, and input', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      const panel = agent.querySelector('.z-agent-panel');
+      assert.ok(panel, 'Panel should exist');
+      assert.equal(panel.getAttribute('role'), 'dialog', 'Panel should have dialog role');
+
+      const header = agent.querySelector('.z-agent-header');
+      assert.ok(header, 'Header should exist');
+
+      const messages = agent.querySelector('.z-agent-messages');
+      assert.ok(messages, 'Messages area should exist');
+      assert.equal(messages.getAttribute('role'), 'log', 'Messages should have log role');
+
+      const input = agent.querySelector('.z-agent-input');
+      assert.ok(input, 'Input should exist');
+
+      const sendBtn = agent.querySelector('.z-agent-send');
+      assert.ok(sendBtn, 'Send button should exist');
+    });
+
+    // --- Attributes ---
+
+    t.test('Reads data-placeholder attribute', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      const input = agent.querySelector('.z-agent-input');
+      assert.equal(input.placeholder, 'Test placeholder...', 'Input placeholder should match attribute');
+    });
+
+    t.test('Reads data-greeting attribute', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      const msgs = agent.querySelectorAll('.z-agent-msg');
+      assert.ok(msgs.length >= 1, 'Should have at least one message (greeting)');
+      assert.equal(msgs[0].textContent, 'Test greeting', 'First message should be the greeting');
+    });
+
+    t.test('Reads data-position attribute', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      assert.equal(agent.getAttribute('data-position'), 'bottom-left', 'Position should be bottom-left');
+    });
+
+    // --- Open/Close ---
+
+    t.test('open() sets data-open attribute', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      assert.notHasAttribute(agent, 'data-open', 'Should start closed');
+      agent.open();
+      assert.hasAttribute(agent, 'data-open', 'Should be open after open()');
+      agent.close();
+      assert.notHasAttribute(agent, 'data-open', 'Should be closed after close()');
+    });
+
+    t.test('open() dispatches open event', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      let fired = false;
+      agent.addEventListener('open', () => { fired = true; }, { once: true });
+      agent.open();
+      assert.ok(fired, 'open event should fire');
+      agent.close();
+    });
+
+    t.test('close() dispatches close event', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      agent.open();
+      let fired = false;
+      agent.addEventListener('close', () => { fired = true; }, { once: true });
+      agent.close();
+      assert.ok(fired, 'close event should fire');
+    });
+
+    // --- clear() ---
+
+    t.test('clear() resets messages to greeting only', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      agent.clear();
+      await waitForReady();
+      const msgs = agent.querySelectorAll('.z-agent-msg');
+      assert.equal(msgs.length, 1, 'Should have exactly 1 message after clear');
+      assert.equal(msgs[0].textContent, 'Test greeting', 'Should show greeting');
+    });
+
+    // --- Tool Execution Sandboxing ---
+
+    t.test('_executeTool handles zephyr_get_state', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const result = agent._executeTool('zephyr_get_state', {});
+      assert.ok(Array.isArray(result), 'getState should return an array');
+      assert.ok(result.length >= 3, 'Should find at least 3 components (accordion, modal, tabs)');
+    });
+
+    t.test('_executeTool handles zephyr_describe', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const result = agent._executeTool('zephyr_describe', { selector: '#test-modal' });
+      assert.equal(result.tag, 'z-modal', 'Should describe the modal');
+      assert.ok(result.actions.includes('open'), 'Modal should have open action');
+    });
+
+    t.test('_executeTool handles zephyr_act', async (assert) => {
+      const agent = document.getElementById('test-agent');
+
+      // Open the modal via the tool
+      const result = agent._executeTool('zephyr_act', {
+        selector: '#test-modal',
+        action: 'open'
+      });
+      assert.ok(result.success, 'act should succeed');
+
+      // Close it
+      agent._executeTool('zephyr_act', {
+        selector: '#test-modal',
+        action: 'close'
+      });
+    });
+
+    t.test('_executeTool handles zephyr_get_schema', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const result = agent._executeTool('zephyr_get_schema', {});
+      assert.ok(result.accordion, 'Schema should include accordion');
+      assert.ok(result.modal, 'Schema should include modal');
+    });
+
+    t.test('_executeTool rejects unknown tools', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const result = agent._executeTool('arbitrary_code_execution', {});
+      assert.ok(result.error, 'Should return an error for unknown tools');
+      assert.ok(result.error.includes('Unknown tool'), 'Error should mention unknown tool');
+    });
+
+    t.test('_executeTool handles invalid selectors gracefully', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const result = agent._executeTool('zephyr_describe', { selector: '#nonexistent' });
+      assert.ok(result.error, 'Should return error for nonexistent element');
+    });
+
+    // --- Message Rendering ---
+
+    t.test('_renderMessage creates message DOM elements safely', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      agent.clear();
+
+      // Render a user message
+      agent._renderMessage('user', 'Hello');
+      const msgs = agent.querySelectorAll('.z-agent-msg');
+      // 1 greeting + 1 user message
+      assert.equal(msgs.length, 2, 'Should have 2 messages');
+
+      const userMsg = msgs[1];
+      assert.ok(userMsg.classList.contains('z-agent-msg-user'), 'Should have user class');
+      assert.equal(userMsg.textContent, 'Hello', 'Should contain the text');
+    });
+
+    t.test('_renderMessage escapes HTML (no XSS)', async (assert) => {
+      await waitForReady();
+      const agent = document.getElementById('test-agent');
+      agent.clear();
+
+      // Try to inject HTML — textContent should prevent it
+      agent._renderMessage('user', '<img src=x onerror=alert(1)>');
+      const msgs = agent.querySelectorAll('.z-agent-msg');
+      const lastMsg = msgs[msgs.length - 1];
+
+      // The text should be literal, not parsed as HTML
+      assert.equal(lastMsg.textContent, '<img src=x onerror=alert(1)>', 'HTML should be escaped');
+      assert.equal(lastMsg.querySelector('img'), null, 'No img element should be created');
+    });
+
+    // --- Component Pulse ---
+
+    t.test('_pulseComponent adds and removes z-agent-target class', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const modal = document.getElementById('test-modal');
+
+      agent._pulseComponent('#test-modal');
+      assert.ok(modal.classList.contains('z-agent-target'), 'Should add pulse class');
+
+      // Wait for the class to be removed (1.5s timeout in the widget)
+      await new Promise(r => setTimeout(r, 1600));
+      assert.ok(!modal.classList.contains('z-agent-target'), 'Should remove pulse class after timeout');
+    });
+
+    // --- Run tests ---
+    t.run();
+  </script>
+</body>
+</html>

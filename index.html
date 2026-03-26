@@ -239,6 +239,23 @@
       <pre id="agent-output" style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 0.375rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--silver);"></pre>
     </div>
 
+    <!-- Agent Chat Widget Demo -->
+    <div class="demo-card">
+      <h2>Agent Chat Widget</h2>
+      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
+        The <code>&lt;z-agent&gt;</code> widget lets visitors control components via natural language.
+        Add an API key to the element below to try it live.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <button data-action="agent-widget-open">Open Chat Widget</button>
+        <button data-action="agent-widget-close">Close Chat Widget</button>
+      </div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.75rem;">
+        Set <code>data-api-key</code> or <code>data-endpoint</code> on the &lt;z-agent&gt;
+        tag to enable the AI backend. Without credentials, the widget UI works but can't send messages.
+      </p>
+    </div>
+
     <!-- Virtual List Demo -->
     <div class="demo-card">
       <h2>Virtual Scroll</h2>
@@ -260,7 +277,11 @@
     </button>
   </footer>
 
+  <!-- Agent chat widget — add data-api-key="sk-ant-..." to enable AI backend -->
+  <z-agent id="demo-agent" data-greeting="Hi! I can control the components on this page. Try asking me to open the modal or switch a tab."></z-agent>
+
   <script src="zephyr-framework.js"></script>
+  <script src="zephyr-agent-widget.js"></script>
   <script>
     // Demo event delegation — replaces all inline onclick handlers for CSP compatibility
     document.addEventListener('click', (e) => {
@@ -296,6 +317,12 @@
           break;
         case 'agent-get-prompt':
           document.getElementById('agent-output').textContent = Zephyr.agent.getPrompt();
+          break;
+        case 'agent-widget-open':
+          document.getElementById('demo-agent').open();
+          break;
+        case 'agent-widget-close':
+          document.getElementById('demo-agent').close();
           break;
       }
     });

@@ -107,6 +107,9 @@ zephyr-framework/
 │   ├── window.Zephyr          # Global utility API + component registry
 │   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt)
 │
+├── zephyr-agent-widget.js   # <z-agent> embedded chat widget (separate from core)
+│   └── ZAgent                 # LLM-powered chat with Zephyr.agent tool execution
+│
 ├── zephyr-schema.json        # Machine-readable component schema for agents/LLMs
 ├── zephyr-prompt.md          # LLM system prompt template for Zephyr usage
 ├── zephyr-a2ui-catalog.json  # A2UI (Agent-to-UI) catalog definition for Google's agent ecosystem
@@ -172,6 +175,7 @@ zephyr-framework/
 | Agent API | Zephyr.agent namespace | Structured LLM/agent interface |
 | MCP | Model Context Protocol server | Remote agent tool integration |
 | A2UI | Agent-to-UI catalog | Google agent ecosystem discovery |
+| Agent Widget | `<z-agent>` custom element | Embedded chat for live deployed sites |
 
 ### Browser Support
 

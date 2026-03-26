@@ -159,6 +159,61 @@ Think of it this way: **MCP is the waiter** (it executes actions on a live page)
 
 ---
 
+## Agent Chat Widget — AI on your live site
+
+The `<z-agent>` widget brings agent control to **deployed production sites**. Drop one tag into your HTML and visitors get a chat interface that can control every Zephyr component on the page through natural language.
+
+```html
+<script src="zephyr-framework.js"></script>
+<script src="zephyr-agent-widget.js"></script>
+
+<!-- Demo mode (API key in source — not for production) -->
+<z-agent data-api-key="sk-ant-..." data-provider="anthropic"></z-agent>
+
+<!-- Production mode (proxy keeps your API key server-side) -->
+<z-agent data-endpoint="https://api.mysite.com/agent/chat"></z-agent>
+```
+
+A visitor types "open the settings modal" — the agent calls `Zephyr.agent.act('#settings', 'open')` in the browser and the modal opens. The component briefly pulses blue to show what was touched.
+
+**Two API modes:**
+
+| Mode | Attribute | Use case |
+|------|-----------|----------|
+| Direct | `data-api-key` | Quick demos. Calls LLM API from browser. Key visible in source. |
+| Proxy | `data-endpoint` | Production. POST to your backend, which forwards to any LLM. |
+
+**Supports Anthropic and OpenAI** — set `data-provider="anthropic"` (default) or `data-provider="openai"`.
+
+**Attributes:**
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `data-endpoint` | — | Proxy URL for production |
+| `data-api-key` | — | Direct API key for demos |
+| `data-provider` | `anthropic` | `anthropic` or `openai` |
+| `data-model` | per provider | Model identifier |
+| `data-position` | `bottom-right` | `bottom-right`, `bottom-left`, `top-right`, `top-left` |
+| `data-placeholder` | `Ask about this page...` | Input placeholder text |
+| `data-greeting` | `Hi! I can help you...` | First message shown |
+
+**Methods:** `open()`, `close()`, `send(message)`, `clear()`
+
+**Events:** `open`, `close`, `message` (`{ role, content }`), `action` (`{ selector, action, params, result }`), `error` (`{ message }`)
+
+**How MCP and the widget compare:**
+
+| | MCP Server | `<z-agent>` Widget |
+|---|---|---|
+| Where it runs | Developer's machine | Any deployed site |
+| Who uses it | Developer via Claude Desktop | End users visiting the site |
+| Transport | stdio + localhost WebSocket | HTTPS to LLM API or proxy |
+| Dependencies | Node.js, npm packages | None (browser-native fetch) |
+
+MCP is for building. The widget is for shipping.
+
+---
+
 ## Agent API — programmatic control from JavaScript
 
 The `Zephyr.agent` namespace gives any JavaScript-based agent structured access to components on the page. This is what the MCP server calls under the hood, but you can also use it directly in browser-based agents, testing scripts, or custom tooling.

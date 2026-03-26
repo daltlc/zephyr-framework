@@ -8,6 +8,7 @@
   "files": [
     "zephyr-framework.js",
     "zephyr-framework.css",
+    "zephyr-agent-widget.js",
     "zephyr-schema.json",
     "zephyr-prompt.md",
     "zephyr-a2ui-catalog.json",

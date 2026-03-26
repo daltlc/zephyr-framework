@@ -21,6 +21,15 @@
   --z-backdrop-blur: 4px;
   --z-toast-bg: rgb(17 24 39);
   --z-toast-color: white;
+
+  /* Agent chat widget tokens */
+  --z-z-index-agent: 1100;
+  --z-agent-bg: white;
+  --z-agent-color: rgb(17 24 39);
+  --z-agent-accent: rgb(59 130 246);
+  --z-agent-width: 380px;
+  --z-agent-height: 520px;
+  --z-agent-fab-size: 3.25rem;
 }
 
 @layer reset {
@@ -618,6 +627,317 @@
     display: flex;
     align-items: center;
     box-sizing: border-box;
+  }
+
+  /* ----- Agent Chat Widget ----- */
+
+  /* The z-agent element itself is a positioned anchor for the FAB and panel */
+  z-agent {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: var(--z-z-index-agent);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--z-agent-color);
+  }
+
+  /* Position variants — override placement via data attribute */
+  z-agent[data-position="bottom-left"] { right: auto; left: 1.5rem; }
+  z-agent[data-position="top-right"] { bottom: auto; top: 1.5rem; }
+  z-agent[data-position="top-left"] { bottom: auto; top: 1.5rem; right: auto; left: 1.5rem; }
+
+  /* Floating action button — the circular chat toggle */
+  z-agent .z-agent-fab {
+    width: var(--z-agent-fab-size);
+    height: var(--z-agent-fab-size);
+    border-radius: 50%;
+    border: none;
+    background: var(--z-agent-accent);
+    color: white;
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: var(--z-shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s var(--z-transition-timing),
+                box-shadow 0.2s var(--z-transition-timing);
+  }
+
+  z-agent .z-agent-fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 20px 30px -8px rgb(0 0 0 / 0.2);
+  }
+
+  /* Hide FAB when panel is open */
+  z-agent[data-open] .z-agent-fab {
+    display: none;
+  }
+
+  /* Chat panel — the main conversation interface */
+  z-agent .z-agent-panel {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: var(--z-agent-width);
+    height: var(--z-agent-height);
+    max-height: calc(100vh - 3rem);
+    max-width: calc(100vw - 3rem);
+    background: var(--z-agent-bg);
+    border-radius: var(--z-border-radius);
+    box-shadow: var(--z-shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    /* Panel open/close animation — GPU-accelerated opacity + transform */
+    opacity: 0;
+    transform: translateY(1rem) scale(0.95);
+    pointer-events: none;
+    transition: opacity 0.2s var(--z-transition-timing),
+                transform 0.2s var(--z-transition-timing);
+  }
+
+  /* Panel anchors to left side for left-positioned variants */
+  z-agent[data-position="bottom-left"] .z-agent-panel,
+  z-agent[data-position="top-left"] .z-agent-panel {
+    right: auto;
+    left: 0;
+  }
+
+  /* Panel anchors to top for top-positioned variants */
+  z-agent[data-position="top-right"] .z-agent-panel,
+  z-agent[data-position="top-left"] .z-agent-panel {
+    bottom: auto;
+    top: 0;
+    transform: translateY(-1rem) scale(0.95);
+  }
+
+  /* Open state — panel becomes visible and interactive */
+  z-agent[data-open] .z-agent-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  /* Panel header — title bar with close button */
+  z-agent .z-agent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgb(0 0 0 / 0.08);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+    flex-shrink: 0;
+  }
+
+  z-agent .z-agent-close {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    font-size: 1.125rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    opacity: 0.5;
+    transition: opacity 0.15s, background 0.15s;
+    padding: 0;
+  }
+
+  z-agent .z-agent-close:hover {
+    opacity: 1;
+    background: rgb(0 0 0 / 0.06);
+  }
+
+  /* Messages area — scrollable conversation history */
+  z-agent .z-agent-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    /* Smooth scroll when new messages are added */
+    scroll-behavior: smooth;
+  }
+
+  /* Individual message bubble — shared base styles */
+  z-agent .z-agent-msg {
+    max-width: 85%;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--z-border-radius);
+    word-wrap: break-word;
+    animation: fade-in 0.2s var(--z-transition-timing);
+  }
+
+  /* User messages — right-aligned, accent color */
+  z-agent .z-agent-msg-user {
+    align-self: flex-end;
+    background: var(--z-agent-accent);
+    color: white;
+  }
+
+  /* Assistant messages — left-aligned, light background */
+  z-agent .z-agent-msg-assistant {
+    align-self: flex-start;
+    background: rgb(243 244 246);
+  }
+
+  /* Tool action indicators — small italic status text */
+  z-agent .z-agent-msg-action {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    color: rgb(107 114 128);
+    font-style: italic;
+    padding: 0.125rem 0;
+    max-width: 100%;
+  }
+
+  /* Error messages */
+  z-agent .z-agent-msg-error {
+    align-self: flex-start;
+    background: rgb(254 242 242);
+    color: rgb(185 28 28);
+    font-size: 0.8125rem;
+  }
+
+  /* Typing indicator — three dots animation */
+  z-agent .z-agent-typing {
+    align-self: flex-start;
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.625rem 0.75rem;
+    background: rgb(243 244 246);
+    border-radius: var(--z-border-radius);
+  }
+
+  z-agent .z-agent-typing-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background: rgb(156 163 175);
+    animation: z-agent-bounce 1.2s infinite;
+  }
+
+  z-agent .z-agent-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  z-agent .z-agent-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes z-agent-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-0.375rem); }
+  }
+
+  /* Input row — message input and send button */
+  z-agent .z-agent-input-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid rgb(0 0 0 / 0.08);
+    flex-shrink: 0;
+  }
+
+  z-agent .z-agent-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(209 213 219);
+    border-radius: var(--z-border-radius-sm);
+    font-size: 0.8125rem;
+    outline: none;
+    transition: border-color 0.15s;
+    background: var(--z-agent-bg);
+    color: var(--z-agent-color);
+  }
+
+  z-agent .z-agent-input:focus {
+    border-color: var(--z-agent-accent);
+  }
+
+  z-agent .z-agent-send {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--z-border-radius-sm);
+    border: none;
+    background: var(--z-agent-accent);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  z-agent .z-agent-send:hover {
+    opacity: 0.85;
+  }
+
+  z-agent .z-agent-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Component pulse — brief highlight when the agent acts on a component */
+  @keyframes z-agent-pulse {
+    0%, 100% { outline-color: transparent; }
+    50% { outline-color: var(--z-agent-accent); }
+  }
+
+  .z-agent-target {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    animation: z-agent-pulse 0.6s ease 2;
+  }
+
+  /* Dark mode support — follows existing :has() pattern */
+  html:has([data-theme="dark"]) z-agent .z-agent-panel {
+    background: rgb(30 32 38);
+    color: rgb(229 231 235);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-header {
+    border-bottom-color: rgb(255 255 255 / 0.08);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-msg-assistant {
+    background: rgb(55 65 81);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-typing {
+    background: rgb(55 65 81);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-typing-dot {
+    background: rgb(107 114 128);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-input {
+    background: rgb(17 24 39);
+    color: rgb(229 231 235);
+    border-color: rgb(55 65 81);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-input-row {
+    border-top-color: rgb(255 255 255 / 0.08);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-close:hover {
+    background: rgb(255 255 255 / 0.1);
+  }
+
+  html:has([data-theme="dark"]) z-agent .z-agent-msg-error {
+    background: rgb(69 26 26);
+    color: rgb(252 165 165);
   }
 
   /* ----- Scroll-driven Animations ----- */

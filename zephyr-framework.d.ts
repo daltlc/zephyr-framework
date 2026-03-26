@@ -1,6 +1,6 @@
 /**
  * Zephyr Framework — TypeScript Declarations
- * @version 0.1.2
+ * @version 0.3.1
  */
 
 // ---------------------------------------------------------------------------

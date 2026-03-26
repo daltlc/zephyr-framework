@@ -7,7 +7,9 @@
   "types": "zephyr-framework.d.ts",
   "sideEffects": true,
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "echo \"Open tests/index.html in a browser to run the test suite\"",
+    "dev": "npx http-server -c-1"
   },
   "files": [
     "zephyr-framework.js",

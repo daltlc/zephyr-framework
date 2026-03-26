@@ -978,15 +978,26 @@ class ZFileUpload extends ZephyrElement {
 
     // Render file list if container exists
     if (fileList) {
-      fileList.innerHTML = '';
+      fileList.replaceChildren();
       files.forEach(file => {
         const item = document.createElement('div');
         item.classList.add('z-file-item');
-        item.innerHTML = `
-          <span class="z-file-name">${this._escapeHtml(file.name)}</span>
-          <span class="z-file-size">${this._formatSize(file.size)}</span>
-          <div class="z-file-progress"><div class="z-file-progress-bar"></div></div>
-        `;
+
+        const name = document.createElement('span');
+        name.classList.add('z-file-name');
+        name.textContent = file.name;
+
+        const size = document.createElement('span');
+        size.classList.add('z-file-size');
+        size.textContent = this._formatSize(file.size);
+
+        const progress = document.createElement('div');
+        progress.classList.add('z-file-progress');
+        const bar = document.createElement('div');
+        bar.classList.add('z-file-progress-bar');
+        progress.appendChild(bar);
+
+        item.append(name, size, progress);
         fileList.appendChild(item);
       });
     }
@@ -1075,6 +1086,8 @@ class ZVirtualList extends ZephyrElement {
 
   /**
    * Sets the render function that converts a data item to HTML.
+   * The returned HTML is injected via innerHTML — callers are responsible
+   * for escaping any user-supplied content to prevent XSS.
    * @param {function(item: *, index: number): string} fn - Renderer function
    */
   setRenderer(fn) {
@@ -1106,8 +1119,7 @@ class ZVirtualList extends ZephyrElement {
       fragment.appendChild(el);
     }
 
-    this._viewport.innerHTML = '';
-    this._viewport.appendChild(fragment);
+    this._viewport.replaceChildren(fragment);
   }
 
   _cleanup() {

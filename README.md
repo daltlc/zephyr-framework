@@ -3,6 +3,13 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/zephyr-framework"><img src="https://img.shields.io/npm/v/zephyr-framework.svg" alt="npm version"></a>
+  <a href="https://github.com/daltlc/zephyr-framework/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/dependencies-0-brightgreen.svg" alt="Zero Dependencies">
+  <img src="https://img.shields.io/badge/Chrome%20111%2B%20%7C%20Safari%2015.4%2B%20%7C%20Firefox%20121%2B-blue.svg" alt="Browser Support">
+</p>
+
+<p align="center">
   The first UI framework built for AI agents.<br>
   14 components. Pure CSS interactions. Zero runtime JavaScript.<br><br>
   <strong>MCP server</strong> lets Claude Desktop, Cursor, and any AI agent control your UI with typed tools.<br>

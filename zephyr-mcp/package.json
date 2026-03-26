@@ -1,6 +1,6 @@
 {
   "name": "zephyr-framework-mcp",
-  "version": "0.1.0",
+  "version": "0.3.1",
   "description": "MCP server for Zephyr Framework — expose Zephyr UI components as AI agent tools via the Model Context Protocol. Bridges MCP hosts (Claude Desktop, Cursor, etc.) to a browser running Zephyr components.",
   "main": "server.js",
   "bin": {

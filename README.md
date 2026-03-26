@@ -26,9 +26,13 @@ Open `http://localhost:3456`. You'll see a page with working components — acco
 
 **That's it.** You're running. Edit `index.html` to build your app.
 
-### Want AI agents to control the page?
+### Connect an AI agent to control the page
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+The MCP server works with any client that supports the [Model Context Protocol](https://modelcontextprotocol.io/). Here's how to set it up for each:
+
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -42,7 +46,61 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-Now Claude Desktop can open your modals, switch your tabs, and read your component states — all through typed tool calls.
+#### Cursor
+
+Add to `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "zephyr": {
+      "command": "npx",
+      "args": ["zephyr-mcp"],
+      "env": { "ZEPHYR_ROOT": "/path/to/my-app" }
+    }
+  }
+}
+```
+
+#### Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "zephyr": {
+      "command": "npx",
+      "args": ["zephyr-mcp"],
+      "env": { "ZEPHYR_ROOT": "/path/to/my-app" }
+    }
+  }
+}
+```
+
+#### VS Code (with Copilot)
+
+Add to your VS Code `settings.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "zephyr": {
+        "command": "npx",
+        "args": ["zephyr-mcp"],
+        "env": { "ZEPHYR_ROOT": "/path/to/my-app" }
+      }
+    }
+  }
+}
+```
+
+#### Any other MCP client
+
+The Zephyr MCP server uses **stdio transport** (JSON-RPC 2.0 over stdin/stdout). Any MCP-compatible host can spawn it as a child process. The command is `npx zephyr-mcp` — set `ZEPHYR_ROOT` to your project directory and `ZEPHYR_MCP_PORT` to change the bridge port (default 3456).
+
+After connecting, the agent gets 6 tools: `zephyr_act`, `zephyr_get_state`, `zephyr_describe`, `zephyr_set_state`, `zephyr_get_schema`, `zephyr_get_prompt`. Ask it to open a modal, switch a tab, or inspect the page — it just works.
 
 ### Want a chat widget on a live site instead?
 
@@ -123,27 +181,18 @@ Zephyr.agent API → Your components
 
 The agent doesn't see HTML. It sees **typed tools with structured inputs and outputs**. It calls `zephyr_act('#modal', 'open')` and gets `{ success: true }`. It calls `zephyr_get_state()` and gets a JSON array of every component's current state, actions, and metadata.
 
-### Setup — 2 minutes
+### Setup
+
+See the [Quick Start](#connect-an-ai-agent-to-control-the-page) above for config examples for Claude Desktop, Cursor, Windsurf, VS Code, and any other MCP client.
+
+If running from the framework repo (not via npm):
 
 ```bash
 cd zephyr-mcp && npm install
 node server.js  # starts bridge on http://localhost:3456
 ```
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "zephyr": {
-      "command": "node",
-      "args": ["/absolute/path/to/zephyr-mcp/server.js"]
-    }
-  }
-}
-```
-
-Open `http://localhost:3456` in your browser. That's it — your agent can now control the page.
+Open `http://localhost:3456` in your browser. The agent can now control the page.
 
 ### Available tools
 

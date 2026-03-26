@@ -183,6 +183,40 @@ interface ZephyrObserverDetail {
   newValue: string | null;
 }
 
+interface ZephyrDiffDetail {
+  component: string;
+  id: string | null;
+  property: string;
+  from: string | null;
+  to: string | null;
+  timestamp: number;
+}
+
+interface ZephyrRecordedAction {
+  selector: string;
+  action: string;
+  params: Record<string, any> | null;
+  timestamp: number;
+}
+
+interface ZephyrRecordingHandle {
+  /** Stops recording and returns the captured actions. */
+  stop(): ZephyrRecordedAction[];
+}
+
+interface ZephyrReplayOptions {
+  /** Milliseconds between each action (default: 0). Ignored if realtime is true. */
+  delay?: number;
+  /** If true, uses original timestamps to space out actions. */
+  realtime?: boolean;
+}
+
+interface ZephyrReplayResult {
+  selector: string;
+  action: string;
+  result: ZephyrActResult;
+}
+
 interface ZephyrAgentAPI {
   /** Returns the enriched component schema with descriptions, actions, and examples. */
   getSchema(): Record<string, ZephyrComponentDef & { actions: string[]; description: string }>;
@@ -225,6 +259,40 @@ interface ZephyrAgentAPI {
    * @param callback - The callback to remove
    */
   unobserve(callback: (detail: ZephyrObserverDetail) => void): void;
+
+  /**
+   * Observes state changes with structured diff objects.
+   * @param callback - Called with enriched diff details
+   */
+  observeDiffs(callback: (diff: ZephyrDiffDetail) => void): void;
+
+  /**
+   * Removes a diff observer callback.
+   * @param callback - The callback to remove
+   */
+  unobserveDiffs(callback: (diff: ZephyrDiffDetail) => void): void;
+
+  /**
+   * Enables or disables headless mode.
+   * @param enabled - true to enable, false to disable, omit to toggle
+   * @returns Current headless state
+   */
+  headless(enabled?: boolean): boolean;
+
+  /**
+   * Starts recording agent actions.
+   * @returns Recording handle with stop() method
+   * @throws If a recording is already in progress
+   */
+  record(): ZephyrRecordingHandle;
+
+  /**
+   * Replays a recorded sequence of agent actions.
+   * @param recording - Array of recorded actions
+   * @param options - Replay options
+   * @returns Resolves with results of each action
+   */
+  replay(recording: ZephyrRecordedAction[], options?: ZephyrReplayOptions): Promise<ZephyrReplayResult[]>;
 
   /** Generates a markdown prompt describing all Zephyr components on the page. */
   getPrompt(): string;

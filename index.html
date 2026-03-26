@@ -235,6 +235,8 @@
         <button data-action="agent-describe">Zephyr.agent.describe('z-modal')</button>
         <button data-action="agent-act-modal">Zephyr.agent.act('#demo-modal', 'open')</button>
         <button data-action="agent-get-prompt">Zephyr.agent.getPrompt()</button>
+        <button data-action="agent-headless">Zephyr.agent.headless()</button>
+        <button data-action="agent-record">Record &amp; Replay Demo</button>
       </div>
       <pre id="agent-output" style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 0.375rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--silver);"></pre>
     </div>
@@ -318,6 +320,26 @@
         case 'agent-get-prompt':
           document.getElementById('agent-output').textContent = Zephyr.agent.getPrompt();
           break;
+        case 'agent-headless': {
+          const state = Zephyr.agent.headless();
+          document.getElementById('agent-output').textContent = `→ Zephyr.agent.headless()\n✓ Headless mode: ${state ? 'ON' : 'OFF'}\n\nAll transitions and animations are ${state ? 'disabled' : 'enabled'}.`;
+          break;
+        }
+        case 'agent-record': {
+          const out = document.getElementById('agent-output');
+          out.textContent = '⏺ Recording... performing 3 actions...';
+          const rec = Zephyr.agent.record();
+          Zephyr.agent.act('#demo-modal', 'open');
+          setTimeout(() => {
+            Zephyr.agent.act('#demo-modal', 'close');
+            const actions = rec.stop();
+            out.textContent = `⏺ Recorded ${actions.length} actions:\n${JSON.stringify(actions, null, 2)}\n\n▶ Replaying with 500ms delay...`;
+            Zephyr.agent.replay(actions, { delay: 500 }).then((results) => {
+              out.textContent += `\n\n✓ Replay complete:\n${JSON.stringify(results, null, 2)}`;
+            });
+          }, 300);
+          break;
+        }
         case 'agent-widget-open':
           document.getElementById('demo-agent').open();
           break;

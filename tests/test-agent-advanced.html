@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Agent Advanced (Headless, Diffs, Recording)</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixtures -->
+  <z-accordion id="test-accordion">
+    <z-accordion-item>
+      <button slot="trigger">Item 1</button>
+      <div slot="content"><div>Content 1</div></div>
+    </z-accordion-item>
+  </z-accordion>
+
+  <z-modal id="test-modal">
+    <h2>Test Modal</h2>
+    <p>Modal content</p>
+  </z-modal>
+
+  <z-select id="test-select" name="color">
+    <button slot="trigger">Choose</button>
+    <div slot="options">
+      <div data-value="red">Red</div>
+      <div data-value="blue">Blue</div>
+    </div>
+  </z-select>
+
+  <z-dropdown id="test-dropdown">
+    <button slot="trigger">Menu</button>
+    <div slot="content"><a href="#">Link 1</a></div>
+  </z-dropdown>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Agent Advanced Features');
+
+    // =========================================================================
+    // 13.6 Headless Mode
+    // =========================================================================
+
+    t.test('headless() enables headless mode', async (assert) => {
+      const result = Zephyr.agent.headless(true);
+      assert.equal(result, true, 'should return true');
+      assert.ok(document.documentElement.hasAttribute('data-z-headless'), 'should set data-z-headless on html');
+      Zephyr.agent.headless(false);
+    });
+
+    t.test('headless() disables headless mode', async (assert) => {
+      Zephyr.agent.headless(true);
+      const result = Zephyr.agent.headless(false);
+      assert.equal(result, false, 'should return false');
+      assert.ok(!document.documentElement.hasAttribute('data-z-headless'), 'should remove data-z-headless');
+    });
+
+    t.test('headless() toggles when called without argument', async (assert) => {
+      Zephyr.agent.headless(false); // ensure off
+      const first = Zephyr.agent.headless();
+      assert.equal(first, true, 'should toggle to true');
+      const second = Zephyr.agent.headless();
+      assert.equal(second, false, 'should toggle back to false');
+    });
+
+    t.test('headless mode suppresses transitions via CSS', async (assert) => {
+      Zephyr.agent.headless(true);
+      const el = document.getElementById('test-dropdown');
+      const style = getComputedStyle(el.querySelector('[slot="content"]'));
+      // With data-z-headless, transition-duration should be 0s
+      assert.ok(
+        style.transitionDuration === '0s' || style.transitionDuration === '0ms',
+        'transition-duration should be 0s in headless mode'
+      );
+      Zephyr.agent.headless(false);
+    });
+
+    // =========================================================================
+    // 13.5 Observable State Diffs
+    // =========================================================================
+
+    t.test('observeDiffs() receives structured diffs', async (assert) => {
+      const diffs = [];
+      const cb = (diff) => diffs.push(diff);
+      Zephyr.agent.observeDiffs(cb);
+
+      // Trigger a state change
+      Zephyr.agent.act('#test-dropdown', 'open');
+
+      // MutationObserver is async, wait a tick
+      await new Promise(r => setTimeout(r, 50));
+
+      assert.ok(diffs.length > 0, 'should receive at least one diff');
+      const diff = diffs[0];
+      assert.equal(diff.component, 'z-dropdown', 'component should be z-dropdown');
+      assert.equal(diff.id, 'test-dropdown', 'id should be test-dropdown');
+      assert.equal(diff.property, 'data-open', 'property should be data-open');
+      assert.ok(typeof diff.timestamp === 'number', 'timestamp should be a number');
+      assert.ok(typeof diff.from !== 'undefined', 'from should be defined');
+      assert.ok(typeof diff.to !== 'undefined', 'to should be defined');
+
+      Zephyr.agent.unobserveDiffs(cb);
+      Zephyr.agent.act('#test-dropdown', 'close');
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    t.test('unobserveDiffs() stops receiving diffs', async (assert) => {
+      const diffs = [];
+      const cb = (diff) => diffs.push(diff);
+      Zephyr.agent.observeDiffs(cb);
+      Zephyr.agent.unobserveDiffs(cb);
+
+      Zephyr.agent.act('#test-dropdown', 'open');
+      await new Promise(r => setTimeout(r, 50));
+
+      assert.equal(diffs.length, 0, 'should not receive diffs after unobserve');
+      Zephyr.agent.act('#test-dropdown', 'close');
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    t.test('observeDiffs() works alongside observe()', async (assert) => {
+      const diffs = [];
+      const obs = [];
+      const diffCb = (d) => diffs.push(d);
+      const obsCb = (d) => obs.push(d);
+
+      Zephyr.agent.observe(obsCb);
+      Zephyr.agent.observeDiffs(diffCb);
+
+      Zephyr.agent.act('#test-dropdown', 'open');
+      await new Promise(r => setTimeout(r, 50));
+
+      assert.ok(diffs.length > 0, 'should receive diffs');
+      assert.ok(obs.length > 0, 'should receive observe callbacks');
+
+      Zephyr.agent.unobserve(obsCb);
+      Zephyr.agent.unobserveDiffs(diffCb);
+      Zephyr.agent.act('#test-dropdown', 'close');
+      await new Promise(r => setTimeout(r, 50));
+    });
+
+    // =========================================================================
+    // 13.3 Action Recordings
+    // =========================================================================
+
+    t.test('record() returns handle with stop()', async (assert) => {
+      const handle = Zephyr.agent.record();
+      assert.ok(handle, 'should return a handle');
+      assert.ok(typeof handle.stop === 'function', 'handle should have stop()');
+      handle.stop();
+    });
+
+    t.test('record() captures act() calls', async (assert) => {
+      const handle = Zephyr.agent.record();
+
+      Zephyr.agent.act('#test-dropdown', 'open');
+      Zephyr.agent.act('#test-dropdown', 'close');
+
+      const actions = handle.stop();
+      assert.equal(actions.length, 2, 'should capture 2 actions');
+      assert.equal(actions[0].selector, '#test-dropdown', 'first action selector');
+      assert.equal(actions[0].action, 'open', 'first action name');
+      assert.equal(actions[1].action, 'close', 'second action name');
+      assert.ok(typeof actions[0].timestamp === 'number', 'should have timestamp');
+    });
+
+    t.test('record() throws if already recording', async (assert) => {
+      const handle = Zephyr.agent.record();
+      let threw = false;
+      try {
+        Zephyr.agent.record();
+      } catch (e) {
+        threw = true;
+      }
+      assert.ok(threw, 'should throw when recording is already active');
+      handle.stop();
+    });
+
+    t.test('stop() clears recording state', async (assert) => {
+      const handle = Zephyr.agent.record();
+      handle.stop();
+
+      // Should be able to start a new recording
+      const handle2 = Zephyr.agent.record();
+      assert.ok(handle2, 'should allow new recording after stop');
+      handle2.stop();
+    });
+
+    t.test('actions are not captured after stop()', async (assert) => {
+      const handle = Zephyr.agent.record();
+      Zephyr.agent.act('#test-dropdown', 'open');
+      const actions = handle.stop();
+
+      Zephyr.agent.act('#test-dropdown', 'close');
+
+      assert.equal(actions.length, 1, 'should only have 1 action (before stop)');
+    });
+
+    t.test('replay() executes recorded actions', async (assert) => {
+      // Record some actions
+      const handle = Zephyr.agent.record();
+      Zephyr.agent.act('#test-dropdown', 'open');
+      Zephyr.agent.act('#test-dropdown', 'close');
+      const actions = handle.stop();
+
+      // Replay
+      const results = await Zephyr.agent.replay(actions);
+      assert.equal(results.length, 2, 'should return 2 results');
+      assert.equal(results[0].result.success, true, 'first replay should succeed');
+      assert.equal(results[1].result.success, true, 'second replay should succeed');
+    });
+
+    t.test('replay() with delay spaces out actions', async (assert) => {
+      const actions = [
+        { selector: '#test-dropdown', action: 'open', params: null, timestamp: 1000 },
+        { selector: '#test-dropdown', action: 'close', params: null, timestamp: 1100 },
+      ];
+
+      const start = Date.now();
+      await Zephyr.agent.replay(actions, { delay: 100 });
+      const elapsed = Date.now() - start;
+
+      assert.ok(elapsed >= 80, 'should take at least ~100ms with delay');
+    });
+
+    t.test('replay() with realtime uses original timestamps', async (assert) => {
+      const actions = [
+        { selector: '#test-dropdown', action: 'open', params: null, timestamp: 1000 },
+        { selector: '#test-dropdown', action: 'close', params: null, timestamp: 1200 },
+      ];
+
+      const start = Date.now();
+      await Zephyr.agent.replay(actions, { realtime: true });
+      const elapsed = Date.now() - start;
+
+      assert.ok(elapsed >= 150, 'should take at least ~200ms with realtime');
+    });
+
+    t.test('replay() with empty recording resolves immediately', async (assert) => {
+      const results = await Zephyr.agent.replay([]);
+      assert.equal(results.length, 0, 'should return empty results');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

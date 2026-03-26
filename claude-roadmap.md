@@ -302,6 +302,9 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **12.2** Build script — `build.js` using esbuild, produces minified JS (50-66% smaller) and CSS (31% smaller)
 - [x] **12.3** CDN links — jsdelivr and unpkg `<script>`/`<link>` tags added to README
 - [x] **12.4** TypeScript declarations — `zephyr-framework.d.ts` with full types for all components, `Zephyr` global, and agent API
+- [x] **13.6** Headless mode — `Zephyr.agent.headless()` toggles `[data-z-headless]`, CSS disables all transitions/animations
+- [x] **13.5** Agent-observable state diffs — `observeDiffs()`/`unobserveDiffs()` emit `{ component, id, property, from, to, timestamp }`
+- [x] **13.3** Agent action recordings — `record()` captures `act()` calls, `replay()` replays with delay/realtime options
 
 ---
 

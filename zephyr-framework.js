@@ -1280,6 +1280,10 @@ window.Zephyr = {
     /** @private Observer state. */
     _observer: null,
     _callbacks: null,
+    _diffCallbacks: null,
+
+    /** @private Recording state. */
+    _recording: null,
 
     /** @private Action mappings per component tag. */
     _actions: {
@@ -1558,6 +1562,11 @@ window.Zephyr = {
       const fn = componentActions[action];
       if (!fn) return { success: false, error: `Unknown action '${action}' for ${tag}. Available: ${Object.keys(componentActions).join(', ')}` };
 
+      // Capture call if recording is active
+      if (Zephyr.agent._recording) {
+        Zephyr.agent._recording.push({ selector, action, params: params || null, timestamp: Date.now() });
+      }
+
       fn(el, params);
       return { success: true };
     },
@@ -1582,6 +1591,18 @@ window.Zephyr = {
               newValue: m.target.getAttribute(m.attributeName)
             };
             Zephyr.agent._callbacks.forEach(cb => cb(detail));
+            // Fire diff callbacks with enriched structure
+            if (Zephyr.agent._diffCallbacks && Zephyr.agent._diffCallbacks.size) {
+              const diff = {
+                component: m.target.tagName.toLowerCase(),
+                id: m.target.id || null,
+                property: m.attributeName,
+                from: m.oldValue,
+                to: m.target.getAttribute(m.attributeName),
+                timestamp: Date.now()
+              };
+              Zephyr.agent._diffCallbacks.forEach(cb => cb(diff));
+            }
           });
         });
         Zephyr.agent._observer.observe(document.body, {
@@ -1601,7 +1622,8 @@ window.Zephyr = {
     unobserve(callback) {
       if (Zephyr.agent._callbacks) {
         Zephyr.agent._callbacks.delete(callback);
-        if (Zephyr.agent._callbacks.size === 0 && Zephyr.agent._observer) {
+        const diffCount = Zephyr.agent._diffCallbacks ? Zephyr.agent._diffCallbacks.size : 0;
+        if (Zephyr.agent._callbacks.size === 0 && diffCount === 0 && Zephyr.agent._observer) {
           Zephyr.agent._observer.disconnect();
           Zephyr.agent._observer = null;
         }
@@ -1631,6 +1653,157 @@ window.Zephyr = {
       });
 
       return prompt;
+    },
+
+    /**
+     * Observes state changes with structured diff objects.
+     * Emits enriched diffs with component name, id, timestamps.
+     * Reuses the same MutationObserver as observe().
+     * @param {function({component: string, id: string|null, property: string, from: string|null, to: string|null, timestamp: number}): void} callback
+     */
+    observeDiffs(callback) {
+      if (!Zephyr.agent._diffCallbacks) {
+        Zephyr.agent._diffCallbacks = new Set();
+      }
+      // Ensure the shared MutationObserver is running (reuse observe's setup)
+      if (!Zephyr.agent._observer) {
+        if (!Zephyr.agent._callbacks) {
+          Zephyr.agent._callbacks = new Set();
+        }
+        Zephyr.agent._observer = new MutationObserver((mutations) => {
+          mutations.forEach(m => {
+            const detail = {
+              element: m.target,
+              tag: m.target.tagName.toLowerCase(),
+              attribute: m.attributeName,
+              oldValue: m.oldValue,
+              newValue: m.target.getAttribute(m.attributeName)
+            };
+            Zephyr.agent._callbacks.forEach(cb => cb(detail));
+            if (Zephyr.agent._diffCallbacks && Zephyr.agent._diffCallbacks.size) {
+              const diff = {
+                component: m.target.tagName.toLowerCase(),
+                id: m.target.id || null,
+                property: m.attributeName,
+                from: m.oldValue,
+                to: m.target.getAttribute(m.attributeName),
+                timestamp: Date.now()
+              };
+              Zephyr.agent._diffCallbacks.forEach(cb => cb(diff));
+            }
+          });
+        });
+        Zephyr.agent._observer.observe(document.body, {
+          subtree: true,
+          attributes: true,
+          attributeOldValue: true,
+          attributeFilter: Zephyr.agent._stateAttrs
+        });
+      }
+      Zephyr.agent._diffCallbacks.add(callback);
+    },
+
+    /**
+     * Removes a diff observer callback. Disconnects the MutationObserver when no callbacks remain.
+     * @param {function} callback - The callback to remove
+     */
+    unobserveDiffs(callback) {
+      if (Zephyr.agent._diffCallbacks) {
+        Zephyr.agent._diffCallbacks.delete(callback);
+        const obsCount = Zephyr.agent._callbacks ? Zephyr.agent._callbacks.size : 0;
+        if (Zephyr.agent._diffCallbacks.size === 0 && obsCount === 0 && Zephyr.agent._observer) {
+          Zephyr.agent._observer.disconnect();
+          Zephyr.agent._observer = null;
+        }
+      }
+    },
+
+    /**
+     * Enables or disables headless mode. Suppresses all CSS transitions and
+     * animations for faster agent-driven operations. Components still update
+     * state normally, just without visual delay.
+     * @param {boolean} [enabled] - true to enable, false to disable. Omit to toggle.
+     * @returns {boolean} Current headless state after the call
+     */
+    headless(enabled) {
+      const el = document.documentElement;
+      if (typeof enabled === 'undefined') {
+        enabled = !el.hasAttribute('data-z-headless');
+      }
+      if (enabled) {
+        el.setAttribute('data-z-headless', '');
+      } else {
+        el.removeAttribute('data-z-headless');
+      }
+      return el.hasAttribute('data-z-headless');
+    },
+
+    /**
+     * Starts recording agent actions. Every act() call is captured with
+     * selector, action, params, and timestamp. Only one recording can be
+     * active at a time.
+     * @returns {{stop: function(): Array<{selector: string, action: string, params: Object|null, timestamp: number}>}} Recording handle with stop() method
+     * @throws {Error} If a recording is already in progress
+     */
+    record() {
+      if (Zephyr.agent._recording) {
+        throw new Error('A recording is already in progress. Call stop() on the current recording first.');
+      }
+      Zephyr.agent._recording = [];
+      const recording = Zephyr.agent._recording;
+      return {
+        /** Stops recording and returns the captured actions. */
+        stop() {
+          Zephyr.agent._recording = null;
+          return recording;
+        }
+      };
+    },
+
+    /**
+     * Replays a recorded sequence of agent actions.
+     * @param {Array<{selector: string, action: string, params: Object|null, timestamp: number}>} recording - Array of recorded actions
+     * @param {Object} [options] - Replay options
+     * @param {number} [options.delay=0] - Milliseconds between each action (ignored if realtime is true)
+     * @param {boolean} [options.realtime=false] - If true, uses original timestamps to space out actions
+     * @returns {Promise<Array<{selector: string, action: string, result: Object}>>} Resolves with results of each action
+     */
+    replay(recording, options) {
+      const delay = (options && options.delay) || 0;
+      const realtime = (options && options.realtime) || false;
+
+      return new Promise((resolve) => {
+        const results = [];
+        let i = 0;
+
+        function next() {
+          if (i >= recording.length) {
+            resolve(results);
+            return;
+          }
+          const entry = recording[i];
+          const result = Zephyr.agent.act(entry.selector, entry.action, entry.params);
+          results.push({ selector: entry.selector, action: entry.action, result });
+          i++;
+
+          if (i < recording.length) {
+            let wait = delay;
+            if (realtime && recording[i]) {
+              wait = recording[i].timestamp - entry.timestamp;
+              if (wait < 0) wait = 0;
+            }
+            if (wait > 0) {
+              setTimeout(next, wait);
+            } else {
+              next();
+            }
+          } else {
+            resolve(results);
+          }
+        }
+
+        next();
+      });
     },
 
     /**

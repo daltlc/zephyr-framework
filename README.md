@@ -338,6 +338,26 @@ Zephyr.agent.getPrompt()
 
 // Add data-z-actions attributes for DOM-level discovery
 Zephyr.agent.annotate()
+
+// Headless mode — disable transitions for fast agent operations
+Zephyr.agent.headless(true)   // enable
+Zephyr.agent.headless(false)  // disable
+
+// Structured state diffs — richer than observe()
+Zephyr.agent.observeDiffs((diff) => {
+  console.log(diff.component, diff.property, diff.from, '→', diff.to);
+  // { component: 'z-modal', id: 'settings', property: 'data-open', from: null, to: '', timestamp: 1711... }
+});
+
+// Record and replay agent actions
+const rec = Zephyr.agent.record();
+Zephyr.agent.act('#modal', 'open');
+Zephyr.agent.act('#select', 'select', { value: 'red' });
+const actions = rec.stop();
+// Replay instantly, or with delays
+await Zephyr.agent.replay(actions);
+await Zephyr.agent.replay(actions, { delay: 500 });
+await Zephyr.agent.replay(actions, { realtime: true });
 ```
 
 A full machine-readable schema is available in `zephyr-schema.json`, and an LLM system prompt template in `zephyr-prompt.md`.

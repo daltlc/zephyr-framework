@@ -8,6 +8,12 @@
 
 @layer reset, components, utilities;
 
+/* Agent headless mode — disables all transitions/animations for fast agent operations */
+[data-z-headless] * {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+}
+
 /* Theming tokens — override these to customize all components */
 :root {
   --z-transition-duration: 0.3s;

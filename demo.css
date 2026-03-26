@@ -61,6 +61,78 @@ h1 {
   text-transform: uppercase;
 }
 
+/* Hero section */
+.hero-tagline {
+  color: var(--silver);
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-top: 1.25rem;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-tagline strong {
+  color: var(--accent-soft);
+}
+
+.hero-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.hero-link {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.hero-link:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+/* Section headings */
+.agent-showcase {
+  max-width: 1400px;
+  margin: 0 auto 1.5rem;
+  text-align: center;
+}
+
+.section-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--accent-soft);
+  margin: 0 0 0.5rem;
+}
+
+.section-desc {
+  color: var(--silver);
+  font-size: 0.9rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Agent feature cards — accent border */
+.agent-card {
+  border-color: rgba(255, 107, 157, 0.3);
+}
+
+.agent-card:hover {
+  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.25);
+}
+
 .demo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));

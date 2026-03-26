@@ -10,8 +10,81 @@
 <body>
   <header>
     <h1>Zephyr</h1>
-    <div class="subtitle">Zero-JavaScript Framework</div>
+    <div class="subtitle">The First UI Framework Built for AI Agents</div>
+    <p class="hero-tagline">14 components. Zero runtime JS. Built-in <strong>MCP server</strong>, <strong>Agent API</strong>, and <strong>A2UI catalog</strong>.<br>Agents don't parse your HTML — they call typed tools.</p>
+    <div class="hero-links">
+      <a href="https://www.npmjs.com/package/zephyr-framework" class="hero-link">npm</a>
+      <a href="https://github.com/daltlc/zephyr-framework" class="hero-link">GitHub</a>
+      <a href="https://zephyr-agent-demo.vercel.app" class="hero-link">Live App Demo</a>
+    </div>
   </header>
+
+  <!-- Agent Features — Front and Center -->
+  <div class="agent-showcase">
+    <h2 class="section-heading">Agent-Native Features</h2>
+    <p class="section-desc">No other UI framework gives agents read-write control of live UI. These aren't doc lookups — agents control your running app.</p>
+  </div>
+
+  <div class="demo-grid">
+    <!-- Agent API Demo — FIRST -->
+    <div class="demo-card agent-card">
+      <h2>Agent API</h2>
+      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
+        Structured interface for AI agents to discover, inspect, and control every component on the page.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <button data-action="agent-get-state">getState() — snapshot all components</button>
+        <button data-action="agent-describe">describe() — deep inspect one</button>
+        <button data-action="agent-act-modal">act() — open the modal</button>
+        <button data-action="agent-get-prompt">getPrompt() — LLM context</button>
+        <button data-action="agent-headless">headless() — toggle fast mode</button>
+        <button data-action="agent-record">record() / replay() demo</button>
+      </div>
+      <pre id="agent-output" style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 0.375rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--silver);"></pre>
+    </div>
+
+    <!-- Agent Chat Widget Demo — SECOND -->
+    <div class="demo-card agent-card">
+      <h2>Agent Chat Widget</h2>
+      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
+        Drop <code>&lt;z-agent&gt;</code> into any page. Visitors type natural language, the agent controls your UI.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <button data-action="agent-widget-open">Open Chat Widget</button>
+        <button data-action="agent-widget-close">Close Chat Widget</button>
+      </div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.75rem;">
+        Works with Anthropic and OpenAI. Direct mode for demos, proxy mode for production.
+        Set <code>data-api-key</code> or <code>data-endpoint</code> on the tag.
+      </p>
+    </div>
+
+    <!-- MCP + A2UI Info Card -->
+    <div class="demo-card agent-card">
+      <h2>MCP Server + A2UI</h2>
+      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
+        Connect Claude Desktop, Cursor, or any MCP host. 6 typed tools for full UI control.
+        A2UI catalog makes components discoverable across Google's agent ecosystem.
+      </p>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--silver); background: rgba(0,0,0,0.3); border-radius: 0.375rem; padding: 0.75rem; line-height: 1.6;">
+        <div><span style="color: var(--accent);">zephyr_act</span>('#modal', 'open')</div>
+        <div><span style="color: var(--accent);">zephyr_get_state</span>() → JSON snapshot</div>
+        <div><span style="color: var(--accent);">zephyr_describe</span>('#select') → full spec</div>
+        <div><span style="color: var(--accent);">zephyr_set_state</span>('#tab', {active: true})</div>
+        <div><span style="color: var(--accent);">zephyr_get_schema</span>() → all 14 components</div>
+        <div><span style="color: var(--accent);">zephyr_get_prompt</span>() → LLM context</div>
+      </div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.75rem;">
+        <code>npx create-zephyr-framework my-app</code> — up and running in 30 seconds.
+      </p>
+    </div>
+  </div>
+
+  <!-- Components Section -->
+  <div class="agent-showcase" style="margin-top: 3rem;">
+    <h2 class="section-heading">Components</h2>
+    <p class="section-desc">14 web components. CSS-driven interactions. No runtime JS after page load.</p>
+  </div>
 
   <div class="demo-grid">
     <!-- Accordion Demo -->
@@ -221,40 +294,6 @@
       <p style="margin-top: 1rem; color: var(--silver); font-size: 0.875rem;">
         Drag-and-drop zone with progress bars.
         Uses native <code>&lt;input type="file"&gt;</code> under the hood.
-      </p>
-    </div>
-
-    <!-- Agent API Demo -->
-    <div class="demo-card">
-      <h2>Agent API</h2>
-      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
-        Built-in API for AI agents and LLMs to discover and control components.
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-        <button data-action="agent-get-state">Zephyr.agent.getState()</button>
-        <button data-action="agent-describe">Zephyr.agent.describe('z-modal')</button>
-        <button data-action="agent-act-modal">Zephyr.agent.act('#demo-modal', 'open')</button>
-        <button data-action="agent-get-prompt">Zephyr.agent.getPrompt()</button>
-        <button data-action="agent-headless">Zephyr.agent.headless()</button>
-        <button data-action="agent-record">Record &amp; Replay Demo</button>
-      </div>
-      <pre id="agent-output" style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 0.375rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--silver);"></pre>
-    </div>
-
-    <!-- Agent Chat Widget Demo -->
-    <div class="demo-card">
-      <h2>Agent Chat Widget</h2>
-      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
-        The <code>&lt;z-agent&gt;</code> widget lets visitors control components via natural language.
-        Add an API key to the element below to try it live.
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-        <button data-action="agent-widget-open">Open Chat Widget</button>
-        <button data-action="agent-widget-close">Close Chat Widget</button>
-      </div>
-      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.75rem;">
-        Set <code>data-api-key</code> or <code>data-endpoint</code> on the &lt;z-agent&gt;
-        tag to enable the AI backend. Without credentials, the widget UI works but can't send messages.
       </p>
     </div>
 

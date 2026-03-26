@@ -359,13 +359,28 @@
   }
 
   html:has([data-theme="dark"]) z-select [slot="options"],
-  html:has([data-theme="dark"]) z-dropdown [slot="content"] {
+  html:has([data-theme="dark"]) z-dropdown [slot="content"],
+  html:has([data-theme="dark"]) z-combobox [slot="listbox"] {
     background: rgb(17 24 39);
     color: white;
   }
 
-  html:has([data-theme="dark"]) z-select [slot="options"] [data-value]:hover {
+  html:has([data-theme="dark"]) z-select [slot="options"] [data-value]:hover,
+  html:has([data-theme="dark"]) z-combobox [slot="listbox"] [data-value]:hover,
+  html:has([data-theme="dark"]) z-combobox [slot="listbox"] [data-value][data-highlighted] {
     background-color: rgb(31 41 55);
+  }
+
+  html:has([data-theme="dark"]) z-combobox input {
+    background: rgb(17 24 39);
+    color: white;
+    border-color: rgb(55 65 81);
+  }
+
+  html:has([data-theme="dark"]) z-select [slot="trigger"] {
+    background: rgb(17 24 39);
+    color: white;
+    border-color: rgb(55 65 81);
   }
 
   /* ----- Loading State (via :has()) ----- */

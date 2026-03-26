@@ -32,7 +32,7 @@
  *   Zephyr.agent API (in browser context)
  *
  * Usage (standalone — when installed via npm):
- *   1. npx create-zephyr-app my-app && cd my-app
+ *   1. npx create-zephyr-framework my-app && cd my-app
  *   2. npm start
  *   3. Open http://localhost:3456 in your browser
  *   4. Add to Claude Desktop config (see README.md)

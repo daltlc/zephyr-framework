@@ -1,9 +1,9 @@
 {
-  "name": "create-zephyr-app",
+  "name": "create-zephyr-framework",
   "version": "0.1.0",
-  "description": "Scaffold a new Zephyr Framework project with MCP server integration. The fastest way to build agent-controlled UIs. Run with: npx create-zephyr-app my-app",
+  "description": "Scaffold a new Zephyr Framework project with MCP server integration. The fastest way to build agent-controlled UIs. Run with: npx create-zephyr-framework my-app",
   "bin": {
-    "create-zephyr-app": "./index.js"
+    "create-zephyr-framework": "./index.js"
   },
   "files": [
     "index.js",

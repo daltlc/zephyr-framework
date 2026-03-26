@@ -51,10 +51,10 @@ The server is a single Node.js process with three responsibilities:
 
 ## Setup
 
-**Option A: Via `create-zephyr-app` (recommended)**
+**Option A: Via `create-zephyr-framework` (recommended)**
 
 ```bash
-npx create-zephyr-app my-app
+npx create-zephyr-framework my-app
 cd my-app
 npm start
 ```
@@ -64,7 +64,7 @@ This scaffolds a project with the framework, MCP server, and a starter page — 
 **Option B: Add to an existing project**
 
 ```bash
-npm install @zephyr-framework/mcp
+npm install zephyr-framework-mcp
 npx zephyr-mcp
 ```
 
@@ -83,7 +83,7 @@ node server.js
 ### 1. Start the server
 
 ```bash
-npm start        # if using create-zephyr-app
+npm start        # if using create-zephyr-framework
 npx zephyr-mcp   # if installed standalone
 node server.js   # if running from the repo
 ```

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
 /**
- * create-zephyr-app
+ * create-zephyr-framework
  *
  * CLI scaffolder for new Zephyr Framework projects. Creates a ready-to-run
  * project with the framework, MCP server, and a starter page — all wired up.
  *
  * Usage:
- *   npx create-zephyr-app my-app    — creates ./my-app/ with everything set up
- *   npx create-zephyr-app .         — scaffolds in the current directory
- *   npx create-zephyr-app           — prints usage instructions
+ *   npx create-zephyr-framework my-app    — creates ./my-app/ with everything set up
+ *   npx create-zephyr-framework .         — scaffolds in the current directory
+ *   npx create-zephyr-framework           — prints usage instructions
  *
  * What it creates:
  *   my-app/
- *   ├── package.json       — deps: zephyr-framework, @zephyr-framework/mcp
+ *   ├── package.json       — deps: zephyr-framework, zephyr-mcp
  *   ├── index.html          — starter page with example components
  *   └── node_modules/       — installed dependencies
  *
@@ -53,14 +53,14 @@ const color = {
 // ---------------------------------------------------------------------------
 
 const USAGE = `
-${color.bold('create-zephyr-app')} — Scaffold a new Zephyr Framework project
+${color.bold('create-zephyr-framework')} — Scaffold a new Zephyr Framework project
 
 ${color.bold('Usage:')}
-  npx create-zephyr-app ${color.cyan('<project-name>')}
-  npx create-zephyr-app ${color.cyan('.')}  ${color.dim('(scaffold in current directory)')}
+  npx create-zephyr-framework ${color.cyan('<project-name>')}
+  npx create-zephyr-framework ${color.cyan('.')}  ${color.dim('(scaffold in current directory)')}
 
 ${color.bold('Example:')}
-  npx create-zephyr-app my-dashboard
+  npx create-zephyr-framework my-dashboard
   cd my-dashboard
   npm start
 
@@ -91,7 +91,7 @@ function isValidName(name) {
  * Generate the package.json content for a new Zephyr project.
  * The generated project depends on:
  *   - zephyr-framework (core CSS components)
- *   - @zephyr-framework/mcp (MCP server for agent integration)
+ *   - zephyr-mcp (MCP server for agent integration)
  *
  * The "start" script runs the MCP server binary, which serves the project
  * files and starts the WebSocket bridge for Claude Desktop.
@@ -106,14 +106,14 @@ function generatePackageJson(name) {
     private: true,
     description: 'A Zephyr Framework app — agent-native UI with MCP integration',
     scripts: {
-      // "zephyr-mcp" is the bin command from @zephyr-framework/mcp
+      // "zephyr-mcp" is the bin command from zephyr-framework-mcp
       // It starts the HTTP server (serves index.html + framework files)
       // and the MCP stdio transport (for Claude Desktop / Cursor)
       start: 'zephyr-mcp',
     },
     dependencies: {
-      'zephyr-framework': '^0.1.0',
-      '@zephyr-framework/mcp': '^0.1.0',
+      'zephyr-framework': '^0.2.0',
+      'zephyr-framework-mcp': '^0.1.0',
     },
   };
 
@@ -232,7 +232,7 @@ ${color.bold('Connect Claude Desktop:')}
  */
 function main() {
   // Get the project name from the first CLI argument
-  // e.g., "npx create-zephyr-app my-app" → process.argv = ['node', 'index.js', 'my-app']
+  // e.g., "npx create-zephyr-framework my-app" → process.argv = ['node', 'index.js', 'my-app']
   const projectName = process.argv[2];
 
   // No argument or help flag — show usage and exit
@@ -305,7 +305,7 @@ function main() {
   console.log(`  ${color.green('+')} index.html`);
   copyTemplate(projectDir);
 
-  // Step 3: Install npm dependencies (zephyr-framework + @zephyr-framework/mcp)
+  // Step 3: Install npm dependencies (zephyr-framework + zephyr-mcp)
   installDependencies(projectDir);
 
   // Step 4: Print success message with next steps

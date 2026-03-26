@@ -17,7 +17,7 @@
 **30 seconds to a working app with AI agent support:**
 
 ```bash
-npx create-zephyr-app my-app
+npx create-zephyr-framework my-app
 cd my-app
 npm start
 ```
@@ -723,6 +723,16 @@ Graceful degradation for older browsers — components work without animations.
 - **No layout thrashing** — CSS transitions don't trigger reflow
 - **Shared event delegation** — single document-level click-outside handler
 - **Cleanup on disconnect** — all intervals and listeners cleaned up via `disconnectedCallback`
+
+## npm Packages
+
+| Package | npm | Description |
+|---------|-----|-------------|
+| [`zephyr-framework`](https://www.npmjs.com/package/zephyr-framework) | `npm install zephyr-framework` | Core framework — 14 web components, CSS, agent API, schema, prompt template, A2UI catalog |
+| [`zephyr-framework-mcp`](https://www.npmjs.com/package/zephyr-framework-mcp) | `npm install zephyr-framework-mcp` | MCP server — bridges Claude Desktop, Cursor, and any MCP host to Zephyr components in the browser |
+| [`create-zephyr-framework`](https://www.npmjs.com/package/create-zephyr-framework) | `npx create-zephyr-framework my-app` | CLI scaffolder — creates a ready-to-run project with framework, MCP server, and starter page |
+
+**Source:** All three packages live in the [zephyr-framework](https://github.com/daltlc/zephyr-framework) monorepo (`zephyr-mcp/` and `create-zephyr-app/` subdirectories).
 
 ## License
 

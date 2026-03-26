@@ -12,9 +12,9 @@
 
 ---
 
-## Install
+## Quick start
 
-The fastest way to get started — scaffolds a project with the framework, MCP server, and a starter page:
+**30 seconds to a working app with AI agent support:**
 
 ```bash
 npx create-zephyr-app my-app
@@ -22,36 +22,58 @@ cd my-app
 npm start
 ```
 
-Open `http://localhost:3456` in your browser. Connect Claude Desktop. Start talking to your UI.
+Open `http://localhost:3456`. You'll see a page with working components — accordion, tabs, modal, select, dropdown. All CSS-driven, zero runtime JS.
 
-Or add to an existing project:
+**That's it.** You're running. Edit `index.html` to build your app.
 
-```bash
-npm install zephyr-framework
+### Want AI agents to control the page?
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "zephyr": {
+      "command": "npx",
+      "args": ["zephyr-mcp"],
+      "env": { "ZEPHYR_ROOT": "/path/to/my-app" }
+    }
+  }
+}
 ```
 
-This gives you `zephyr-framework.js`, `zephyr-framework.css`, the component schema, prompt template, and A2UI catalog. Drop the CSS and JS into your HTML:
+Now Claude Desktop can open your modals, switch your tabs, and read your component states — all through typed tool calls.
+
+### Want a chat widget on a live site instead?
 
 ```html
-<link rel="stylesheet" href="node_modules/zephyr-framework/zephyr-framework.css">
-<script src="node_modules/zephyr-framework/zephyr-framework.js"></script>
+<script src="zephyr-agent-widget.js"></script>
+<z-agent data-api-key="sk-ant-..." data-provider="anthropic"></z-agent>
 ```
 
-To add MCP agent support:
+Visitors type "open the settings modal" and it happens. No MCP, no localhost — works on any deployed page.
+
+### Other install options
 
 ```bash
-npm install @zephyr-framework/mcp
-npx zephyr-mcp  # starts the bridge server on localhost:3456
-```
+# Add to an existing project
+npm install zephyr-framework
 
-Or with zero install — just grab the two files:
+# Or just grab the files — no npm, no build step
+# Copy zephyr-framework.js and zephyr-framework.css into your project
+```
 
 ```html
 <link rel="stylesheet" href="zephyr-framework.css">
 <script src="zephyr-framework.js"></script>
-```
 
-No build step, no npm, no config files. Copy the files, open the HTML.
+<z-accordion>
+  <z-accordion-item>
+    <button slot="trigger">Click me</button>
+    <div slot="content"><div>It works.</div></div>
+  </z-accordion-item>
+</z-accordion>
+```
 
 ---
 

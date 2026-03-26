@@ -1,0 +1,395 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Zephyr Framework",
+  "version": "1.0.0",
+  "description": "Agent-native zero-JS web component framework. State lives in HTML data attributes, CSS drives all animations. Agents interact via Zephyr.agent API or direct attribute manipulation.",
+  "stateAttributes": {
+    "data-open": "Binary open/closed state (accordion items, select, dropdown, combobox)",
+    "data-active": "Selected/current item in a set (tabs, carousel slides)",
+    "data-visible": "Visibility toggle (toast notifications)",
+    "data-value": "Item value for selection (select options, combobox options)",
+    "data-loading": "Loading state indicator (infinite scroll)",
+    "data-done": "Completion state (infinite scroll)",
+    "data-dragover": "Drag hover state (file upload)"
+  },
+  "cssCustomProperties": {
+    "--z-transition-duration": { "default": "0.3s", "description": "Duration for all component transitions" },
+    "--z-transition-timing": { "default": "ease", "description": "Timing function for transitions" },
+    "--z-border-radius": { "default": "0.5rem", "description": "Border radius for components" },
+    "--z-border-radius-sm": { "default": "0.375rem", "description": "Smaller border radius" },
+    "--z-shadow": { "default": "0 10px 15px -3px rgb(0 0 0 / 0.1)", "description": "Default box shadow" },
+    "--z-shadow-lg": { "default": "0 25px 50px -12px rgb(0 0 0 / 0.25)", "description": "Large box shadow" },
+    "--z-z-index-dropdown": { "default": "50", "description": "Z-index for dropdown/select panels" },
+    "--z-z-index-toast": { "default": "1000", "description": "Z-index for toast notifications" },
+    "--z-backdrop-blur": { "default": "4px", "description": "Backdrop blur for modals" },
+    "--z-toast-bg": { "default": "rgb(17 24 39)", "description": "Toast background color" },
+    "--z-toast-color": { "default": "white", "description": "Toast text color" }
+  },
+  "components": {
+    "accordion": {
+      "tag": "z-accordion",
+      "description": "Collapsible accordion with CSS Grid transitions. Items expand/collapse via data-open attribute on content slots.",
+      "category": "disclosure",
+      "childTag": "z-accordion-item",
+      "slots": [
+        { "name": "trigger", "description": "Button that toggles the accordion item", "element": "button" },
+        { "name": "content", "description": "Collapsible content panel", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [],
+        "managed": [
+          { "name": "data-open", "on": "content slot", "type": "boolean", "description": "Present when item is expanded" }
+        ]
+      },
+      "events": [
+        { "name": "toggle", "bubbles": true, "detail": { "index": "number", "open": "boolean" }, "description": "Fired when an item is opened or closed" }
+      ],
+      "methods": [],
+      "aria": {
+        "trigger": { "aria-expanded": "boolean", "aria-controls": "content-id" },
+        "content": { "role": "region", "aria-labelledby": "trigger-id" }
+      },
+      "keyboard": ["Enter", "Space"],
+      "cssProperties": ["--z-transition-duration", "--z-transition-timing"],
+      "example": "<z-accordion>\n  <z-accordion-item>\n    <button slot=\"trigger\">Section 1</button>\n    <div slot=\"content\">Content here</div>\n  </z-accordion-item>\n</z-accordion>"
+    },
+    "modal": {
+      "tag": "z-modal",
+      "description": "Modal dialog wrapping native <dialog> with View Transitions. Opens programmatically via .open() method or Zephyr.agent.act().",
+      "category": "overlay",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "id", "type": "string", "description": "Required for targeting via Zephyr.modal(id) or agent API" }
+        ],
+        "managed": []
+      },
+      "events": [
+        { "name": "open", "bubbles": true, "detail": null, "description": "Fired when modal opens" },
+        { "name": "close", "bubbles": true, "detail": null, "description": "Fired when modal closes (including Escape key)" }
+      ],
+      "methods": [
+        { "name": "open", "params": [], "returns": "void", "description": "Opens the modal with View Transition" },
+        { "name": "close", "params": [], "returns": "void", "description": "Closes the modal" }
+      ],
+      "aria": {
+        "dialog": { "aria-labelledby": "auto-detected from heading" }
+      },
+      "keyboard": ["Escape"],
+      "cssProperties": ["--z-transition-duration", "--z-shadow-lg", "--z-backdrop-blur"],
+      "example": "<z-modal id=\"my-modal\">\n  <h2>Modal Title</h2>\n  <p>Modal content here.</p>\n  <button data-action=\"close-modal\" data-target=\"my-modal\">Close</button>\n</z-modal>"
+    },
+    "tabs": {
+      "tag": "z-tabs",
+      "description": "Tab panel component with View Transitions and keyboard navigation. Tabs activate via data-active attribute.",
+      "category": "navigation",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-tab", "on": "tab buttons", "type": "string", "description": "Tab identifier matching a panel" },
+          { "name": "data-tab-panel", "on": "panel elements", "type": "string", "description": "Panel identifier matching a tab" }
+        ],
+        "managed": [
+          { "name": "data-active", "on": "active tab and panel", "type": "boolean", "description": "Present on currently active tab and its panel" }
+        ]
+      },
+      "events": [],
+      "methods": [],
+      "aria": {
+        "tablist": { "role": "tablist" },
+        "tab": { "role": "tab", "aria-selected": "boolean", "aria-controls": "panel-id", "tabindex": "0|-1" },
+        "panel": { "role": "tabpanel", "aria-labelledby": "tab-id" }
+      },
+      "keyboard": ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"],
+      "cssProperties": ["--z-transition-duration", "--z-transition-timing"],
+      "example": "<z-tabs>\n  <div role=\"tablist\">\n    <button data-tab=\"one\" role=\"tab\">Tab 1</button>\n    <button data-tab=\"two\" role=\"tab\">Tab 2</button>\n  </div>\n  <div data-tab-panel=\"one\" role=\"tabpanel\">Panel 1</div>\n  <div data-tab-panel=\"two\" role=\"tabpanel\">Panel 2</div>\n</z-tabs>"
+    },
+    "select": {
+      "tag": "z-select",
+      "description": "Form-associated custom select using ElementInternals. Participates in native HTML forms via FormData.",
+      "category": "form",
+      "formAssociated": true,
+      "slots": [
+        { "name": "trigger", "description": "Button that opens/closes the dropdown", "element": "button" },
+        { "name": "options", "description": "Container with option children bearing data-value attributes", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [
+          { "name": "name", "type": "string", "description": "Form field name for FormData" },
+          { "name": "data-value", "on": "option children", "type": "string", "description": "Value of each option" }
+        ],
+        "managed": [
+          { "name": "data-open", "type": "boolean", "description": "Present when options dropdown is visible" }
+        ]
+      },
+      "events": [
+        { "name": "change", "bubbles": true, "detail": null, "description": "Fired when an option is selected" }
+      ],
+      "methods": [
+        { "name": "value", "type": "getter/setter", "valueType": "string", "description": "Get or set the current selected value" }
+      ],
+      "aria": {
+        "trigger": { "aria-expanded": "boolean", "aria-haspopup": "listbox" },
+        "options": { "role": "listbox" },
+        "option": { "role": "option" }
+      },
+      "keyboard": ["ArrowUp", "ArrowDown", "Enter", "Escape"],
+      "cssProperties": ["--z-transition-duration", "--z-z-index-dropdown", "--z-shadow"],
+      "example": "<z-select name=\"color\">\n  <button slot=\"trigger\">Choose color</button>\n  <div slot=\"options\">\n    <div data-value=\"red\">Red</div>\n    <div data-value=\"blue\">Blue</div>\n  </div>\n</z-select>"
+    },
+    "carousel": {
+      "tag": "z-carousel",
+      "description": "Slide carousel with View Transitions, optional autoplay, and keyboard navigation.",
+      "category": "content",
+      "slots": [
+        { "name": "item", "description": "Individual slide elements", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [
+          { "name": "data-autoplay", "type": "number", "description": "Autoplay interval in milliseconds (e.g., 3000)" }
+        ],
+        "managed": [
+          { "name": "data-active", "on": "current slide", "type": "boolean", "description": "Present on the currently visible slide" }
+        ]
+      },
+      "events": [
+        { "name": "slide", "bubbles": true, "detail": { "index": "number", "direction": "'next' | 'prev'" }, "description": "Fired on slide transition" }
+      ],
+      "methods": [
+        { "name": "next", "params": [], "returns": "void", "description": "Advance to the next slide" },
+        { "name": "prev", "params": [], "returns": "void", "description": "Go to the previous slide" }
+      ],
+      "aria": {},
+      "keyboard": ["ArrowLeft", "ArrowRight"],
+      "cssProperties": ["--z-transition-duration"],
+      "example": "<z-carousel data-autoplay=\"3000\">\n  <div slot=\"item\">Slide 1</div>\n  <div slot=\"item\">Slide 2</div>\n  <button data-prev>Prev</button>\n  <button data-next>Next</button>\n</z-carousel>"
+    },
+    "toast": {
+      "tag": "z-toast",
+      "description": "Toast notification component. Typically created automatically via Zephyr.toast() global helper.",
+      "category": "feedback",
+      "slots": [],
+      "attributes": {
+        "developer": [],
+        "managed": [
+          { "name": "data-visible", "type": "boolean", "description": "Present when toast is shown" }
+        ]
+      },
+      "events": [
+        { "name": "show", "bubbles": true, "detail": { "message": "string" }, "description": "Fired when toast is displayed" },
+        { "name": "hide", "bubbles": true, "detail": null, "description": "Fired when toast auto-hides" }
+      ],
+      "methods": [
+        { "name": "show", "params": [
+          { "name": "message", "type": "string", "description": "Text to display" },
+          { "name": "duration", "type": "number", "default": 3000, "description": "Auto-hide delay in ms" }
+        ], "returns": "void", "description": "Displays the toast with a message" }
+      ],
+      "aria": {
+        "toast": { "role": "alert", "aria-live": "polite" }
+      },
+      "keyboard": [],
+      "cssProperties": ["--z-toast-bg", "--z-toast-color", "--z-z-index-toast", "--z-border-radius"],
+      "example": "<!-- Via global API (preferred): -->\n<script>Zephyr.toast('File saved!', 3000);</script>\n\n<!-- Or direct element: -->\n<z-toast></z-toast>"
+    },
+    "dropdown": {
+      "tag": "z-dropdown",
+      "description": "Dropdown menu with click-outside handling and keyboard support.",
+      "category": "overlay",
+      "slots": [
+        { "name": "trigger", "description": "Button that toggles the dropdown", "element": "button" },
+        { "name": "content", "description": "Dropdown content panel", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [],
+        "managed": [
+          { "name": "data-open", "type": "boolean", "description": "Present when dropdown is open" }
+        ]
+      },
+      "events": [
+        { "name": "toggle", "bubbles": true, "detail": { "open": "boolean" }, "description": "Fired when dropdown opens or closes" }
+      ],
+      "methods": [],
+      "aria": {
+        "trigger": { "aria-expanded": "boolean", "aria-haspopup": "true" }
+      },
+      "keyboard": ["Escape"],
+      "cssProperties": ["--z-transition-duration", "--z-z-index-dropdown", "--z-shadow"],
+      "example": "<z-dropdown>\n  <button slot=\"trigger\">Menu</button>\n  <div slot=\"content\">\n    <a href=\"#\">Item 1</a>\n    <a href=\"#\">Item 2</a>\n  </div>\n</z-dropdown>"
+    },
+    "combobox": {
+      "tag": "z-combobox",
+      "description": "Filterable combobox combining a text input with a dropdown listbox. Form-associated via ElementInternals.",
+      "category": "form",
+      "formAssociated": true,
+      "slots": [
+        { "name": "listbox", "description": "Container with option children bearing data-value attributes", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [
+          { "name": "name", "type": "string", "description": "Form field name for FormData" },
+          { "name": "data-value", "on": "option children", "type": "string", "description": "Value of each option" }
+        ],
+        "managed": [
+          { "name": "data-open", "type": "boolean", "description": "Present when listbox is visible" },
+          { "name": "data-highlighted", "on": "focused option", "type": "boolean", "description": "Present on keyboard-highlighted option" }
+        ]
+      },
+      "events": [
+        { "name": "change", "bubbles": true, "detail": null, "description": "Fired when an option is selected" },
+        { "name": "input", "bubbles": true, "detail": null, "description": "Fired on filter text input" }
+      ],
+      "methods": [
+        { "name": "value", "type": "getter/setter", "valueType": "string", "description": "Get or set the current value" }
+      ],
+      "aria": {
+        "input": { "role": "combobox", "aria-expanded": "boolean", "aria-autocomplete": "list", "aria-haspopup": "listbox" },
+        "listbox": { "role": "listbox" },
+        "option": { "role": "option" }
+      },
+      "keyboard": ["ArrowUp", "ArrowDown", "Enter", "Escape"],
+      "cssProperties": ["--z-transition-duration", "--z-z-index-dropdown", "--z-shadow"],
+      "example": "<z-combobox name=\"language\">\n  <input type=\"text\" placeholder=\"Search languages...\">\n  <div slot=\"listbox\">\n    <div data-value=\"js\">JavaScript</div>\n    <div data-value=\"py\">Python</div>\n  </div>\n</z-combobox>"
+    },
+    "datepicker": {
+      "tag": "z-datepicker",
+      "description": "Enhanced date picker wrapping native <input type=\"date\">. Provides a styled trigger with formatted display. Form-associated.",
+      "category": "form",
+      "formAssociated": true,
+      "slots": [
+        { "name": "display", "description": "Button trigger showing formatted date or placeholder", "element": "button" }
+      ],
+      "attributes": {
+        "developer": [
+          { "name": "name", "type": "string", "description": "Form field name for FormData" }
+        ],
+        "managed": []
+      },
+      "events": [
+        { "name": "change", "bubbles": true, "detail": null, "description": "Fired when a date is selected" }
+      ],
+      "methods": [
+        { "name": "value", "type": "getter/setter", "valueType": "string", "description": "Get or set the date value (YYYY-MM-DD format)" }
+      ],
+      "aria": {
+        "display": { "role": "button", "tabindex": "0", "aria-label": "Choose date" }
+      },
+      "keyboard": ["Enter", "Space"],
+      "cssProperties": ["--z-transition-duration"],
+      "example": "<z-datepicker name=\"birthday\">\n  <button slot=\"display\">Choose a date</button>\n</z-datepicker>"
+    },
+    "infiniteScroll": {
+      "tag": "z-infinite-scroll",
+      "description": "IntersectionObserver-based infinite loading. Fires loadmore event when sentinel enters viewport. Set data-loading while fetching to prevent duplicates.",
+      "category": "data",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-root-margin", "type": "string", "default": "200px", "description": "IntersectionObserver rootMargin for early trigger" }
+        ],
+        "managed": [
+          { "name": "data-loading", "type": "boolean", "description": "Set while fetching to prevent duplicate loadmore events" },
+          { "name": "data-done", "type": "boolean", "description": "Set when all data loaded, stops observing" }
+        ]
+      },
+      "events": [
+        { "name": "loadmore", "bubbles": true, "detail": null, "description": "Fired when sentinel enters viewport and not loading/done" }
+      ],
+      "methods": [
+        { "name": "complete", "params": [], "returns": "void", "description": "Marks loading as done and disconnects observer" }
+      ],
+      "aria": {},
+      "keyboard": [],
+      "cssProperties": [],
+      "example": "<z-infinite-scroll data-root-margin=\"200px\">\n  <div id=\"items\"></div>\n</z-infinite-scroll>"
+    },
+    "sortable": {
+      "tag": "z-sortable",
+      "description": "Drag & drop reorderable list using native HTML Drag and Drop API. Children with data-sortable become draggable.",
+      "category": "interaction",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-sortable", "on": "children", "type": "string", "description": "Value identifier for each sortable item" }
+        ],
+        "managed": [
+          { "name": "data-dragging", "on": "dragged item", "type": "boolean", "description": "Present on the item being dragged" },
+          { "name": "data-drag-over", "on": "hover target", "type": "boolean", "description": "Present on the item being hovered during drag" }
+        ]
+      },
+      "events": [
+        { "name": "sort", "bubbles": true, "detail": { "order": "[{ index: number, value: string }]" }, "description": "Fired after items are reordered" }
+      ],
+      "methods": [],
+      "aria": {
+        "list": { "role": "list" },
+        "item": { "role": "listitem", "draggable": "true" }
+      },
+      "keyboard": [],
+      "cssProperties": [],
+      "example": "<z-sortable>\n  <div data-sortable=\"1\">Item 1</div>\n  <div data-sortable=\"2\">Item 2</div>\n  <div data-sortable=\"3\">Item 3</div>\n</z-sortable>"
+    },
+    "fileUpload": {
+      "tag": "z-file-upload",
+      "description": "Drag-and-drop file upload with progress bars. Click or drop files on the zone.",
+      "category": "form",
+      "slots": [
+        { "name": "dropzone", "description": "Drop zone area for drag-and-drop", "element": "div" },
+        { "name": "filelist", "description": "Container where file items and progress bars are rendered", "element": "div" }
+      ],
+      "attributes": {
+        "developer": [
+          { "name": "data-multiple", "type": "boolean", "description": "Allow multiple file selection" },
+          { "name": "data-accept", "type": "string", "description": "Accepted file types (e.g., 'image/*', '.pdf')" }
+        ],
+        "managed": [
+          { "name": "data-dragover", "type": "boolean", "description": "Present when files are being dragged over the drop zone" }
+        ]
+      },
+      "events": [
+        { "name": "upload", "bubbles": true, "detail": { "files": "File[]" }, "description": "Fired when files are selected or dropped" }
+      ],
+      "methods": [
+        { "name": "setProgress", "params": [
+          { "name": "index", "type": "number", "description": "File index in the list" },
+          { "name": "percent", "type": "number", "description": "Progress percentage (0-100)" }
+        ], "returns": "void", "description": "Updates the progress bar for a specific file" }
+      ],
+      "aria": {
+        "dropzone": { "role": "button", "tabindex": "0", "aria-label": "Drop files here or click to browse" }
+      },
+      "keyboard": ["Enter", "Space"],
+      "cssProperties": [],
+      "example": "<z-file-upload data-multiple data-accept=\"image/*\">\n  <div slot=\"dropzone\">Drop files here or click to browse</div>\n  <div slot=\"filelist\"></div>\n</z-file-upload>"
+    },
+    "virtualList": {
+      "tag": "z-virtual-list",
+      "description": "Virtual scrolling list for large datasets. Only renders visible items plus a buffer for performance.",
+      "category": "data",
+      "slots": [],
+      "attributes": {
+        "developer": [
+          { "name": "data-item-height", "type": "number", "default": 40, "description": "Fixed height of each row in pixels" },
+          { "name": "data-buffer", "type": "number", "default": 5, "description": "Number of overscan items above and below viewport" }
+        ],
+        "managed": []
+      },
+      "events": [],
+      "methods": [
+        { "name": "setItems", "params": [
+          { "name": "items", "type": "Array", "description": "Array of data objects to render" }
+        ], "returns": "void", "description": "Sets the data array for the list" },
+        { "name": "setRenderer", "params": [
+          { "name": "fn", "type": "(item: any, index: number) => string", "description": "Function that converts a data item to an HTML string" }
+        ], "returns": "void", "description": "Sets the render function for list items" }
+      ],
+      "aria": {
+        "list": { "role": "list" },
+        "item": { "role": "listitem" }
+      },
+      "keyboard": [],
+      "cssProperties": [],
+      "example": "<z-virtual-list data-item-height=\"40\" data-buffer=\"5\" style=\"height: 400px;\"></z-virtual-list>\n<script>\n  const list = document.querySelector('z-virtual-list');\n  list.setRenderer((item, i) => `<div>${item.name}</div>`);\n  list.setItems(data);\n</script>"
+    }
+  }
+}

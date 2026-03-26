@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Agent API</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixtures: one of each component type we need to test -->
+  <z-accordion id="test-accordion">
+    <z-accordion-item>
+      <button slot="trigger">Item 1</button>
+      <div slot="content"><div>Content 1</div></div>
+    </z-accordion-item>
+    <z-accordion-item>
+      <button slot="trigger">Item 2</button>
+      <div slot="content"><div>Content 2</div></div>
+    </z-accordion-item>
+  </z-accordion>
+
+  <z-modal id="test-modal">
+    <h2>Test Modal</h2>
+    <p>Modal content</p>
+  </z-modal>
+
+  <z-tabs id="test-tabs">
+    <div role="tablist">
+      <button data-tab="alpha" role="tab">Alpha</button>
+      <button data-tab="beta" role="tab">Beta</button>
+    </div>
+    <div data-tab-panel="alpha" role="tabpanel">Panel Alpha</div>
+    <div data-tab-panel="beta" role="tabpanel">Panel Beta</div>
+  </z-tabs>
+
+  <z-select id="test-select" name="color">
+    <button slot="trigger">Choose</button>
+    <div slot="options">
+      <div data-value="red">Red</div>
+      <div data-value="blue">Blue</div>
+    </div>
+  </z-select>
+
+  <z-carousel id="test-carousel">
+    <div slot="item">Slide 1</div>
+    <div slot="item">Slide 2</div>
+    <div slot="item">Slide 3</div>
+    <button data-prev>Prev</button>
+    <button data-next>Next</button>
+  </z-carousel>
+
+  <z-dropdown id="test-dropdown">
+    <button slot="trigger">Menu</button>
+    <div slot="content">
+      <a href="#">Link 1</a>
+    </div>
+  </z-dropdown>
+
+  <z-toast id="test-toast"></z-toast>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Agent API');
+
+    // --- getSchema ---
+
+    t.test('Zephyr.agent exists', async (assert) => {
+      assert.ok(Zephyr.agent, 'Zephyr.agent should exist');
+    });
+
+    t.test('getSchema() returns all 13 components', async (assert) => {
+      const schema = Zephyr.agent.getSchema();
+      assert.equal(Object.keys(schema).length, 13, 'should have 13 components');
+      assert.ok(schema.accordion, 'should have accordion');
+      assert.ok(schema.modal, 'should have modal');
+      assert.ok(schema.virtualList, 'should have virtualList');
+    });
+
+    t.test('getSchema() includes actions for each component', async (assert) => {
+      const schema = Zephyr.agent.getSchema();
+      assert.ok(schema.modal.actions.includes('open'), 'modal should have open action');
+      assert.ok(schema.modal.actions.includes('close'), 'modal should have close action');
+      assert.ok(schema.carousel.actions.includes('next'), 'carousel should have next action');
+      assert.ok(schema.select.actions.includes('select'), 'select should have select action');
+    });
+
+    t.test('getSchema() includes descriptions', async (assert) => {
+      const schema = Zephyr.agent.getSchema();
+      assert.ok(schema.accordion.description.length > 0, 'accordion should have a description');
+      assert.ok(schema.modal.description.length > 0, 'modal should have a description');
+    });
+
+    // --- getState ---
+
+    t.test('getState() returns all components on the page', async (assert) => {
+      await waitForElements();
+      const state = Zephyr.agent.getState();
+      assert.ok(state.length >= 7, 'should find at least 7 components on the page');
+    });
+
+    t.test('getState() returns tag and id for each component', async (assert) => {
+      await waitForElements();
+      const state = Zephyr.agent.getState();
+      const modal = state.find(s => s.tag === 'z-modal');
+      assert.ok(modal, 'should find z-modal');
+      assert.equal(modal.id, 'test-modal', 'modal should have id test-modal');
+    });
+
+    t.test('getState() returns available actions', async (assert) => {
+      await waitForElements();
+      const state = Zephyr.agent.getState();
+      const modal = state.find(s => s.tag === 'z-modal');
+      assert.ok(modal.actions.includes('open'), 'modal actions should include open');
+    });
+
+    t.test('getState(selector) filters to specific elements', async (assert) => {
+      await waitForElements();
+      const state = Zephyr.agent.getState('#test-modal');
+      assert.equal(state.length, 1, 'should find exactly 1 element');
+      assert.equal(state[0].tag, 'z-modal', 'should be a z-modal');
+    });
+
+    // --- setState ---
+
+    t.test('setState() sets attributes on elements', async (assert) => {
+      await waitForElements();
+      const result = Zephyr.agent.setState('#test-dropdown', { 'data-open': true });
+      assert.ok(result.success, 'should succeed');
+      const dropdown = document.getElementById('test-dropdown');
+      assert.hasAttribute(dropdown, 'data-open', 'dropdown should have data-open');
+      // Cleanup
+      dropdown.removeAttribute('data-open');
+    });
+
+    t.test('setState() removes attributes when value is null', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+      dropdown.setAttribute('data-open', '');
+      Zephyr.agent.setState('#test-dropdown', { 'data-open': null });
+      assert.notHasAttribute(dropdown, 'data-open', 'dropdown should not have data-open');
+    });
+
+    t.test('setState() returns error for missing element', async (assert) => {
+      const result = Zephyr.agent.setState('#nonexistent', { 'data-open': true });
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(result.error, 'should have error message');
+    });
+
+    // --- describe ---
+
+    t.test('describe() returns structured component info', async (assert) => {
+      await waitForElements();
+      const info = Zephyr.agent.describe('#test-select');
+      assert.equal(info.tag, 'z-select', 'should be z-select');
+      assert.equal(info.id, 'test-select', 'should have correct id');
+      assert.ok(info.actions.includes('select'), 'should include select action');
+      assert.ok(info.description.length > 0, 'should have a description');
+    });
+
+    t.test('describe() includes slot content preview', async (assert) => {
+      await waitForElements();
+      const info = Zephyr.agent.describe('#test-select');
+      assert.ok(info.slots.trigger !== undefined, 'should have trigger slot info');
+      assert.ok(info.slots.options !== undefined, 'should have options slot info');
+    });
+
+    t.test('describe() returns error for missing element', async (assert) => {
+      const info = Zephyr.agent.describe('#nonexistent');
+      assert.ok(info.error, 'should have error');
+    });
+
+    // --- act ---
+
+    t.test('act() opens and closes a dropdown', async (assert) => {
+      await waitForElements();
+      const dropdown = document.getElementById('test-dropdown');
+
+      let result = Zephyr.agent.act('#test-dropdown', 'open');
+      assert.ok(result.success, 'open should succeed');
+      assert.hasAttribute(dropdown, 'data-open', 'dropdown should be open');
+
+      result = Zephyr.agent.act('#test-dropdown', 'close');
+      assert.ok(result.success, 'close should succeed');
+      assert.notHasAttribute(dropdown, 'data-open', 'dropdown should be closed');
+    });
+
+    t.test('act() advances carousel', async (assert) => {
+      await waitForElements();
+      const slides = document.querySelectorAll('#test-carousel [slot="item"]');
+      assert.hasAttribute(slides[0], 'data-active', 'first slide should be active initially');
+
+      Zephyr.agent.act('#test-carousel', 'next');
+      assert.notHasAttribute(slides[0], 'data-active', 'first slide should no longer be active');
+      assert.hasAttribute(slides[1], 'data-active', 'second slide should be active');
+    });
+
+    t.test('act() selects a value in z-select', async (assert) => {
+      await waitForElements();
+      const select = document.getElementById('test-select');
+
+      Zephyr.agent.act('#test-select', 'select', { value: 'blue' });
+      assert.equal(select.value, 'blue', 'select value should be blue');
+    });
+
+    t.test('act() toggles accordion item', async (assert) => {
+      await waitForElements();
+      Zephyr.agent.act('#test-accordion', 'toggle', { index: 0 });
+      const content = document.querySelector('#test-accordion z-accordion-item [slot="content"]');
+      assert.hasAttribute(content, 'data-open', 'first accordion content should be open');
+    });
+
+    t.test('act() returns error for unknown action', async (assert) => {
+      await waitForElements();
+      const result = Zephyr.agent.act('#test-modal', 'fly');
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(result.error.includes('fly'), 'error should mention the action');
+    });
+
+    t.test('act() returns error for missing element', async (assert) => {
+      const result = Zephyr.agent.act('#nonexistent', 'open');
+      assert.equal(result.success, false, 'should fail');
+    });
+
+    // --- observe / unobserve ---
+
+    t.test('observe() fires callback on state changes', async (assert) => {
+      await waitForElements();
+      let received = null;
+      const cb = (detail) => { received = detail; };
+
+      Zephyr.agent.observe(cb);
+
+      // Trigger a state change
+      const dropdown = document.getElementById('test-dropdown');
+      dropdown.setAttribute('data-open', '');
+
+      // MutationObserver is async, wait a tick
+      await new Promise(r => setTimeout(r, 50));
+
+      assert.ok(received, 'callback should have been called');
+      assert.equal(received.attribute, 'data-open', 'should report data-open change');
+      assert.equal(received.tag, 'z-dropdown', 'should report z-dropdown');
+
+      // Cleanup
+      Zephyr.agent.unobserve(cb);
+      dropdown.removeAttribute('data-open');
+    });
+
+    t.test('unobserve() removes callback', async (assert) => {
+      await waitForElements();
+      let callCount = 0;
+      const cb = () => { callCount++; };
+
+      Zephyr.agent.observe(cb);
+      Zephyr.agent.unobserve(cb);
+
+      document.getElementById('test-dropdown').setAttribute('data-open', '');
+      await new Promise(r => setTimeout(r, 50));
+
+      assert.equal(callCount, 0, 'callback should not fire after unobserve');
+      document.getElementById('test-dropdown').removeAttribute('data-open');
+    });
+
+    // --- getPrompt ---
+
+    t.test('getPrompt() returns markdown string', async (assert) => {
+      await waitForElements();
+      const prompt = Zephyr.agent.getPrompt();
+      assert.ok(prompt.includes('# Zephyr Components'), 'should have markdown heading');
+      assert.ok(prompt.includes('z-modal'), 'should mention z-modal');
+      assert.ok(prompt.includes('Zephyr.agent.act'), 'should mention the agent API');
+    });
+
+    // --- annotate ---
+
+    t.test('annotate() adds data-z-actions to components', async (assert) => {
+      await waitForElements();
+      Zephyr.agent.annotate();
+
+      const modal = document.getElementById('test-modal');
+      assert.hasAttribute(modal, 'data-z-actions', 'modal should have data-z-actions');
+      assert.ok(modal.getAttribute('data-z-actions').includes('open'), 'should include open action');
+
+      const dropdown = document.getElementById('test-dropdown');
+      assert.hasAttribute(dropdown, 'data-z-description', 'dropdown should have data-z-description');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

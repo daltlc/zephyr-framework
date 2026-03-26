@@ -4,7 +4,9 @@
 
 <p align="center">
   14 interactive UI components. ~7kb of setup code runs once at page load.<br>
-  After that, every animation, state change, and transition is pure CSS.
+  After that, every animation, state change, and transition is pure CSS.<br><br>
+  <strong>Agent-native:</strong> Built-in MCP server, A2UI catalog, and structured agent API.<br>
+  The easiest UI framework for AI agents to discover, understand, and control.
 </p>
 
 ---
@@ -363,6 +365,119 @@ Access component metadata programmatically:
 Zephyr.components.modal
 // { tag: 'z-modal', slots: [], attributes: [], events: ['open', 'close'], methods: ['open()', 'close()'] }
 ```
+
+### Agent API
+
+Zephyr is **agent-native** — built for AI agents and LLMs to discover and control components programmatically. The `Zephyr.agent` namespace provides a structured interface:
+
+```javascript
+// Snapshot all component states on the page
+Zephyr.agent.getState()
+// → [{ tag: 'z-modal', id: 'my-modal', state: {}, actions: ['open', 'close'] }, ...]
+
+// Describe a specific component instance
+Zephyr.agent.describe('#my-select')
+// → { tag, id, state, actions: ['open','close','select'], slots, events, methods }
+
+// Perform high-level actions (no DOM knowledge needed)
+Zephyr.agent.act('#my-modal', 'open')
+Zephyr.agent.act('#my-select', 'select', { value: 'red' })
+Zephyr.agent.act('#carousel', 'next')
+
+// Set/remove attributes directly
+Zephyr.agent.setState('#dropdown', { 'data-open': true })
+
+// Watch for state changes across all components
+Zephyr.agent.observe((change) => {
+  console.log(change.tag, change.attribute, change.newValue);
+});
+
+// Get component schema with actions, descriptions
+Zephyr.agent.getSchema()
+
+// Generate an LLM-ready prompt for the current page
+Zephyr.agent.getPrompt()
+
+// Add data-z-actions attributes for DOM-level discovery
+Zephyr.agent.annotate()
+```
+
+A full machine-readable schema is available in `zephyr-schema.json`, and an LLM system prompt template in `zephyr-prompt.md`.
+
+### MCP Server
+
+The [Model Context Protocol](https://modelcontextprotocol.io/) server lets AI agents (Claude Desktop, Cursor, or any MCP host) control Zephyr components on a live page using structured tools instead of screenshot parsing or raw DOM manipulation.
+
+Without MCP, an agent has to take a screenshot and guess what to click, or parse raw HTML and figure out the DOM structure. With MCP, the agent just calls a typed function:
+
+```
+Agent thinks: "I need to open the settings modal"
+Agent calls:  zephyr_act({ selector: '#settings-modal', action: 'open' })
+Agent gets:   { success: true }
+```
+
+No screenshot parsing. No HTML analysis. No guessing.
+
+**Setup** (the MCP server is a separate optional package — the core framework stays zero-dependency):
+
+```bash
+cd zephyr-mcp && npm install
+node server.js  # starts bridge on http://localhost:3456
+```
+
+Then add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "zephyr": {
+      "command": "node",
+      "args": ["/path/to/zephyr-mcp/server.js"]
+    }
+  }
+}
+```
+
+**Available tools:**
+
+| Tool | What it does | Example |
+|------|-------------|---------|
+| `zephyr_act` | Perform actions on components | `act('#modal', 'open')`, `act('#select', 'select', { value: 'red' })` |
+| `zephyr_get_state` | Snapshot all component states | Returns `[{ tag, id, state, actions }]` for every component |
+| `zephyr_describe` | Deep-inspect a single component | Returns state, actions, slots, events, ARIA info |
+| `zephyr_set_state` | Set/remove data attributes | `setState('#dropdown', { 'data-open': true })` |
+| `zephyr_get_schema` | Get the full component reference | All 13 components with actions, events, methods |
+| `zephyr_get_prompt` | Generate an LLM context summary | Markdown of current page state for agent context windows |
+
+**What you can build with this:**
+
+- **Agent-controlled dashboards** — An agent calls `getSchema()` to learn available components, generates a page with tabs/selects/modals, then controls everything via `act()` — switching views, opening detail panels, selecting filters
+- **AI-powered testing** — Instead of writing Playwright scripts, tell Claude: "Test that the accordion opens and closes." The agent uses `getState()` to check states and `act()` to interact
+- **Agent-assisted form filling** — An agent fills out complex forms by calling `act('#country', 'select', { value: 'US' })` and `act('#date', 'set', { value: '2026-04-01' })` on form-associated components that participate in native FormData
+- **Live UI debugging** — Ask an agent to inspect the page — it calls `getState()` and instantly sees every component's state as structured JSON, no DevTools needed
+
+See [`zephyr-mcp/README.md`](zephyr-mcp/README.md) for the full tool reference, architecture diagram, and troubleshooting.
+
+### A2UI Compatibility
+
+[A2UI (Agent-to-UI)](https://a2ui.org/) is Google's protocol for how AI agents describe and render UIs. Zephyr publishes its components as an A2UI catalog in `zephyr-a2ui-catalog.json`, making them discoverable by any agent in Google's ecosystem.
+
+Think of A2UI as a shared language between agents and rendering engines. The catalog file is Zephyr's entry into that ecosystem:
+
+- **Agent discovery** — When an A2UI-compatible agent (Gemini, CopilotKit, or any agent using the protocol) needs to build a UI, it browses available component catalogs. Zephyr's catalog says: "I have 13 components — here's a modal with open/close, here's a select with typed options, here's a carousel with next/prev." The agent picks the right components without custom integration code
+- **Cross-platform rendering** — A2UI is renderer-agnostic. An agent using Zephyr's catalog could render components as Web Components (native), Flutter widgets, React components, or any future renderer. You define the accordion once; any renderer knows how to display it
+- **Structured contracts** — The catalog formally documents what each component accepts (properties), what it does (actions), what it reports (events), and what accessibility it provides (ARIA). This powers auto-generated docs, visual component browsers, and validation of agent-generated UIs
+- **Ecosystem positioning** — Google backs A2UI as the standard for agent-driven interfaces (deployed in Gemini Enterprise, Opal). Having a catalog means Zephyr shows up alongside Google's own components when agents search for UI toolkits
+
+**How MCP and A2UI work together:**
+
+The A2UI catalog is the **menu** — it tells agents what components exist and what they can do. The MCP server is the **waiter** — it executes those actions on a live page. An agent workflow might be: read the catalog to plan a UI, generate HTML with those components, serve it via MCP, then use MCP tools to interact with the live page.
+
+**Why agents love Zephyr:**
+- State lives in `data-*` attributes — no opaque JS closures to reverse-engineer
+- Semantic custom elements — LLMs understand `<z-modal>` without docs
+- Zero runtime JS — works in any execution context
+- Minimal API surface — low token cost for agent context windows
 
 ---
 

@@ -261,3 +261,18 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **Future: Sortable** — `ZSortable` with native Drag and Drop API, sort events, MutationObserver
 - [x] **Future: File Upload** — `ZFileUpload` with drop zone, progress tracking, XSS-safe rendering
 - [x] **Future: Virtual List** — `ZVirtualList` with DOM recycling, spacer/viewport pattern, 10k+ row support
+
+---
+
+## Priority 9 — Agent-Native Features
+
+- [x] **9.1** Machine-readable component schema — `zephyr-schema.json` with full component definitions (tags, slots, attributes, events, methods, ARIA, examples)
+- [x] **9.2** Agent API (`Zephyr.agent`) — `getState()`, `setState()`, `describe()`, `act()`, `observe()`, `unobserve()`, `getSchema()`, `getPrompt()`, `annotate()`
+- [x] **9.3** Action mappings — high-level actions per component (open, close, select, next, prev, toggle, etc.)
+- [x] **9.4** LLM prompt template — `zephyr-prompt.md` for injecting Zephyr knowledge into any agent
+- [x] **9.5** Dynamic prompt generation — `Zephyr.agent.getPrompt()` scoped to components on current page
+- [x] **9.6** DOM annotations — `Zephyr.agent.annotate()` adds `data-z-actions` and `data-z-description` for agent discovery
+- [x] **9.7** Agent API tests — `tests/test-agent-api.html` covering all agent methods
+- [x] **9.8** Agent API demo — interactive demo card in `index.html`
+- [x] **9.9** MCP Server — `zephyr-mcp/` package with stdio MCP server, HTTP file server, WebSocket bridge to browser, 6 MCP tools mapping to Zephyr.agent API
+- [x] **9.10** A2UI Compatibility — `zephyr-a2ui-catalog.json` exporting all 13 components in Google's Agent-to-UI catalog format with properties, actions, events, state attributes, and ARIA

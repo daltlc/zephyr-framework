@@ -1262,5 +1262,396 @@ window.Zephyr = {
       events: [],
       methods: ['setItems(array)', 'setRenderer(fn)']
     }
+  },
+
+  // -------------------------------------------------------------------------
+  // Agent API — Structured interface for LLMs and AI agents
+  // -------------------------------------------------------------------------
+
+  /**
+   * Agent API namespace. Provides structured methods for AI agents and LLMs
+   * to discover, inspect, and interact with Zephyr components on the page.
+   * @namespace Zephyr.agent
+   */
+  agent: {
+    /** @private State attributes tracked by the agent API. */
+    _stateAttrs: ['data-open', 'data-active', 'data-visible', 'data-value', 'data-loading', 'data-done', 'data-dragover'],
+
+    /** @private Observer state. */
+    _observer: null,
+    _callbacks: null,
+
+    /** @private Action mappings per component tag. */
+    _actions: {
+      'z-accordion': {
+        toggle(el, params) {
+          const items = Array.from(el.querySelectorAll('z-accordion-item'));
+          const item = typeof params?.index === 'number' ? items[params.index] : items[0];
+          if (item) {
+            const trigger = item.querySelector('[slot="trigger"]');
+            if (trigger) trigger.click();
+          }
+        }
+      },
+      'z-modal': {
+        open(el) { el.open(); },
+        close(el) { el.close(); }
+      },
+      'z-tabs': {
+        activate(el, params) {
+          if (params?.tab) {
+            const tab = el.querySelector(`[data-tab="${params.tab}"]`);
+            if (tab) tab.click();
+          }
+        }
+      },
+      'z-select': {
+        open(el) {
+          el.setAttribute('data-open', '');
+          const trigger = el.querySelector('[slot="trigger"]');
+          if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        },
+        close(el) {
+          el.removeAttribute('data-open');
+          const trigger = el.querySelector('[slot="trigger"]');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        },
+        select(el, params) {
+          if (params?.value) {
+            const opt = el.querySelector(`[data-value="${params.value}"]`);
+            if (opt) opt.click();
+          }
+        }
+      },
+      'z-carousel': {
+        next(el) { el.next(); },
+        prev(el) { el.prev(); },
+        goto(el, params) {
+          if (typeof params?.index === 'number') {
+            const items = Array.from(el.querySelectorAll('[slot="item"]'));
+            const current = items.findIndex(i => i.hasAttribute('data-active'));
+            const diff = params.index - current;
+            if (diff > 0) for (let i = 0; i < diff; i++) el.next();
+            else if (diff < 0) for (let i = 0; i < -diff; i++) el.prev();
+          }
+        }
+      },
+      'z-toast': {
+        show(el, params) {
+          el.show(params?.message || '', params?.duration || 3000);
+        }
+      },
+      'z-dropdown': {
+        open(el) {
+          el.setAttribute('data-open', '');
+          const trigger = el.querySelector('[slot="trigger"]');
+          if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        },
+        close(el) {
+          el.removeAttribute('data-open');
+          const trigger = el.querySelector('[slot="trigger"]');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+      },
+      'z-combobox': {
+        open(el) {
+          el.setAttribute('data-open', '');
+          const input = el.querySelector('input');
+          if (input) input.setAttribute('aria-expanded', 'true');
+        },
+        close(el) {
+          el.removeAttribute('data-open');
+          const input = el.querySelector('input');
+          if (input) input.setAttribute('aria-expanded', 'false');
+        },
+        select(el, params) {
+          if (params?.value) {
+            const opt = el.querySelector(`[data-value="${params.value}"]`);
+            if (opt) opt.click();
+          }
+        }
+      },
+      'z-datepicker': {
+        open(el) {
+          const input = el.querySelector('input[type="date"]');
+          if (input) input.showPicker?.() || input.focus();
+        },
+        set(el, params) {
+          if (params?.value) {
+            const input = el.querySelector('input[type="date"]');
+            if (input) {
+              input.value = params.value;
+              input.dispatchEvent(new Event('change'));
+            }
+          }
+        }
+      },
+      'z-infinite-scroll': {
+        complete(el) { el.complete(); }
+      },
+      'z-virtual-list': {
+        setItems(el, params) {
+          if (params?.items) el.setItems(params.items);
+        }
+      }
+    },
+
+    /**
+     * Returns the enriched component schema with descriptions, actions, and examples.
+     * @returns {Object} Component schema keyed by component name
+     */
+    getSchema() {
+      const schema = {};
+      for (const [name, def] of Object.entries(Zephyr.components)) {
+        const tag = def.tag;
+        const actions = Zephyr.agent._actions[tag];
+        schema[name] = {
+          ...def,
+          actions: actions ? Object.keys(actions) : [],
+          description: Zephyr.agent._descriptions[name] || ''
+        };
+      }
+      return schema;
+    },
+
+    /** @private Component descriptions for schema enrichment. */
+    _descriptions: {
+      accordion: 'Collapsible accordion with CSS Grid transitions',
+      modal: 'Modal dialog wrapping native <dialog> with View Transitions',
+      tabs: 'Tab panel component with keyboard navigation',
+      select: 'Form-associated custom select with ElementInternals',
+      carousel: 'Slide carousel with autoplay and View Transitions',
+      toast: 'Toast notification system',
+      dropdown: 'Dropdown menu with click-outside handling',
+      combobox: 'Filterable combobox with keyboard navigation',
+      datepicker: 'Enhanced native date input with styled trigger',
+      infiniteScroll: 'IntersectionObserver-based infinite loading',
+      sortable: 'Drag & drop reorderable list',
+      fileUpload: 'Drag-and-drop file upload with progress bars',
+      virtualList: 'Virtual scrolling list for large datasets'
+    },
+
+    /**
+     * Snapshots the state of all Zephyr components on the page (or a subset).
+     * Returns plain objects safe for JSON serialization.
+     * @param {string} [selector] - Optional CSS selector to scope the query
+     * @returns {Array<{tag: string, id: string|null, state: Object, actions: string[]}>}
+     */
+    getState(selector) {
+      const tags = Object.values(Zephyr.components).map(c => c.tag);
+      const elements = selector
+        ? document.querySelectorAll(selector)
+        : document.querySelectorAll(tags.join(','));
+
+      return Array.from(elements).map(el => {
+        const tag = el.tagName.toLowerCase();
+        const state = {};
+        Zephyr.agent._stateAttrs.forEach(attr => {
+          if (el.hasAttribute(attr)) {
+            state[attr] = el.getAttribute(attr) || true;
+          }
+        });
+        // Read value from form-associated components
+        if (typeof el.value === 'string' && el.value) {
+          state.value = el.value;
+        }
+        const actions = Zephyr.agent._actions[tag];
+        return {
+          tag,
+          id: el.id || null,
+          state,
+          actions: actions ? Object.keys(actions) : []
+        };
+      });
+    },
+
+    /**
+     * Sets or removes data attributes on a Zephyr component.
+     * @param {string} selector - CSS selector for the target element
+     * @param {Object} attributes - Attributes to set (null/false to remove)
+     * @returns {{success: boolean, state?: Object, error?: string}}
+     */
+    setState(selector, attributes) {
+      const el = document.querySelector(selector);
+      if (!el) return { success: false, error: 'Element not found: ' + selector };
+      Object.entries(attributes).forEach(([key, value]) => {
+        if (value === null || value === false) {
+          el.removeAttribute(key);
+        } else if (value === true || value === '') {
+          el.setAttribute(key, '');
+        } else {
+          el.setAttribute(key, String(value));
+        }
+      });
+      const state = {};
+      Zephyr.agent._stateAttrs.forEach(attr => {
+        if (el.hasAttribute(attr)) {
+          state[attr] = el.getAttribute(attr) || true;
+        }
+      });
+      return { success: true, state };
+    },
+
+    /**
+     * Returns a structured description of a specific component instance.
+     * @param {string} selector - CSS selector for the target element
+     * @returns {{tag: string, id: string|null, state: Object, actions: string[], slots: Object, description: string}|{error: string}}
+     */
+    describe(selector) {
+      const el = document.querySelector(selector);
+      if (!el) return { error: 'Element not found: ' + selector };
+
+      const tag = el.tagName.toLowerCase();
+      const name = Object.keys(Zephyr.components).find(
+        k => Zephyr.components[k].tag === tag
+      );
+      const def = name ? Zephyr.components[name] : null;
+      const actions = Zephyr.agent._actions[tag];
+
+      // Read current state
+      const state = {};
+      Zephyr.agent._stateAttrs.forEach(attr => {
+        if (el.hasAttribute(attr)) {
+          state[attr] = el.getAttribute(attr) || true;
+        }
+      });
+      if (typeof el.value === 'string' && el.value) {
+        state.value = el.value;
+      }
+
+      // Enumerate slot content
+      const slots = {};
+      if (def && def.slots.length) {
+        def.slots.forEach(slotName => {
+          const slotEl = el.querySelector(`[slot="${slotName}"]`);
+          slots[slotName] = slotEl ? slotEl.textContent.trim().slice(0, 100) : null;
+        });
+      }
+
+      return {
+        tag,
+        id: el.id || null,
+        description: (name && Zephyr.agent._descriptions[name]) || '',
+        state,
+        actions: actions ? Object.keys(actions) : [],
+        slots,
+        events: def ? def.events : [],
+        methods: def ? def.methods : []
+      };
+    },
+
+    /**
+     * Performs a high-level action on a Zephyr component.
+     * @param {string} selector - CSS selector for the target element
+     * @param {string} action - Action name (e.g., 'open', 'close', 'select', 'next')
+     * @param {Object} [params] - Action parameters (e.g., { value: 'red' })
+     * @returns {{success: boolean, error?: string}}
+     */
+    act(selector, action, params) {
+      const el = document.querySelector(selector);
+      if (!el) return { success: false, error: 'Element not found: ' + selector };
+
+      const tag = el.tagName.toLowerCase();
+      const componentActions = Zephyr.agent._actions[tag];
+      if (!componentActions) return { success: false, error: 'No actions for: ' + tag };
+
+      const fn = componentActions[action];
+      if (!fn) return { success: false, error: `Unknown action '${action}' for ${tag}. Available: ${Object.keys(componentActions).join(', ')}` };
+
+      fn(el, params);
+      return { success: true };
+    },
+
+    /**
+     * Observes state attribute changes on all Zephyr components.
+     * Uses a single MutationObserver, lazily initialized on first call.
+     * @param {function({element: Element, tag: string, attribute: string, oldValue: string|null, newValue: string|null}): void} callback
+     */
+    observe(callback) {
+      if (!Zephyr.agent._callbacks) {
+        Zephyr.agent._callbacks = new Set();
+      }
+      if (!Zephyr.agent._observer) {
+        Zephyr.agent._observer = new MutationObserver((mutations) => {
+          mutations.forEach(m => {
+            const detail = {
+              element: m.target,
+              tag: m.target.tagName.toLowerCase(),
+              attribute: m.attributeName,
+              oldValue: m.oldValue,
+              newValue: m.target.getAttribute(m.attributeName)
+            };
+            Zephyr.agent._callbacks.forEach(cb => cb(detail));
+          });
+        });
+        Zephyr.agent._observer.observe(document.body, {
+          subtree: true,
+          attributes: true,
+          attributeOldValue: true,
+          attributeFilter: Zephyr.agent._stateAttrs
+        });
+      }
+      Zephyr.agent._callbacks.add(callback);
+    },
+
+    /**
+     * Removes an observer callback. Disconnects the MutationObserver when no callbacks remain.
+     * @param {function} callback - The callback to remove
+     */
+    unobserve(callback) {
+      if (Zephyr.agent._callbacks) {
+        Zephyr.agent._callbacks.delete(callback);
+        if (Zephyr.agent._callbacks.size === 0 && Zephyr.agent._observer) {
+          Zephyr.agent._observer.disconnect();
+          Zephyr.agent._observer = null;
+        }
+      }
+    },
+
+    /**
+     * Generates a markdown prompt describing all Zephyr components currently on the page.
+     * Useful for injecting into an LLM's context window.
+     * @returns {string} Markdown-formatted component reference
+     */
+    getPrompt() {
+      const components = Zephyr.agent.getState();
+      if (components.length === 0) {
+        return '# Zephyr Components\n\nNo Zephyr components found on this page.';
+      }
+
+      let prompt = '# Zephyr Components on This Page\n\n';
+      prompt += 'Interact via: `Zephyr.agent.act(selector, action, params)`\n\n';
+
+      components.forEach(c => {
+        const label = c.id ? `#${c.id}` : c.tag;
+        prompt += `## ${c.tag} (${label})\n`;
+        prompt += `- **State:** ${Object.keys(c.state).length ? JSON.stringify(c.state) : 'default'}\n`;
+        prompt += `- **Actions:** ${c.actions.length ? c.actions.join(', ') : 'none'}\n`;
+        prompt += '\n';
+      });
+
+      return prompt;
+    },
+
+    /**
+     * Opt-in: Annotates all Zephyr components on the page with data-z-actions
+     * attributes for DOM-level agent discovery.
+     */
+    annotate() {
+      const tags = Object.values(Zephyr.components).map(c => c.tag);
+      document.querySelectorAll(tags.join(',')).forEach(el => {
+        const tag = el.tagName.toLowerCase();
+        const actions = Zephyr.agent._actions[tag];
+        if (actions) {
+          el.setAttribute('data-z-actions', Object.keys(actions).join(','));
+        }
+        const name = Object.keys(Zephyr.components).find(
+          k => Zephyr.components[k].tag === tag
+        );
+        if (name && Zephyr.agent._descriptions[name]) {
+          el.setAttribute('data-z-description', Zephyr.agent._descriptions[name]);
+        }
+      });
+    }
   }
 };

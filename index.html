@@ -224,6 +224,21 @@
       </p>
     </div>
 
+    <!-- Agent API Demo -->
+    <div class="demo-card">
+      <h2>Agent API</h2>
+      <p style="color: var(--silver); font-size: 0.875rem; margin-bottom: 1rem;">
+        Built-in API for AI agents and LLMs to discover and control components.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <button data-action="agent-get-state">Zephyr.agent.getState()</button>
+        <button data-action="agent-describe">Zephyr.agent.describe('z-modal')</button>
+        <button data-action="agent-act-modal">Zephyr.agent.act('#demo-modal', 'open')</button>
+        <button data-action="agent-get-prompt">Zephyr.agent.getPrompt()</button>
+      </div>
+      <pre id="agent-output" style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.3); border-radius: 0.375rem; font-size: 0.75rem; max-height: 200px; overflow: auto; white-space: pre-wrap; color: var(--silver);"></pre>
+    </div>
+
     <!-- Virtual List Demo -->
     <div class="demo-card">
       <h2>Virtual Scroll</h2>
@@ -268,6 +283,19 @@
           break;
         case 'show-toast':
           Zephyr.toast('Framework features: Form-associated elements, View Transitions, Container Queries, CSS :has()', 5000);
+          break;
+        case 'agent-get-state':
+          document.getElementById('agent-output').textContent = JSON.stringify(Zephyr.agent.getState(), null, 2);
+          break;
+        case 'agent-describe':
+          document.getElementById('agent-output').textContent = JSON.stringify(Zephyr.agent.describe('z-modal'), null, 2);
+          break;
+        case 'agent-act-modal':
+          Zephyr.agent.act('#demo-modal', 'open');
+          document.getElementById('agent-output').textContent = '→ Zephyr.agent.act(\'#demo-modal\', \'open\')\n✓ Modal opened via agent API';
+          break;
+        case 'agent-get-prompt':
+          document.getElementById('agent-output').textContent = Zephyr.agent.getPrompt();
           break;
       }
     });

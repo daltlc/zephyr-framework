@@ -104,7 +104,12 @@ zephyr-framework/
 │   ├── ZSortable              # Native Drag & Drop reorderable list
 │   ├── ZFileUpload            # Drag-and-drop file upload with progress
 │   ├── ZVirtualList           # Virtual scrolling for large datasets
-│   └── window.Zephyr          # Global utility API + component registry
+│   ├── window.Zephyr          # Global utility API + component registry
+│   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt)
+│
+├── zephyr-schema.json        # Machine-readable component schema for agents/LLMs
+├── zephyr-prompt.md          # LLM system prompt template for Zephyr usage
+├── zephyr-a2ui-catalog.json  # A2UI (Agent-to-UI) catalog definition for Google's agent ecosystem
 │
 ├── zephyr-framework.css      # Core styles (CSS custom properties for theming)
 │   ├── :root                  # --z-* design tokens
@@ -131,6 +136,12 @@ zephyr-framework/
 │   │   └── Scroll Animations  # animation-timeline: view()
 │   └── @layer utilities       # Container query grid utilities
 │
+├── zephyr-mcp/               # Optional MCP server package (separate deps)
+│   ├── server.js              # MCP stdio server + HTTP/WebSocket bridge
+│   ├── bridge-client.js       # Browser-side WebSocket bridge script
+│   ├── package.json           # npm deps: @modelcontextprotocol/sdk, zod, ws
+│   └── README.md              # MCP setup and tool reference
+│
 ├── demo.css                  # Demo page styles (NOT part of framework)
 ├── index.html                # Demo/showcase page
 ├── README.md                 # Documentation + usage guide
@@ -151,6 +162,9 @@ zephyr-framework/
 | Theming | CSS Custom Properties | User-customizable design tokens |
 | Layout | CSS Grid, Flexbox, Container Queries | Responsive, component-scoped layout |
 | Scroll | Scroll-driven Animations API | Scroll-triggered effects |
+| Agent API | Zephyr.agent namespace | Structured LLM/agent interface |
+| MCP | Model Context Protocol server | Remote agent tool integration |
+| A2UI | Agent-to-UI catalog | Google agent ecosystem discovery |
 
 ### Browser Support
 

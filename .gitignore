@@ -16,5 +16,10 @@ Thumbs.db
 *.min.js
 *.min.css
 
+# Environment variables
+.env
+.env.local
+.env.production
+
 # Node (if ever added for tooling)
 node_modules/

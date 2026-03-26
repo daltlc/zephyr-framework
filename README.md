@@ -137,7 +137,7 @@ npm install zephyr-framework
 
 ## Live Demo — Zephyr Boards
 
-See Zephyr's agent capabilities in action: **[Zephyr Boards](https://github.com/daltlc/zephyr-agent-demo)** — a task board where an AI agent creates, moves, and manages tasks through natural language in real time.
+See Zephyr's agent capabilities in action: **[Zephyr Boards](https://zephyr-agent-demo.vercel.app)** — a task board where an AI agent creates, moves, and manages tasks through natural language in real time. ([Source](https://github.com/daltlc/zephyr-agent-demo))
 
 ---
 

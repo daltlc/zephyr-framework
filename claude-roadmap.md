@@ -299,3 +299,97 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **11.5** Tests — `tests/test-agent-widget.html` covering registration, DOM structure, attributes, open/close, tool sandboxing, message rendering, XSS prevention, component pulse
 - [x] **11.6** Demo page — Agent widget demo card in `index.html` with open/close buttons
 - [x] **11.7** Documentation — README section, AGENTS.md stack layout, roadmap update
+- [x] **12.2** Build script — `build.js` using esbuild, produces minified JS (50-66% smaller) and CSS (31% smaller)
+- [x] **12.3** CDN links — jsdelivr and unpkg `<script>`/`<link>` tags added to README
+- [x] **12.4** TypeScript declarations — `zephyr-framework.d.ts` with full types for all components, `Zephyr` global, and agent API
+
+---
+
+## Priority 12 — Ship & Distribute
+
+### 12.1 Publish to npm
+- **Packages**: `zephyr-framework`, `@zephyr-framework/mcp`, `create-zephyr-app`
+- **Issue**: All README install instructions (`npm install`, `npx create-zephyr-app`) depend on packages being published
+- **Fix**: `npm publish` each package after verifying contents with `npm pack --dry-run`
+
+### 12.2 Build Script for Minification
+- **File**: new `build.js` or `package.json` script
+- **Issue**: No minified production files — users serve unminified source
+- **Fix**: Use `esbuild` to produce `zephyr-framework.min.js` and `zephyr-framework.min.css`. Add to `package.json` `files` array. Single dev dependency, keeps zero-dep philosophy for the framework itself
+
+### 12.3 CDN Links
+- **File**: `README.md`
+- **Issue**: Users must use npm to consume the framework — no zero-install option
+- **Fix**: After npm publish, add unpkg/jsdelivr `<script>` and `<link>` tags to README for true zero-install usage from a CDN
+
+### 12.4 TypeScript Declarations
+- **File**: new `zephyr-framework.d.ts`
+- **Issue**: No type information — VS Code users get no autocomplete for `Zephyr.*`, component methods, or the agent API
+- **Fix**: Ship a `.d.ts` file with types for all components, the `Zephyr` global, and the `Zephyr.agent` API. Reference in `package.json` via `"types"` field
+
+### 12.5 GitHub Pages Docs Site
+- **File**: new `.github/workflows/pages.yml` or `/docs` folder
+- **Issue**: No live documentation site — README is the only reference
+- **Fix**: Deploy a polished docs/demo site from the main repo via GitHub Pages. Add live URL to README and `package.json` homepage
+
+---
+
+## Priority 13 — Competitive Differentiation
+
+> **Context**: MUI, Tailwind, shadcn/ui, and Radix all ship MCP servers — but they are read-only documentation lookups. Zephyr is the only framework with read-write agent control of live UI. These items widen that gap.
+
+### 13.1 WebMCP Alignment
+- **Files**: `zephyr-framework.js`, new `zephyr-webmcp-adapter.js` (if needed)
+- **Issue**: WebMCP (W3C/Chrome early preview, Feb 2026) defines a browser-native PostMessage transport for agent–app communication. Zephyr.agent predates this but may not align with the spec
+- **Fix**: Evaluate the WebMCP spec. If `Zephyr.agent` already aligns, document compatibility. If gaps exist, implement a thin PostMessage adapter so `<z-agent>` works via WebMCP alongside existing WebSocket transport
+
+### 13.2 A2UI v0.9 Compliance Audit
+- **File**: `zephyr-a2ui-catalog.json`
+- **Issue**: Google's A2UI spec is at v0.9 and evolving. Zephyr's catalog may have gaps against the latest spec
+- **Fix**: Audit catalog against A2UI v0.9 spec, fix any gaps, and document Zephyr as a reference A2UI implementation
+
+### 13.3 Agent Action Recordings
+- **File**: `zephyr-framework.js` (Zephyr.agent namespace)
+- **Issue**: No way for agents to record and replay sequences of UI actions
+- **Fix**: Add `Zephyr.agent.record()` / `Zephyr.agent.replay()` — captures a sequence of `act()` calls with timestamps and replays them. Enables agent-driven testing, macro recording, and automation. No competitor offers this
+
+### 13.4 Multi-Agent Coordination
+- **File**: `zephyr-framework.js` (Zephyr.agent namespace)
+- **Issue**: When multiple agents operate on the same page, conflicting state mutations can occur
+- **Fix**: Add `Zephyr.agent.lock(selector)` / `Zephyr.agent.unlock(selector)` for component-level locking. Locked components reject `act()` calls from other agents until unlocked
+
+### 13.5 Agent-Observable State Diffs
+- **File**: `zephyr-framework.js` (Zephyr.agent namespace)
+- **Issue**: `observe()` emits raw events — agents must diff state manually to reason about changes
+- **Fix**: Enhance `observe()` to emit structured diffs (`{ component, property, from, to, timestamp }`) so agents can reason about state changes over time
+
+### 13.6 Headless Mode
+- **File**: `zephyr-framework.js` (Zephyr.agent namespace), `zephyr-framework.css`
+- **Issue**: CSS transitions and animations slow down agent-driven test cycles
+- **Fix**: `Zephyr.agent.headless(true)` adds `[data-z-headless]` to document root, CSS rule disables all transitions/animations. Components still update state, just without visual delay
+
+---
+
+## Priority 14 — Launch & Visibility
+
+### 14.1 End-to-End Demo Video
+- **Issue**: No visual proof of agent-controlled UI — the killer differentiator is invisible
+- **Fix**: Screen recording showing Claude Desktop controlling a Zephyr app via MCP. Demonstrate agent reading state, acting on components, and observing changes in real time. Embed in README and share on social
+
+### 14.2 Launch Blog Post
+- **Issue**: No public narrative about what Zephyr is and why it matters
+- **Fix**: Write "The first UI framework built for AI agents" on Dev.to or personal blog. Cover: zero-JS philosophy, agent API vs competitor doc-lookup MCP servers, A2UI catalog, embedded widget, competitive comparison table
+
+### 14.3 Hacker News / Reddit Launch
+- **Issue**: No public awareness
+- **Fix**: Post to HN Show and r/webdev. The "AI-native UI framework" angle is timely and differentiated from the sea of React component libraries
+
+### 14.4 VS Code Snippets Extension
+- **File**: new `vscode-zephyr-snippets/` package
+- **Issue**: No IDE tooling for quick component scaffolding
+- **Fix**: VS Code extension with snippets for all `z-*` components. Low effort, high discoverability on the VS Code marketplace
+
+### 14.5 Additional Starter Templates
+- **File**: `create-zephyr-app/`
+- **Issue**: Single basic starter template limits perceived versatility
+- **Fix**: Add dashboard template and form-heavy template options to `create-zephyr-app`. Shows the framework handles real app patterns, not just demos

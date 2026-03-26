@@ -1,14 +1,22 @@
 {
   "name": "zephyr-framework",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "The first UI framework built for AI agents. 14 web components with pure CSS interactions, zero runtime JavaScript. Built-in MCP server, A2UI catalog, and structured Agent API.",
   "main": "zephyr-framework.js",
   "module": "zephyr-framework.js",
+  "types": "zephyr-framework.d.ts",
   "sideEffects": true,
+  "scripts": {
+    "build": "node build.js"
+  },
   "files": [
     "zephyr-framework.js",
+    "zephyr-framework.min.js",
     "zephyr-framework.css",
+    "zephyr-framework.min.css",
+    "zephyr-framework.d.ts",
     "zephyr-agent-widget.js",
+    "zephyr-agent-widget.min.js",
     "zephyr-schema.json",
     "zephyr-prompt.md",
     "zephyr-a2ui-catalog.json",
@@ -38,5 +46,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.4"
   }
 }

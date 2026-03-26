@@ -116,10 +116,23 @@ Visitors type "open the settings modal" and it happens. No MCP, no localhost —
 ```bash
 # Add to an existing project
 npm install zephyr-framework
-
-# Or just grab the files — no npm, no build step
-# Copy zephyr-framework.js and zephyr-framework.css into your project
 ```
+
+#### CDN (no install, no build step)
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework/zephyr-framework.min.css">
+<script src="https://cdn.jsdelivr.net/npm/zephyr-framework/zephyr-framework.min.js"></script>
+```
+
+Or use unpkg:
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/zephyr-framework/zephyr-framework.min.css">
+<script src="https://unpkg.com/zephyr-framework/zephyr-framework.min.js"></script>
+```
+
+#### Manual (copy files)
 
 ```html
 <link rel="stylesheet" href="zephyr-framework.css">

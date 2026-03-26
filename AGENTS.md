@@ -151,6 +151,8 @@ zephyr-framework/
 │   │   └── index.html         # Starter page with example components
 │   └── package.json           # Zero deps — uses only Node built-ins
 │
+├── build.js                  # esbuild minification script (node build.js)
+├── zephyr-framework.d.ts     # TypeScript declarations for all components + APIs
 ├── package.json              # Root npm package: zephyr-framework
 ├── demo.css                  # Demo page styles (NOT part of framework)
 ├── index.html                # Demo/showcase page

@@ -349,35 +349,45 @@
 
   /* ----- Dark Mode (via :has()) ----- */
 
-  html:has([data-theme="dark"]) {
+  html:has([data-theme="dark"]),
+  html[data-theme="dark"] {
     color-scheme: dark;
   }
 
-  html:has([data-theme="dark"]) z-modal dialog {
+  html:has([data-theme="dark"]) z-modal dialog,
+  html[data-theme="dark"] z-modal dialog {
     background: rgb(17 24 39);
     color: white;
   }
 
   html:has([data-theme="dark"]) z-select [slot="options"],
   html:has([data-theme="dark"]) z-dropdown [slot="content"],
-  html:has([data-theme="dark"]) z-combobox [slot="listbox"] {
+  html:has([data-theme="dark"]) z-combobox [slot="listbox"],
+  html[data-theme="dark"] z-select [slot="options"],
+  html[data-theme="dark"] z-dropdown [slot="content"],
+  html[data-theme="dark"] z-combobox [slot="listbox"] {
     background: rgb(17 24 39);
     color: white;
   }
 
   html:has([data-theme="dark"]) z-select [slot="options"] [data-value]:hover,
   html:has([data-theme="dark"]) z-combobox [slot="listbox"] [data-value]:hover,
-  html:has([data-theme="dark"]) z-combobox [slot="listbox"] [data-value][data-highlighted] {
+  html:has([data-theme="dark"]) z-combobox [slot="listbox"] [data-value][data-highlighted],
+  html[data-theme="dark"] z-select [slot="options"] [data-value]:hover,
+  html[data-theme="dark"] z-combobox [slot="listbox"] [data-value]:hover,
+  html[data-theme="dark"] z-combobox [slot="listbox"] [data-value][data-highlighted] {
     background-color: rgb(31 41 55);
   }
 
-  html:has([data-theme="dark"]) z-combobox input {
+  html:has([data-theme="dark"]) z-combobox input,
+  html[data-theme="dark"] z-combobox input {
     background: rgb(17 24 39);
     color: white;
     border-color: rgb(55 65 81);
   }
 
-  html:has([data-theme="dark"]) z-select [slot="trigger"] {
+  html:has([data-theme="dark"]) z-select [slot="trigger"],
+  html[data-theme="dark"] z-select [slot="trigger"] {
     background: rgb(17 24 39);
     color: white;
     border-color: rgb(55 65 81);
@@ -914,43 +924,52 @@
     animation: z-agent-pulse 0.6s ease 2;
   }
 
-  /* Dark mode support — follows existing :has() pattern */
-  html:has([data-theme="dark"]) z-agent .z-agent-panel {
+  /* Dark mode support — matches both html[data-theme] and descendant :has() */
+  html:has([data-theme="dark"]) z-agent .z-agent-panel,
+  html[data-theme="dark"] z-agent .z-agent-panel {
     background: rgb(30 32 38);
     color: rgb(229 231 235);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-header {
+  html:has([data-theme="dark"]) z-agent .z-agent-header,
+  html[data-theme="dark"] z-agent .z-agent-header {
     border-bottom-color: rgb(255 255 255 / 0.08);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-msg-assistant {
+  html:has([data-theme="dark"]) z-agent .z-agent-msg-assistant,
+  html[data-theme="dark"] z-agent .z-agent-msg-assistant {
     background: rgb(55 65 81);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-typing {
+  html:has([data-theme="dark"]) z-agent .z-agent-typing,
+  html[data-theme="dark"] z-agent .z-agent-typing {
     background: rgb(55 65 81);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-typing-dot {
+  html:has([data-theme="dark"]) z-agent .z-agent-typing-dot,
+  html[data-theme="dark"] z-agent .z-agent-typing-dot {
     background: rgb(107 114 128);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-input {
+  html:has([data-theme="dark"]) z-agent .z-agent-input,
+  html[data-theme="dark"] z-agent .z-agent-input {
     background: rgb(17 24 39);
     color: rgb(229 231 235);
     border-color: rgb(55 65 81);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-input-row {
+  html:has([data-theme="dark"]) z-agent .z-agent-input-row,
+  html[data-theme="dark"] z-agent .z-agent-input-row {
     border-top-color: rgb(255 255 255 / 0.08);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-close:hover {
+  html:has([data-theme="dark"]) z-agent .z-agent-close:hover,
+  html[data-theme="dark"] z-agent .z-agent-close:hover {
     background: rgb(255 255 255 / 0.1);
   }
 
-  html:has([data-theme="dark"]) z-agent .z-agent-msg-error {
+  html:has([data-theme="dark"]) z-agent .z-agent-msg-error,
+  html[data-theme="dark"] z-agent .z-agent-msg-error {
     background: rgb(69 26 26);
     color: rgb(252 165 165);
   }

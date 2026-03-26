@@ -148,9 +148,10 @@ Or use unpkg:
 
 ---
 
-## Live Demo — Zephyr Boards
+## Live Demos
 
-See Zephyr's agent capabilities in action: **[Zephyr Boards](https://zephyr-agent-demo.vercel.app)** — a task board where an AI agent creates, moves, and manages tasks through natural language in real time. ([Source](https://github.com/daltlc/zephyr-agent-demo))
+- **[Component Showcase](https://daltlc.github.io/zephyr-framework/)** — Interactive demo of all 14 components and the Agent API
+- **[Zephyr Boards](https://zephyr-agent-demo.vercel.app)** — A task board where an AI agent creates, moves, and manages tasks through natural language in real time ([Source](https://github.com/daltlc/zephyr-agent-demo))
 
 ---
 
@@ -358,6 +359,13 @@ const actions = rec.stop();
 await Zephyr.agent.replay(actions);
 await Zephyr.agent.replay(actions, { delay: 500 });
 await Zephyr.agent.replay(actions, { realtime: true });
+
+// Multi-agent coordination — prevent conflicting mutations
+Zephyr.agent.lock('#checkout-form', 'agent-checkout');
+Zephyr.agent.act('#checkout-form', 'submit', { _agentId: 'agent-checkout' }); // works
+Zephyr.agent.act('#checkout-form', 'submit'); // rejected — locked
+Zephyr.agent.unlock('#checkout-form', 'agent-checkout');
+Zephyr.agent.locks(); // list all active locks
 ```
 
 A full machine-readable schema is available in `zephyr-schema.json`, and an LLM system prompt template in `zephyr-prompt.md`.

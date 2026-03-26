@@ -294,6 +294,26 @@ interface ZephyrAgentAPI {
    */
   replay(recording: ZephyrRecordedAction[], options?: ZephyrReplayOptions): Promise<ZephyrReplayResult[]>;
 
+  /**
+   * Locks a component so only the specified agent can act on it.
+   * @param selector - CSS selector for the component
+   * @param agentId - Unique identifier for the locking agent
+   */
+  lock(selector: string, agentId: string): ZephyrActResult;
+
+  /**
+   * Unlocks a component.
+   * @param selector - CSS selector for the component
+   * @param agentId - The agent requesting the unlock
+   * @param options - Unlock options
+   */
+  unlock(selector: string, agentId: string, options?: { force?: boolean }): ZephyrActResult;
+
+  /**
+   * Returns all currently locked components and their owning agents.
+   */
+  locks(): Array<{ selector: string; agentId: string }>;
+
   /** Generates a markdown prompt describing all Zephyr components on the page. */
   getPrompt(): string;
 

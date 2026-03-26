@@ -40,7 +40,7 @@
     "type": "git",
     "url": "git+https://github.com/daltlc/zephyr-framework.git"
   },
-  "homepage": "https://github.com/daltlc/zephyr-framework#readme",
+  "homepage": "https://daltlc.github.io/zephyr-framework/",
   "bugs": {
     "url": "https://github.com/daltlc/zephyr-framework/issues"
   },

@@ -305,6 +305,8 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **13.6** Headless mode — `Zephyr.agent.headless()` toggles `[data-z-headless]`, CSS disables all transitions/animations
 - [x] **13.5** Agent-observable state diffs — `observeDiffs()`/`unobserveDiffs()` emit `{ component, id, property, from, to, timestamp }`
 - [x] **13.3** Agent action recordings — `record()` captures `act()` calls, `replay()` replays with delay/realtime options
+- [x] **13.4** Multi-agent coordination — `lock()`/`unlock()` with agent ownership, `locks()` to list, force unlock, `data-z-locked` attribute
+- [x] **12.5** GitHub Pages docs site — `.github/workflows/pages.yml` deploys demo + framework files to daltlc.github.io/zephyr-framework
 
 ---
 

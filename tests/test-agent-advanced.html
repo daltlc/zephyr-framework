@@ -241,6 +241,78 @@
       assert.equal(results.length, 0, 'should return empty results');
     });
 
+    // =========================================================================
+    // 13.4 Multi-Agent Coordination (Lock / Unlock)
+    // =========================================================================
+
+    t.test('lock() locks a component to an agent', async (assert) => {
+      const result = Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      assert.equal(result.success, true, 'should succeed');
+      const el = document.getElementById('test-dropdown');
+      assert.equal(el.getAttribute('data-z-locked'), 'agent-1', 'should set data-z-locked');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('lock() rejects if already locked by another agent', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.lock('#test-dropdown', 'agent-2');
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(result.error.includes('agent-1'), 'error should mention owner');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('lock() allows re-locking by same agent', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      assert.equal(result.success, true, 'same agent should be able to re-lock');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('act() is rejected when locked by another agent', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.act('#test-dropdown', 'open');
+      assert.equal(result.success, false, 'should reject act without matching agentId');
+      assert.ok(result.error.includes('locked'), 'error should mention lock');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('act() succeeds when locked by same agent (via _agentId param)', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.act('#test-dropdown', 'open', { _agentId: 'agent-1' });
+      assert.equal(result.success, true, 'should allow act with matching _agentId');
+      Zephyr.agent.act('#test-dropdown', 'close', { _agentId: 'agent-1' });
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('unlock() fails if wrong agent', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.unlock('#test-dropdown', 'agent-2');
+      assert.equal(result.success, false, 'should reject unlock from wrong agent');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+    });
+
+    t.test('unlock() with force overrides ownership', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      const result = Zephyr.agent.unlock('#test-dropdown', 'agent-2', { force: true });
+      assert.equal(result.success, true, 'force unlock should succeed');
+      const el = document.getElementById('test-dropdown');
+      assert.ok(!el.hasAttribute('data-z-locked'), 'data-z-locked should be removed');
+    });
+
+    t.test('locks() returns all active locks', async (assert) => {
+      Zephyr.agent.lock('#test-dropdown', 'agent-1');
+      Zephyr.agent.lock('#test-modal', 'agent-2');
+      const locks = Zephyr.agent.locks();
+      assert.equal(locks.length, 2, 'should have 2 locks');
+      Zephyr.agent.unlock('#test-dropdown', 'agent-1');
+      Zephyr.agent.unlock('#test-modal', 'agent-2');
+    });
+
+    t.test('lock() requires agentId', async (assert) => {
+      const result = Zephyr.agent.lock('#test-dropdown');
+      assert.equal(result.success, false, 'should fail without agentId');
+    });
+
     t.run();
   </script>
 </body>

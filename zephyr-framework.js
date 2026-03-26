@@ -1285,6 +1285,9 @@ window.Zephyr = {
     /** @private Recording state. */
     _recording: null,
 
+    /** @private Locked components: Map<Element, string> (element → agent ID). */
+    _locks: new Map(),
+
     /** @private Action mappings per component tag. */
     _actions: {
       'z-accordion': {
@@ -1555,6 +1558,15 @@ window.Zephyr = {
       const el = document.querySelector(selector);
       if (!el) return { success: false, error: 'Element not found: ' + selector };
 
+      // Check if component is locked by another agent
+      const lockOwner = Zephyr.agent._locks.get(el);
+      if (lockOwner) {
+        const agentId = (params && params._agentId) || null;
+        if (lockOwner !== agentId) {
+          return { success: false, error: `Component is locked by agent '${lockOwner}'. Unlock it first or pass matching _agentId in params.` };
+        }
+      }
+
       const tag = el.tagName.toLowerCase();
       const componentActions = Zephyr.agent._actions[tag];
       if (!componentActions) return { success: false, error: 'No actions for: ' + tag };
@@ -1804,6 +1816,66 @@ window.Zephyr = {
 
         next();
       });
+    },
+
+    /**
+     * Locks a component so only the specified agent can act on it.
+     * Other agents' act() calls will be rejected until unlocked.
+     * @param {string} selector - CSS selector for the component to lock
+     * @param {string} agentId - Unique identifier for the locking agent
+     * @returns {{success: boolean, error?: string}}
+     */
+    lock(selector, agentId) {
+      if (!agentId || typeof agentId !== 'string') {
+        return { success: false, error: 'agentId is required and must be a string' };
+      }
+      const el = document.querySelector(selector);
+      if (!el) return { success: false, error: 'Element not found: ' + selector };
+
+      const existing = Zephyr.agent._locks.get(el);
+      if (existing && existing !== agentId) {
+        return { success: false, error: `Component is already locked by agent '${existing}'` };
+      }
+      Zephyr.agent._locks.set(el, agentId);
+      el.setAttribute('data-z-locked', agentId);
+      return { success: true };
+    },
+
+    /**
+     * Unlocks a component. Only the locking agent (or a force unlock) can unlock it.
+     * @param {string} selector - CSS selector for the component to unlock
+     * @param {string} agentId - The agent requesting the unlock
+     * @param {Object} [options] - Unlock options
+     * @param {boolean} [options.force=false] - Force unlock regardless of owner
+     * @returns {{success: boolean, error?: string}}
+     */
+    unlock(selector, agentId, options) {
+      const el = document.querySelector(selector);
+      if (!el) return { success: false, error: 'Element not found: ' + selector };
+
+      const existing = Zephyr.agent._locks.get(el);
+      if (!existing) return { success: true }; // Already unlocked
+
+      const force = options && options.force;
+      if (!force && existing !== agentId) {
+        return { success: false, error: `Component is locked by agent '${existing}', not '${agentId}'. Use { force: true } to override.` };
+      }
+      Zephyr.agent._locks.delete(el);
+      el.removeAttribute('data-z-locked');
+      return { success: true };
+    },
+
+    /**
+     * Returns all currently locked components and their owning agents.
+     * @returns {Array<{selector: string, agentId: string}>}
+     */
+    locks() {
+      const result = [];
+      Zephyr.agent._locks.forEach((agentId, el) => {
+        const id = el.id ? '#' + el.id : el.tagName.toLowerCase();
+        result.push({ selector: id, agentId });
+      });
+      return result;
     },
 
     /**

@@ -2,6 +2,8 @@
 
 A minimal Electron app showing what we're calling the **WebMCP** pattern. The browser process acts as the AI agent, controls Zephyr web components via IPC, and your API keys never touch the webpage.
 
+![Zephyr Browser screenshot](screenshot.png)
+
 ## What is WebMCP?
 
 Right now if you want an AI agent to control a webpage, you either need a server in the middle or you embed the agent directly in the page (which means your API keys are just sitting there in the source). Neither is great.

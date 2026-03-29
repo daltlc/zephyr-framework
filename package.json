@@ -1,6 +1,6 @@
 {
   "name": "zephyr-framework",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "The first UI framework built for AI agents. 14 web components with pure CSS interactions, zero runtime JavaScript. Built-in MCP server, A2UI catalog, and structured Agent API.",
   "main": "zephyr-framework.js",
   "module": "zephyr-framework.js",

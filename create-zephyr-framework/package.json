@@ -24,7 +24,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/daltlc/zephyr-framework.git",
-    "directory": "create-zephyr-app"
+    "directory": "create-zephyr-framework"
   },
   "homepage": "https://github.com/daltlc/zephyr-framework#readme",
   "bugs": {

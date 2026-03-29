@@ -796,7 +796,7 @@ Graceful degradation for older browsers — components work without animations.
 | [`zephyr-framework-mcp`](https://www.npmjs.com/package/zephyr-framework-mcp) | `npm install zephyr-framework-mcp` | MCP server — bridges Claude Desktop, Cursor, and any MCP host to Zephyr components in the browser |
 | [`create-zephyr-framework`](https://www.npmjs.com/package/create-zephyr-framework) | `npx create-zephyr-framework my-app` | CLI scaffolder — creates a ready-to-run project with framework, MCP server, and starter page |
 
-**Source:** All three packages live in the [zephyr-framework](https://github.com/daltlc/zephyr-framework) monorepo (`zephyr-mcp/` and `create-zephyr-app/` subdirectories).
+**Source:** All three packages live in the [zephyr-framework](https://github.com/daltlc/zephyr-framework) monorepo (`zephyr-mcp/` and `create-zephyr-framework/` subdirectories).
 
 ## License
 

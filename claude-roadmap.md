@@ -313,10 +313,9 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 
 ## Priority 12 — Ship & Distribute
 
-### 12.1 Publish to npm
+### ~~12.1 Publish to npm~~ ✅
 - **Packages**: `zephyr-framework`, `zephyr-framework-mcp`, `create-zephyr-framework`
-- **Issue**: All README install instructions (`npm install`, `npx create-zephyr-framework`) depend on packages being published
-- **Fix**: `npm publish` each package after verifying contents with `npm pack --dry-run`
+- **Status**: Published to npm (2026-03-29)
 
 ### 12.2 Build Script for Minification
 - **File**: new `build.js` or `package.json` script
@@ -414,3 +413,4 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **15.8** Mock data system — `dashboard-data.js` with time-series/candlestick/stat generators and real-time simulation
 - [x] **15.9** Integration updates — Schema, A2UI catalog, prompt template, TypeScript declarations, widget tools, MCP tools all updated
 - [x] **15.10** Architecture — Dashboard components in separate `zephyr-dashboard.js` + `zephyr-dashboard.css` to keep core lightweight
+- [x] **12.1** Publish to npm — `zephyr-framework@0.3.2`, `zephyr-framework-mcp@0.3.1`, `create-zephyr-framework@0.3.1` all published

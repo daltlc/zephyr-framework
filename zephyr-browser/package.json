@@ -1,0 +1,22 @@
+{
+  "name": "zephyr-browser",
+  "version": "0.1.0",
+  "description": "WebMCP POC  - AI agent in the browser process, controlling Zephyr UI via IPC. Keys never touch the webpage.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "webmcp",
+    "zephyr",
+    "electron",
+    "ai-agent",
+    "mcp",
+    "web-components"
+  ],
+  "author": "Dalton Carr",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

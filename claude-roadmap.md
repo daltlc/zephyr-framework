@@ -343,10 +343,9 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 
 > **Context**: MUI, Tailwind, shadcn/ui, and Radix all ship MCP servers — but they are read-only documentation lookups. Zephyr is the only framework with read-write agent control of live UI. These items widen that gap.
 
-### 13.1 WebMCP Alignment
-- **Files**: `zephyr-framework.js`, new `zephyr-webmcp-adapter.js` (if needed)
-- **Issue**: WebMCP (W3C/Chrome early preview, Feb 2026) defines a browser-native PostMessage transport for agent–app communication. Zephyr.agent predates this but may not align with the spec
-- **Fix**: Evaluate the WebMCP spec. If `Zephyr.agent` already aligns, document compatibility. If gaps exist, implement a thin PostMessage adapter so `<z-agent>` works via WebMCP alongside existing WebSocket transport
+### ~~13.1 WebMCP Alignment~~ ✅
+- **Files**: `zephyr-browser/` — Electron POC demonstrating the WebMCP pattern
+- **Status**: Built as a proof-of-concept Electron app (2026-03-28). Agent runs in main process, keys never touch the webpage, IPC bridge mirrors the MCP WebSocket bridge format. Includes educational splash explaining WebMCP concept.
 
 ### 13.2 A2UI v0.9 Compliance Audit
 - **File**: `zephyr-a2ui-catalog.json`
@@ -414,3 +413,4 @@ Prioritized improvements for DRY, modular, maintainable, production-ready code. 
 - [x] **15.9** Integration updates — Schema, A2UI catalog, prompt template, TypeScript declarations, widget tools, MCP tools all updated
 - [x] **15.10** Architecture — Dashboard components in separate `zephyr-dashboard.js` + `zephyr-dashboard.css` to keep core lightweight
 - [x] **12.1** Publish to npm — `zephyr-framework@0.3.2`, `zephyr-framework-mcp@0.3.1`, `create-zephyr-framework@0.3.1` all published
+- [x] **13.1** WebMCP POC — `zephyr-browser/` Electron app demonstrating agent-in-browser-process pattern with IPC bridge

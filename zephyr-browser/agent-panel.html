@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zephyr Browser - WebMCP Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Left pane: Zephyr demo page loaded in a webview -->
+  <div class="pane-left">
+    <webview id="zephyr-webview" src="about:blank" nodeintegration="false"></webview>
+    <div class="pane-label pane-label--page">Web Page - no API keys here</div>
+  </div>
+
+  <!-- Resize handle -->
+  <div class="resize-handle" id="resize-handle"></div>
+
+  <!-- Right pane: Agent panel -->
+  <div class="pane-right">
+    <div class="pane-label--agent">Agent Process - API keys secured here</div>
+
+    <!-- ================================================================
+         Educational Splash  - explains what WebMCP is
+         ================================================================ -->
+    <div class="splash" id="splash">
+
+      <div>
+        <h1>Welcome to Zephyr Browser</h1>
+        <p>This is a proof-of-concept for something we're calling <strong>WebMCP</strong>.
+        The basic idea: what if the browser itself was the AI agent, instead of
+        just being the window you look through?</p>
+      </div>
+
+      <div>
+        <h2>What is WebMCP?</h2>
+        <p>Right now, if you want an AI agent to control a webpage, you either
+        need a server sitting in the middle or you embed the agent directly in
+        the page (which means your API keys are just... sitting there in the
+        source code). Neither is great.</p>
+        <p><strong>WebMCP is a different approach.</strong> The browser's own
+        process becomes the agent. It holds your API keys, talks to the AI model,
+        and sends commands to the webpage through a secure bridge. The webpage
+        just says what it can do. It never sees your keys.</p>
+      </div>
+
+      <div>
+        <h2>How is this different?</h2>
+        <div class="comparison">
+          <div class="comparison-card">
+            <h3>Server Agent</h3>
+            <ul>
+              <li class="secure">Keys on your server</li>
+              <li class="neutral">Agent runs remotely</li>
+              <li class="risk">Needs WebSocket bridge</li>
+              <li class="risk">Server infrastructure required</li>
+            </ul>
+          </div>
+          <div class="comparison-card">
+            <h3>Embedded Widget</h3>
+            <ul>
+              <li class="risk">Keys in the page (XSS risk)</li>
+              <li class="neutral">Agent runs in the page</li>
+              <li class="secure">No server needed</li>
+              <li class="risk">Visible in page source</li>
+            </ul>
+          </div>
+          <div class="comparison-card highlight">
+            <h3>WebMCP (this demo)</h3>
+            <ul>
+              <li class="secure">Keys in browser process</li>
+              <li class="secure">Agent runs outside page</li>
+              <li class="secure">No server needed</li>
+              <li class="secure">Page never sees keys</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2>How does it work?</h2>
+        <div class="flow"><span class="highlight">You</span> type a message
+   <span class="dim">|</span>
+   v
+<span class="highlight">Agent Panel</span> (this sidebar)
+   <span class="dim">|</span> IPC
+   v
+<span class="highlight">Main Process</span> <span class="secure">[API key lives here]</span>
+   <span class="dim">|</span> fetch()
+   v
+<span class="highlight">Anthropic API</span> returns tool calls
+   <span class="dim">|</span>
+   v
+<span class="highlight">Main Process</span> forwards tool call via IPC
+   <span class="dim">|</span>
+   v
+<span class="highlight">Preload Bridge</span> (the "WebMCP" layer)
+   <span class="dim">|</span>
+   v
+<span class="secure">Zephyr.agent.act()</span> on the web page
+   <span class="dim">|</span>
+   v
+Result flows back up, <span class="secure">keys never crossed</span></div>
+      </div>
+
+      <div>
+        <h2>Where could this go?</h2>
+        <p>Right now we're using Electron's IPC as the bridge, but imagine if
+        browsers had this built in. Something like <strong>navigator.webmcp</strong>
+        where any webpage could declare its capabilities and any agent, whether
+        it's built into the browser, an extension, or a desktop app, could
+        discover and use them. No custom bridges, no exposed keys.</p>
+        <p>This demo is us proving the pattern works. The standard part comes
+        later.</p>
+      </div>
+
+      <button class="cta" id="start-btn">Try it - talk to the agent</button>
+    </div>
+
+    <!-- ================================================================
+         Chat Interface
+         ================================================================ -->
+    <div class="chat" id="chat">
+      <div class="messages" id="messages">
+        <div class="thinking" id="thinking">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input type="text" id="input" placeholder="Ask the agent to control the page..."
+               autocomplete="off" autofocus>
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">
+      <span id="status-text">
+        <span class="status-dot status-dot--pending" id="status-dot"></span>
+        Connecting...
+      </span>
+      <span id="model-label"></span>
+    </div>
+  </div>
+
+  <script src="agent-panel.js"></script>
+</body>
+</html>

@@ -158,6 +158,15 @@ zephyr-framework/
 │   │   └── index.html         # Starter page with example components
 │   └── package.json           # Zero deps — uses only Node built-ins
 │
+├── zephyr-browser/            # WebMCP POC — Electron agent browser
+│   ├── main.js                # Main process: agent loop, Anthropic API, IPC hub
+│   ├── preload.js             # WebMCP bridge: IPC → Zephyr.agent.* calls
+│   ├── agent-preload.js       # Agent panel bridge: chat UI ↔ main process
+│   ├── agent-panel.html       # Split-pane UI: educational splash + chat
+│   ├── agent-panel.js         # Chat renderer logic + webview IPC relay
+│   ├── styles.css             # Agent panel styling (Zephyr demo tokens)
+│   └── package.json           # Electron dependency
+│
 ├── build.js                  # esbuild minification script (node build.js)
 ├── zephyr-framework.d.ts     # TypeScript declarations for all components + APIs
 ├── package.json              # Root npm package: zephyr-framework

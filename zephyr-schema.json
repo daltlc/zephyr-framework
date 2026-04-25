@@ -25,6 +25,20 @@
     "--z-toast-bg": { "default": "rgb(17 24 39)", "description": "Toast background color" },
     "--z-toast-color": { "default": "white", "description": "Toast text color" }
   },
+  "guardSystem": {
+    "description": "Optional confirmation layer for destructive agent actions. Register guards on components/actions; act() returns a pending state instead of executing. Call confirm() to proceed or deny() to cancel.",
+    "methods": {
+      "guard": "guard(selector, actions, handler?, options?) — register a confirmation requirement",
+      "unguard": "unguard(selector) — remove a guard",
+      "confirm": "confirm(confirmId) — execute a pending guarded action",
+      "deny": "deny(confirmId) — discard a pending guarded action",
+      "guarded": "guarded() — list all pending confirmations"
+    },
+    "attributes": {
+      "data-z-guarded": "Set on elements with a pending confirmation. Value is the confirmId."
+    },
+    "timeout": "Default 30 seconds. Pending actions are auto-denied after timeout."
+  },
   "components": {
     "accordion": {
       "tag": "z-accordion",

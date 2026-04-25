@@ -1,0 +1,550 @@
+/**
+ * Zephyr Runtime — Styles for the agent execution surface
+ * Optional: only load alongside zephyr-runtime.js
+ *
+ * Components: z-stream, z-stream-entry, z-command, z-ticker
+ * Design: Terminal aesthetic — tight rows, monospace, dark-first
+ */
+
+/* ----- Runtime tokens ----- */
+:root {
+  --z-rt-bg: #0a0e27;
+  --z-rt-surface: #111631;
+  --z-rt-border: #1e2540;
+  --z-rt-text: #e8edf7;
+  --z-rt-text-muted: #64748b;
+  --z-rt-text-dim: #475569;
+  --z-rt-accent: #ff6b9d;
+  --z-rt-accent-soft: #ffa5c3;
+  --z-rt-success: #4ade80;
+  --z-rt-warning: #fbbf24;
+  --z-rt-error: #f87171;
+  --z-rt-info: #60a5fa;
+  --z-rt-entry-gap: 2px;
+  --z-rt-gutter-width: 2rem;
+  --z-rt-entry-radius: 0.25rem;
+  --z-rt-collapse-duration: 0.2s;
+  --z-rt-font: 'IBM Plex Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+}
+
+/* ----- z-ticker ----- */
+
+z-ticker {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  background: var(--z-rt-surface);
+  border-bottom: 1px solid var(--z-rt-border);
+  font-family: var(--z-rt-font);
+  font-size: 0.75rem;
+  color: var(--z-rt-text-muted);
+  padding: 0.375rem 0;
+  user-select: none;
+}
+
+.z-ticker-track {
+  display: inline-flex;
+  gap: 2rem;
+  animation: z-ticker-scroll linear infinite;
+  padding-left: 100%;
+}
+
+z-ticker:hover .z-ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes z-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.z-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.z-ticker-label {
+  font-weight: 600;
+  color: var(--z-rt-text);
+  letter-spacing: 0.03em;
+}
+
+.z-ticker-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--z-rt-text);
+}
+
+.z-ticker-trend {
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.z-ticker-trend--up {
+  color: var(--z-rt-success);
+}
+
+.z-ticker-trend--down {
+  color: var(--z-rt-error);
+}
+
+/* ----- z-stream ----- */
+
+z-stream {
+  display: flex;
+  flex-direction: column;
+  gap: var(--z-rt-entry-gap);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: var(--z-rt-font);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--z-rt-text);
+  padding: 0.5rem;
+  position: relative;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--z-rt-border) transparent;
+}
+
+/* Jump to latest pill */
+.z-stream-jump {
+  position: sticky;
+  bottom: 0.5rem;
+  align-self: center;
+  z-index: 10;
+  padding: 0.375rem 1rem;
+  background: var(--z-rt-accent);
+  color: #0a0e27;
+  border: none;
+  border-radius: 1rem;
+  font-family: var(--z-rt-font);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  opacity: 0.9;
+}
+
+.z-stream-jump:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.z-stream-jump[hidden] {
+  display: none;
+}
+
+/* ----- z-stream-entry ----- */
+
+z-stream-entry {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--z-rt-entry-radius);
+  background: var(--z-rt-surface);
+  border-left: 3px solid var(--z-rt-border);
+  transition: opacity 0.3s, transform 0.3s, border-color 0.3s;
+  position: relative;
+}
+
+/* Top row: gutter | header | timestamp | actions */
+.z-entry-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  min-height: 1.75rem;
+}
+
+/* Gutter (type icon) */
+.z-entry-gutter {
+  width: var(--z-rt-gutter-width);
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Header */
+.z-entry-header {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+.z-entry-header:hover {
+  color: var(--z-rt-accent-soft);
+}
+
+/* No collapsible content — disable interactive header */
+z-stream-entry[data-no-content] .z-entry-header {
+  cursor: default;
+}
+z-stream-entry[data-no-content] .z-entry-header:hover {
+  color: inherit;
+}
+
+/* Timestamp */
+.z-entry-ts {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  color: var(--z-rt-text-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Action buttons */
+.z-entry-actions {
+  display: flex;
+  gap: 0.125rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+z-stream-entry:hover .z-entry-actions {
+  opacity: 1;
+}
+
+.z-entry-btn {
+  background: none;
+  border: none;
+  color: var(--z-rt-text-dim);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.125rem;
+  line-height: 1;
+  font-family: var(--z-rt-font);
+}
+
+.z-entry-btn:hover {
+  color: var(--z-rt-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Content (collapsible) */
+.z-entry-content-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--z-rt-collapse-duration) ease;
+}
+
+.z-entry-content {
+  overflow: hidden;
+  padding: 0 0.5rem 0.5rem calc(var(--z-rt-gutter-width) + 1rem);
+  font-size: 0.75rem;
+  color: var(--z-rt-text-muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Collapsed state */
+z-stream-entry[data-collapsed] .z-entry-content-wrap {
+  grid-template-rows: 0fr;
+}
+
+z-stream-entry[data-collapsed] .z-entry-content {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Pinned state */
+z-stream-entry[data-pinned] {
+  border-left-color: var(--z-rt-warning);
+  background: rgba(251, 191, 36, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.15);
+}
+
+z-stream-entry[data-pinned] .z-entry-pin {
+  color: var(--z-rt-warning);
+}
+
+/* Filtered out */
+z-stream-entry[data-filtered] {
+  display: none;
+}
+
+/* Dismiss animation */
+z-stream-entry[data-dismissing] {
+  opacity: 0;
+  transform: translateX(2rem);
+  pointer-events: none;
+}
+
+/* ----- Entry type styling ----- */
+
+/* Event — neutral dot */
+z-stream-entry[data-type="event"] {
+  border-left-color: var(--z-rt-text-dim);
+}
+z-stream-entry[data-type="event"] .z-entry-gutter::before {
+  content: '\25CF'; /* filled circle */
+  color: var(--z-rt-text-dim);
+}
+
+/* Agent — brain/sparkle */
+z-stream-entry[data-type="agent"] {
+  border-left-color: var(--z-rt-accent);
+}
+z-stream-entry[data-type="agent"] .z-entry-gutter::before {
+  content: '\2726'; /* four-pointed star */
+  color: var(--z-rt-accent);
+}
+z-stream-entry[data-type="agent"] .z-entry-header {
+  color: var(--z-rt-accent-soft);
+}
+
+/* Command — prompt */
+z-stream-entry[data-type="command"] {
+  border-left-color: var(--z-rt-text);
+  background: rgba(232, 237, 247, 0.03);
+}
+z-stream-entry[data-type="command"] .z-entry-gutter::before {
+  content: '\276F'; /* right-pointing angle */
+  color: var(--z-rt-text);
+  font-weight: 700;
+}
+
+/* UI — grid icon */
+z-stream-entry[data-type="ui"] {
+  border-left-color: var(--z-rt-accent-soft);
+}
+z-stream-entry[data-type="ui"] .z-entry-gutter::before {
+  content: '\2637'; /* trigram */
+  color: var(--z-rt-accent-soft);
+}
+z-stream-entry[data-type="ui"] .z-entry-content {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Alert — warning */
+z-stream-entry[data-type="alert"] {
+  border-left-color: var(--z-rt-warning);
+  background: rgba(251, 191, 36, 0.04);
+}
+z-stream-entry[data-type="alert"] .z-entry-gutter::before {
+  content: '\26A0'; /* warning */
+  color: var(--z-rt-warning);
+}
+z-stream-entry[data-type="alert"] .z-entry-header {
+  color: var(--z-rt-warning);
+}
+
+/* Trade — dollar */
+z-stream-entry[data-type="trade"] {
+  border-left-color: var(--z-rt-success);
+}
+z-stream-entry[data-type="trade"] .z-entry-gutter::before {
+  content: '$';
+  color: var(--z-rt-success);
+  font-weight: 700;
+}
+
+/* System — gear */
+z-stream-entry[data-type="system"] {
+  border-left-color: var(--z-rt-text-dim);
+  opacity: 0.6;
+}
+z-stream-entry[data-type="system"] .z-entry-gutter::before {
+  content: '\2699'; /* gear */
+  color: var(--z-rt-text-dim);
+}
+z-stream-entry[data-type="system"] .z-entry-header {
+  font-size: 0.75rem;
+}
+
+/* ----- Entry status styling ----- */
+
+z-stream-entry[data-status="pending"] {
+  opacity: 0.7;
+}
+z-stream-entry[data-status="pending"] .z-entry-header::after {
+  content: '';
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  background: var(--z-rt-text-dim);
+  border-radius: 50%;
+  margin-left: 0.5rem;
+  animation: z-entry-pulse 1.2s ease-in-out infinite;
+}
+
+z-stream-entry[data-status="running"] .z-entry-header::after {
+  content: '';
+  display: inline-block;
+  width: 0.375rem;
+  height: 0.375rem;
+  background: var(--z-rt-info);
+  border-radius: 50%;
+  margin-left: 0.5rem;
+  animation: z-entry-pulse 0.8s ease-in-out infinite;
+}
+
+z-stream-entry[data-status="success"] {
+  opacity: 1;
+}
+z-stream-entry[data-status="success"] .z-entry-ts::before {
+  content: '\2713 ';
+  color: var(--z-rt-success);
+}
+
+z-stream-entry[data-status="error"] {
+  border-left-color: var(--z-rt-error);
+}
+z-stream-entry[data-status="error"] .z-entry-ts::before {
+  content: '\2717 ';
+  color: var(--z-rt-error);
+}
+
+@keyframes z-entry-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* ----- Thinking indicator for agent entries ----- */
+
+z-stream-entry[data-type="agent"][data-status="pending"] .z-entry-content::before,
+z-stream-entry[data-type="agent"][data-status="running"] .z-entry-content::before {
+  content: '\25CF  \25CF  \25CF';
+  display: block;
+  color: var(--z-rt-accent);
+  letter-spacing: 0.2em;
+  animation: z-thinking-dots 1.4s ease-in-out infinite;
+  font-size: 0.625rem;
+  padding: 0.25rem 0;
+}
+
+@keyframes z-thinking-dots {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Inline component container */
+.z-entry-component {
+  margin-top: 0.5rem;
+  border: 1px solid var(--z-rt-border);
+  border-radius: var(--z-rt-entry-radius);
+  overflow: hidden;
+}
+
+/* ----- z-command ----- */
+
+z-command {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--z-rt-surface);
+  border-top: 1px solid var(--z-rt-border);
+  font-family: var(--z-rt-font);
+  flex-shrink: 0;
+}
+
+.z-cmd-mode {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--z-rt-text-dim);
+  width: 1.25rem;
+  text-align: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+z-command[data-mode="command"] .z-cmd-mode {
+  color: var(--z-rt-success);
+}
+
+.z-cmd-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--z-rt-text);
+  font-family: var(--z-rt-font);
+  font-size: 0.8125rem;
+  caret-color: var(--z-rt-accent);
+}
+
+.z-cmd-input::placeholder {
+  color: var(--z-rt-text-dim);
+}
+
+.z-cmd-send {
+  background: none;
+  border: 1px solid var(--z-rt-border);
+  border-radius: 0.25rem;
+  color: var(--z-rt-text-dim);
+  cursor: pointer;
+  font-family: var(--z-rt-font);
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.z-cmd-send:hover {
+  border-color: var(--z-rt-accent);
+  color: var(--z-rt-accent);
+}
+
+/* ----- Utility: full-page runtime layout ----- */
+
+.z-runtime-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--z-rt-bg);
+  color: var(--z-rt-text);
+  font-family: var(--z-rt-font);
+  overflow: hidden;
+}
+
+.z-runtime-layout z-ticker {
+  flex-shrink: 0;
+}
+
+.z-runtime-layout z-stream {
+  flex: 1;
+  min-height: 0;
+}
+
+.z-runtime-layout z-command {
+  flex-shrink: 0;
+}
+
+/* ----- Status bar ----- */
+
+.z-runtime-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--z-rt-bg);
+  border-top: 1px solid var(--z-rt-border);
+  font-family: var(--z-rt-font);
+  font-size: 0.625rem;
+  color: var(--z-rt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.z-runtime-status-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--z-rt-success);
+  animation: z-entry-pulse 2s ease-in-out infinite;
+}
+
+.z-runtime-status-dot--disconnected {
+  background: var(--z-rt-error);
+  animation: none;
+}

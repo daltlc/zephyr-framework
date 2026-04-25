@@ -165,6 +165,36 @@ const ZEPHYR_TOOLS = [
       },
       required: ['container', 'layout']
     }
+  },
+  {
+    name: 'zephyr_confirm',
+    description: 'Confirm a guarded action that is pending approval. Use this after act() returns a pending result with a confirmId.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        confirmId: { type: 'string', description: 'The confirmId returned by the guarded act() call' }
+      },
+      required: ['confirmId']
+    }
+  },
+  {
+    name: 'zephyr_deny',
+    description: 'Deny/cancel a guarded action that is pending approval, discarding it without executing.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        confirmId: { type: 'string', description: 'The confirmId returned by the guarded act() call' }
+      },
+      required: ['confirmId']
+    }
+  },
+  {
+    name: 'zephyr_guarded',
+    description: 'List all pending guarded actions awaiting confirmation. Returns confirmId, selector, action, params, and timestamp for each.',
+    input_schema: {
+      type: 'object',
+      properties: {}
+    }
   }
 ];
 
@@ -1017,7 +1047,10 @@ class ZAgent extends HTMLElement {
       zephyr_set_state: () => Zephyr.agent.setState(input.selector, input.attributes),
       zephyr_get_schema: () => Zephyr.agent.getSchema(),
       zephyr_render: () => Zephyr.agent.render(input.container, input.spec),
-      zephyr_compose: () => Zephyr.agent.compose(input.container, input.layout)
+      zephyr_compose: () => Zephyr.agent.compose(input.container, input.layout),
+      zephyr_confirm: () => Zephyr.agent.confirm(input.confirmId),
+      zephyr_deny: () => Zephyr.agent.deny(input.confirmId),
+      zephyr_guarded: () => Zephyr.agent.guarded()
     };
 
     const handler = handlers[name];

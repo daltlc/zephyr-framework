@@ -14,6 +14,12 @@
   animation-duration: 0s !important;
 }
 
+/* Agent guard — visual feedback for components awaiting confirmation */
+[data-z-guarded] {
+  outline: 2px dashed rgb(234 179 8);
+  outline-offset: 2px;
+}
+
 /* Theming tokens — override these to customize all components */
 :root {
   --z-transition-duration: 0.3s;

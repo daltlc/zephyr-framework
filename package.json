@@ -26,6 +26,10 @@
     "dashboard/zephyr-dashboard.min.js",
     "dashboard/zephyr-dashboard.css",
     "dashboard/zephyr-dashboard.min.css",
+    "runtime/zephyr-runtime.js",
+    "runtime/zephyr-runtime.min.js",
+    "runtime/zephyr-runtime.css",
+    "runtime/zephyr-runtime.min.css",
     "LICENSE"
   ],
   "keywords": [
@@ -40,7 +44,11 @@
     "model-context-protocol",
     "llm",
     "dashboard",
-    "charts"
+    "charts",
+    "vercel-ai-sdk",
+    "ai-tools",
+    "agent-ui",
+    "agentic-ui"
   ],
   "author": "Dalton Carr",
   "license": "MIT",

@@ -587,6 +587,55 @@ mcpServer.tool(
   }
 );
 
+/**
+ * Tool: zephyr_confirm
+ *
+ * Confirms a guarded action that is pending approval.
+ */
+mcpServer.tool(
+  'zephyr_confirm',
+  'Confirm a guarded action that is pending approval. Use after act() returns { pending: true, confirmId }.',
+  {
+    confirmId: z.string().describe('The confirmId returned by the guarded act() call')
+  },
+  async ({ confirmId }) => {
+    const result = await callBrowser('confirm', [confirmId]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_deny
+ *
+ * Denies a guarded action, discarding it without executing.
+ */
+mcpServer.tool(
+  'zephyr_deny',
+  'Deny/cancel a guarded action that is pending approval.',
+  {
+    confirmId: z.string().describe('The confirmId returned by the guarded act() call')
+  },
+  async ({ confirmId }) => {
+    const result = await callBrowser('deny', [confirmId]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_guarded
+ *
+ * Lists all pending guarded actions awaiting confirmation.
+ */
+mcpServer.tool(
+  'zephyr_guarded',
+  'List all pending guarded actions awaiting confirmation.',
+  {},
+  async () => {
+    const result = await callBrowser('guarded', []);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
 // ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------

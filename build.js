@@ -52,6 +52,22 @@ async function run() {
     banner: { css: `/* Zephyr Dashboard v${pkg.version} | MIT License */` },
   });
 
+  // Minify runtime add-on JS
+  await build({
+    entryPoints: ['runtime/zephyr-runtime.js'],
+    outfile: 'runtime/zephyr-runtime.min.js',
+    minify: true,
+    banner: { js: `/* Zephyr Runtime v${pkg.version} | MIT License */` },
+  });
+
+  // Minify runtime add-on CSS
+  await build({
+    entryPoints: ['runtime/zephyr-runtime.css'],
+    outfile: 'runtime/zephyr-runtime.min.css',
+    minify: true,
+    banner: { css: `/* Zephyr Runtime v${pkg.version} | MIT License */` },
+  });
+
   // Report sizes
   const files = [
     ['zephyr-framework.js', 'zephyr-framework.min.js'],
@@ -59,6 +75,8 @@ async function run() {
     ['zephyr-framework.css', 'zephyr-framework.min.css'],
     ['dashboard/zephyr-dashboard.js', 'dashboard/zephyr-dashboard.min.js'],
     ['dashboard/zephyr-dashboard.css', 'dashboard/zephyr-dashboard.min.css'],
+    ['runtime/zephyr-runtime.js', 'runtime/zephyr-runtime.min.js'],
+    ['runtime/zephyr-runtime.css', 'runtime/zephyr-runtime.min.css'],
   ];
 
   console.log('\nZephyr Framework — Build Complete\n');

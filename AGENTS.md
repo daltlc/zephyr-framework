@@ -105,7 +105,12 @@ zephyr-framework/
 │   ├── ZFileUpload            # Drag-and-drop file upload with progress
 │   ├── ZVirtualList           # Virtual scrolling for large datasets
 │   ├── window.Zephyr          # Global utility API + component registry
-│   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt, render, compose)
+│   └── Zephyr.agent           # Agent API (getState, act, describe, observe, getPrompt, render, compose, guard/confirm/deny)
+│
+├── runtime/                 # Runtime add-on (optional) — agent execution surface
+│   ├── zephyr-runtime.js      # Components: ZStream, ZStreamEntry, ZCommand, ZTicker
+│   │                          # + Zephyr.agent.stream(), registerSource(), connectSource()
+│   └── zephyr-runtime.css     # Terminal aesthetic (dark, monospace, tight rows)
 │
 ├── dashboard/               # Dashboard add-on (optional)
 │   ├── zephyr-dashboard.js    # Components: ZStat, ZDashboard, ZDashboardPanel, ZDataGrid, ZChart
@@ -152,6 +157,13 @@ zephyr-framework/
 │   ├── package.json           # npm deps: @modelcontextprotocol/sdk, zod, ws
 │   └── README.md              # MCP setup and tool reference
 │
+├── examples/                  # Integration examples
+│   └── ai-sdk/                # Vercel AI SDK integration
+│       ├── server.js            # Express + AI SDK tools + WebSocket bridge
+│       ├── public/index.html    # Zephyr demo page + chat UI
+│       ├── public/bridge-client.js  # Browser-side WebSocket bridge (from zephyr-mcp)
+│       └── README.md            # Setup, architecture, example prompts
+│
 ├── create-zephyr-framework/        # CLI scaffolder for new projects
 │   ├── index.js               # npx create-zephyr-framework CLI entry point
 │   ├── template/
@@ -164,7 +176,13 @@ zephyr-framework/
 │   ├── agent-preload.js       # Agent panel bridge: chat UI ↔ main process
 │   ├── agent-panel.html       # Split-pane UI: educational splash + chat
 │   ├── agent-panel.js         # Chat renderer logic + webview IPC relay
+│   ├── runtime-panel.html     # Full-window webview for runtime mode
 │   ├── styles.css             # Agent panel styling (Zephyr demo tokens)
+│   ├── runtime-demo/          # Runtime demo (terminal-style execution surface)
+│   │   ├── runtime.html       # Full-page stream layout
+│   │   ├── runtime.css        # Demo-specific styles
+│   │   ├── runtime-data.js    # Mock data + price simulation
+│   │   └── runtime-preload.js # Electron preload bridge
 │   └── package.json           # Electron dependency
 │
 ├── build.js                  # esbuild minification script (node build.js)

@@ -19,28 +19,110 @@
 
 ---
 
-## Quick start
+## Try it now
 
-**30 seconds to a working app with AI agent support:**
+Save this as an HTML file and open it in your browser. No install, no build step, no dependencies:
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.css">
+</head>
+<body>
+  <z-accordion>
+    <z-accordion-item>
+      <button slot="trigger">What is Zephyr?</button>
+      <div slot="content">A UI framework built for AI agents. Zero JS. Pure CSS interactions.</div>
+    </z-accordion-item>
+  </z-accordion>
+
+  <z-modal id="demo">
+    <h2>Hello from Zephyr</h2>
+    <p>An AI agent can open this with: <code>Zephyr.agent.act('#demo', 'open')</code></p>
+  </z-modal>
+  <button data-trigger="demo">Open Modal</button>
+
+  <z-tabs>
+    <button slot="tab" data-tab="one" data-active>First</button>
+    <button slot="tab" data-tab="two">Second</button>
+    <div slot="panel" data-tab="one">Tab content here.</div>
+    <div slot="panel" data-tab="two">More content here.</div>
+  </z-tabs>
+
+  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.js"></script>
+</body>
+</html>
+```
+
+That's it. Three components, zero JavaScript, working in your browser.
+
+---
+
+## Deploy a working AI agent in one click
+
+Want a live, deployed demo with a real `<z-agent>` chat widget controlling your UI? Fork the reference Kanban demo and deploy it to Vercel. Bring your own Anthropic API key:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdaltlc%2Fzephyr-agent-demo&project-name=zephyr-boards&env=ANTHROPIC_API_KEY)
+
+The demo includes a serverless proxy (`/api/chat.js`) that keeps your key server-side, never exposed in the browser. Source: [zephyr-agent-demo](https://github.com/daltlc/zephyr-agent-demo).
+
+**Two paths to production:**
+
+| | DIY (free) | Hosted ([zephyr-agent.sh](https://zephyr-agent.sh), $9 once) |
+|---|---|---|
+| Fork the demo, deploy your own proxy | ✓ | ✗ |
+| No backend to maintain | ✗ | ✓ |
+| Works on Webflow, Squarespace, GitHub Pages | ✗ | ✓ |
+| BYOK encrypted server-side | ✓ | ✓ |
+
+---
+
+## Install
+
+**npm** (recommended for projects):
+```bash
+npm install zephyr-framework
+```
+
+**CDN** (no install):
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.css">
+<script src="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.js"></script>
+```
+
+**Scaffold a new project** (includes MCP server):
 ```bash
 npx create-zephyr-framework my-app
 cd my-app
 npm start
 ```
 
-Open `http://localhost:3456`. You'll see a page with working components — accordion, tabs, modal, select, dropdown. All CSS-driven, zero runtime JS.
+---
 
-**That's it.** You're running. Edit `index.html` to build your app.
+## Agent Integrations
 
-### Connect an AI agent to control the page
+Zephyr is designed for AI agents. Pick the integration that fits your stack:
 
-The MCP server works with any client that supports the [Model Context Protocol](https://modelcontextprotocol.io/). Here's how to set it up for each:
+| Integration | What it does | Setup |
+|---|---|---|
+| **[MCP Server](./zephyr-mcp/)** | Claude Desktop, Cursor, VS Code Copilot, Windsurf, or any MCP client controls your UI | `npx zephyr-mcp` |
+| **[AI SDK Tools](./examples/ai-sdk/)** | Vercel AI SDK `tool()` definitions for `generateText`/`streamText` | [Example project](./examples/ai-sdk/) |
+| **[Chat Widget](./zephyr-agent-widget.js)** | Drop-in `<z-agent>` element — visitors chat with your UI on any deployed page | `<z-agent data-provider="anthropic">` |
+| **[A2UI Catalog](./zephyr-a2ui-catalog.json)** | Google's Agent-to-UI spec — makes components discoverable across agent ecosystems | Automatic |
+| **[Agent API](./zephyr-prompt.md)** | `Zephyr.agent.getState()`, `.act()`, `.describe()`, `.render()`, `.compose()` | Built into the framework |
 
-#### Claude Desktop
+### MCP Server (Claude Desktop, Cursor, etc.)
+
+The MCP server works with any client that supports the [Model Context Protocol](https://modelcontextprotocol.io/):
+
+<details>
+<summary>Claude Desktop</summary>
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
 ```json
 {
   "mcpServers": {
@@ -52,11 +134,12 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   }
 }
 ```
+</details>
 
-#### Cursor
+<details>
+<summary>Cursor</summary>
 
 Add to `.cursor/mcp.json` in your project root:
-
 ```json
 {
   "mcpServers": {
@@ -68,11 +151,12 @@ Add to `.cursor/mcp.json` in your project root:
   }
 }
 ```
+</details>
 
-#### Windsurf
+<details>
+<summary>Windsurf</summary>
 
 Add to `~/.codeium/windsurf/mcp_config.json`:
-
 ```json
 {
   "mcpServers": {
@@ -84,11 +168,12 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
   }
 }
 ```
+</details>
 
-#### VS Code (with Copilot)
+<details>
+<summary>VS Code (with Copilot)</summary>
 
 Add to your VS Code `settings.json`:
-
 ```json
 {
   "mcp": {
@@ -102,56 +187,15 @@ Add to your VS Code `settings.json`:
   }
 }
 ```
+</details>
 
-#### Any other MCP client
+<details>
+<summary>Any other MCP client</summary>
 
-The Zephyr MCP server uses **stdio transport** (JSON-RPC 2.0 over stdin/stdout). Any MCP-compatible host can spawn it as a child process. The command is `npx zephyr-mcp` — set `ZEPHYR_ROOT` to your project directory and `ZEPHYR_MCP_PORT` to change the bridge port (default 3456).
+The Zephyr MCP server uses **stdio transport** (JSON-RPC 2.0 over stdin/stdout). Any MCP-compatible host can spawn it as a child process. Set `ZEPHYR_ROOT` to your project directory and `ZEPHYR_MCP_PORT` to change the bridge port (default 3456).
+</details>
 
-After connecting, the agent gets 6 tools: `zephyr_act`, `zephyr_get_state`, `zephyr_describe`, `zephyr_set_state`, `zephyr_get_schema`, `zephyr_get_prompt`. Ask it to open a modal, switch a tab, or inspect the page — it just works.
-
-### Want a chat widget on a live site instead?
-
-```html
-<script src="zephyr-agent-widget.js"></script>
-<z-agent data-api-key="sk-ant-..." data-provider="anthropic"></z-agent>
-```
-
-Visitors type "open the settings modal" and it happens. No MCP, no localhost — works on any deployed page.
-
-### Other install options
-
-```bash
-# Add to an existing project
-npm install zephyr-framework
-```
-
-#### CDN (no install, no build step)
-
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework/zephyr-framework.min.css">
-<script src="https://cdn.jsdelivr.net/npm/zephyr-framework/zephyr-framework.min.js"></script>
-```
-
-Or use unpkg:
-
-```html
-<link rel="stylesheet" href="https://unpkg.com/zephyr-framework/zephyr-framework.min.css">
-<script src="https://unpkg.com/zephyr-framework/zephyr-framework.min.js"></script>
-```
-
-#### Manual (copy files)
-
-```html
-<link rel="stylesheet" href="zephyr-framework.css">
-<script src="zephyr-framework.js"></script>
-
-<z-accordion>
-  <z-accordion-item>
-    <button slot="trigger">Click me</button>
-    <div slot="content"><div>It works.</div></div>
-  </z-accordion-item>
-</z-accordion>
-```
+After connecting, the agent gets 6 tools: `zephyr_act`, `zephyr_get_state`, `zephyr_describe`, `zephyr_set_state`, `zephyr_get_schema`, `zephyr_get_prompt`. Ask it to open a modal, switch a tab, or inspect the page.
 
 ---
 
@@ -373,6 +417,15 @@ Zephyr.agent.act('#checkout-form', 'submit', { _agentId: 'agent-checkout' }); //
 Zephyr.agent.act('#checkout-form', 'submit'); // rejected — locked
 Zephyr.agent.unlock('#checkout-form', 'agent-checkout');
 Zephyr.agent.locks(); // list all active locks
+
+// Guard destructive actions — require confirmation before executing
+Zephyr.agent.guard('z-modal', ['close']);
+Zephyr.agent.act('#modal', 'close');
+// → { success: false, pending: true, confirmId: 'zg_1_...' }
+Zephyr.agent.confirm('zg_1_...');  // executes the close
+Zephyr.agent.deny('zg_1_...');     // cancels it
+Zephyr.agent.guarded();            // list all pending confirmations
+Zephyr.agent.unguard('z-modal');   // remove the guard
 ```
 
 A full machine-readable schema is available in `zephyr-schema.json`, and an LLM system prompt template in `zephyr-prompt.md`.
@@ -441,6 +494,56 @@ Zephyr.agent.compose('#app', {
 ```
 
 See the [Agent Dashboard Demo](dashboard-demo.html) for a live example with crypto, server monitoring, and IoT sensor themes.
+
+---
+
+## Runtime Add-on — Agent Execution Surface
+
+The dashboard shows data. The runtime **executes workflows**. It's a terminal-style activity stream where events flow, agents respond inline, and UI panels appear on demand.
+
+```html
+<link rel="stylesheet" href="zephyr-runtime.css">
+<script src="zephyr-runtime.js"></script>
+```
+
+**4 new components:**
+
+- `z-stream` — Scrolling, append-only activity container with auto-scroll, max-entries pruning, and jump-to-latest
+- `z-stream-entry` — Typed rows (event, agent, command, ui, alert, trade, system) with CSS-driven collapse, pin, and status progression
+- `z-command` — Unified input bar for slash commands and natural language chat, with history
+- `z-ticker` — Horizontal scrolling ticker strip for live data (CSS-animated, pauses on hover)
+
+**Stream API**: Agents append entries to the stream, optionally with inline components:
+
+```js
+// Append a trade event
+const stream = document.querySelector('z-stream');
+stream.append({
+  type: 'trade',
+  header: 'BUY 100 AAPL @ MARKET — Smith Family Trust',
+  status: 'success',
+  autoCollapse: 30000
+});
+
+// Agent streams an inline chart
+Zephyr.agent.stream('#my-stream', {
+  type: 'ui',
+  header: 'AAPL Price History',
+  component: { tag: 'z-chart', attributes: { 'data-type': 'line' } }
+});
+```
+
+**Data Sources**: Pull-based live data loops for real-time updates:
+
+```js
+Zephyr.agent.registerSource('quotes', {
+  interval: 2000,
+  fetch: () => getLatestQuotes()
+});
+Zephyr.agent.connectSource('quotes', '#ticker', 'setItems');
+```
+
+**Electron demo**: Run `npm run demo:runtime` in `zephyr-browser/` for the full experience — a Bloomberg Terminal-style interface where an AI agent executes financial workflows in real time.
 
 ---
 

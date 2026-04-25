@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zephyr + AI SDK</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0a0a; color: #e5e5e5;
+      display: grid; grid-template-rows: 1fr auto;
+      height: 100vh; padding: 1.5rem; gap: 1rem;
+    }
+    h1 { font-size: 1.25rem; margin-bottom: 1rem; color: #a5b4fc; }
+    h2 { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 0.5rem; }
+
+    /* Component demo area */
+    .demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; align-content: start; overflow-y: auto; }
+    .card { background: #141414; border: 1px solid #262626; border-radius: 0.75rem; padding: 1.25rem; }
+
+    /* Chat panel */
+    .chat { background: #141414; border: 1px solid #262626; border-radius: 0.75rem; padding: 1rem; max-height: 280px; display: flex; flex-direction: column; }
+    .messages { flex: 1; overflow-y: auto; font-size: 0.875rem; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .msg { padding: 0.5rem 0.75rem; border-radius: 0.5rem; max-width: 85%; line-height: 1.4; }
+    .msg.user { background: #1e3a5f; align-self: flex-end; }
+    .msg.assistant { background: #1a1a2e; align-self: flex-start; }
+    .msg.tool { background: #1a2e1a; font-size: 0.75rem; align-self: flex-start; font-family: monospace; opacity: 0.7; }
+    .msg.error { background: #3e1a1a; align-self: flex-start; }
+    .input-row { display: flex; gap: 0.5rem; }
+    .input-row input {
+      flex: 1; background: #0a0a0a; border: 1px solid #333; border-radius: 0.5rem;
+      padding: 0.625rem 0.75rem; color: #e5e5e5; font-size: 0.875rem; outline: none;
+    }
+    .input-row input:focus { border-color: #6366f1; }
+    .input-row button {
+      background: #6366f1; color: white; border: none; border-radius: 0.5rem;
+      padding: 0.625rem 1.25rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;
+    }
+    .input-row button:hover { background: #4f46e5; }
+    .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spinner { display: none; width: 1rem; height: 1rem; border: 2px solid #333; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    .sending .spinner { display: inline-block; }
+    .sending button span { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Dynamic content container */
+    #dynamic { min-height: 2rem; }
+
+    /* Modal trigger */
+    [data-trigger="demo-modal"] {
+      background: #6366f1; color: white; border: none; border-radius: 0.375rem;
+      padding: 0.5rem 1rem; cursor: pointer; font-size: 0.875rem; margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Zephyr + Vercel AI SDK</h1>
+    <div class="demo">
+      <!-- Accordion -->
+      <div class="card">
+        <h2>Accordion</h2>
+        <z-accordion>
+          <z-accordion-item>
+            <button slot="trigger">What is Zephyr?</button>
+            <div slot="content">A zero-dependency web component framework built for AI agents.</div>
+          </z-accordion-item>
+          <z-accordion-item>
+            <button slot="trigger">How does the AI SDK integration work?</button>
+            <div slot="content">The agent calls Zephyr.agent methods through WebSocket-bridged tools defined with the AI SDK's tool() API.</div>
+          </z-accordion-item>
+        </z-accordion>
+      </div>
+
+      <!-- Tabs -->
+      <div class="card">
+        <h2>Tabs</h2>
+        <z-tabs id="demo-tabs">
+          <button slot="tab" data-tab="overview" data-active>Overview</button>
+          <button slot="tab" data-tab="features">Features</button>
+          <button slot="tab" data-tab="agent">Agent API</button>
+          <div slot="panel" data-tab="overview">14 web components, pure CSS interactions, zero runtime JS.</div>
+          <div slot="panel" data-tab="features">MCP server, A2UI catalog, embedded chat widget, dashboard add-on.</div>
+          <div slot="panel" data-tab="agent">getState, act, describe, observe, render, compose, record, replay.</div>
+        </z-tabs>
+      </div>
+
+      <!-- Modal -->
+      <div class="card">
+        <h2>Modal</h2>
+        <z-modal id="demo-modal">
+          <h3>Hello from Zephyr</h3>
+          <p>This modal was opened by an AI agent using <code>Zephyr.agent.act('#demo-modal', 'open')</code></p>
+        </z-modal>
+        <button data-trigger="demo-modal">Open Modal</button>
+      </div>
+
+      <!-- Select -->
+      <div class="card">
+        <h2>Select</h2>
+        <z-select id="demo-select" data-placeholder="Pick a framework...">
+          <div slot="options">
+            <div data-value="zephyr">Zephyr</div>
+            <div data-value="react">React</div>
+            <div data-value="vue">Vue</div>
+            <div data-value="svelte">Svelte</div>
+          </div>
+        </z-select>
+      </div>
+
+      <!-- Dynamic content area -->
+      <div class="card" id="dynamic-card" style="display:none;">
+        <h2>Agent-Created</h2>
+        <div id="dynamic"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat">
+    <div class="messages" id="messages"></div>
+    <div class="input-row" id="input-row">
+      <input type="text" id="chat-input" placeholder="Try: &quot;open the modal&quot; or &quot;switch to the features tab&quot;" autofocus>
+      <button id="send-btn" onclick="sendMessage()">
+        <span>Send</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.js"></script>
+  <script src="bridge-client.js"></script>
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('chat-input');
+    const inputRow = document.getElementById('input-row');
+    const sendBtn = document.getElementById('send-btn');
+    const conversation = [];
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
+    });
+
+    function addMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      inputEl.value = '';
+      addMessage('user', text);
+      conversation.push({ role: 'user', content: text });
+
+      sendBtn.disabled = true;
+      inputRow.classList.add('sending');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: conversation }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          addMessage('error', err.error || 'Request failed');
+          return;
+        }
+
+        const data = await res.json();
+
+        // Show tool calls if any
+        if (data.toolCalls && data.toolCalls.length > 0) {
+          for (const tc of data.toolCalls) {
+            addMessage('tool', tc.name + '(' + JSON.stringify(tc.input) + ')');
+          }
+        }
+
+        // Show assistant response
+        if (data.content) {
+          addMessage('assistant', data.content);
+          conversation.push({ role: 'assistant', content: data.content });
+        }
+
+        // Show dynamic card if render/compose was used
+        if (data.toolCalls?.some(tc => tc.name === 'zephyr_render' || tc.name === 'zephyr_compose')) {
+          document.getElementById('dynamic-card').style.display = '';
+        }
+
+      } catch (err) {
+        addMessage('error', 'Connection error: ' + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        inputRow.classList.remove('sending');
+        inputEl.focus();
+      }
+    }
+  </script>
+</body>
+</html>

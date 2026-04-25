@@ -1300,6 +1300,15 @@ window.Zephyr = {
     /** @private Locked components: Map<Element, string> (element → agent ID). */
     _locks: new Map(),
 
+    /** @private Guard registry: Map<string, {actions: string[]|'*', handler?: Function, timeout?: number}>. */
+    _guards: new Map(),
+
+    /** @private Pending guarded actions: Map<string, {selector, action, params, element, fn, timestamp, timerId}>. */
+    _pending: new Map(),
+
+    /** @private Counter for generating unique confirm IDs. */
+    _confirmSeq: 0,
+
     /** @private Action mappings per component tag. */
     _actions: {
       'z-accordion': {
@@ -1585,6 +1594,26 @@ window.Zephyr = {
 
       const fn = componentActions[action];
       if (!fn) return { success: false, error: `Unknown action '${action}' for ${tag}. Available: ${Object.keys(componentActions).join(', ')}` };
+
+      // Check guards — if guarded, store as pending instead of executing
+      const guardEntry = Zephyr.agent._matchGuard(el, tag, action);
+      if (guardEntry) {
+        if (!guardEntry.handler || guardEntry.handler(selector, action, params) !== false) {
+          var confirmId = 'zg_' + (++Zephyr.agent._confirmSeq) + '_' + Date.now();
+          var timeoutMs = guardEntry.timeout || 30000;
+          var timerId = setTimeout(function () {
+            if (Zephyr.agent._pending.has(confirmId)) {
+              Zephyr.agent.deny(confirmId);
+            }
+          }, timeoutMs);
+          Zephyr.agent._pending.set(confirmId, {
+            selector: selector, action: action, params: params || null,
+            element: el, fn: fn, timestamp: Date.now(), timerId: timerId
+          });
+          el.setAttribute('data-z-guarded', confirmId);
+          return { success: false, pending: true, confirmId: confirmId };
+        }
+      }
 
       // Capture call if recording is active
       if (Zephyr.agent._recording) {
@@ -1886,6 +1915,127 @@ window.Zephyr = {
       Zephyr.agent._locks.forEach((agentId, el) => {
         const id = el.id ? '#' + el.id : el.tagName.toLowerCase();
         result.push({ selector: id, agentId });
+      });
+      return result;
+    },
+
+    // -----------------------------------------------------------------------
+    // Guard System — confirmation for destructive actions
+    // -----------------------------------------------------------------------
+
+    /**
+     * @private Matches a guard entry for the given element, tag, and action.
+     * Checks in specificity order: exact selector > tag name > wildcard '*'.
+     * @returns {Object|null} The matching guard entry or null.
+     */
+    _matchGuard(el, tag, action) {
+      var match = null;
+      Zephyr.agent._guards.forEach(function (entry, key) {
+        if (match) return; // first match wins
+        var selectorMatch = (key === '*') || (key === tag) || (function () {
+          try { return el.matches(key); } catch (e) { return false; }
+        })();
+        if (!selectorMatch) return;
+        var actionMatch = (entry.actions === '*') ||
+          (Array.isArray(entry.actions) && entry.actions.indexOf(action) !== -1);
+        if (actionMatch) match = entry;
+      });
+      return match;
+    },
+
+    /**
+     * Registers a guard that requires confirmation before executing specified actions.
+     * When a guarded action is triggered via act(), it returns a pending state
+     * instead of executing. Call confirm(confirmId) to proceed or deny(confirmId) to cancel.
+     *
+     * @param {string} selector - CSS selector, tag name (e.g., 'z-modal'), or '*' for all
+     * @param {string[]|'*'} actions - Array of action names to guard, or '*' for all actions
+     * @param {function} [handler] - Optional (selector, action, params) => boolean. Return false to bypass.
+     * @param {Object} [options] - Options: { timeout: number } (default 30000ms auto-deny)
+     * @returns {{success: true}}
+     */
+    guard(selector, actions, handler, options) {
+      Zephyr.agent._guards.set(selector, {
+        actions: actions,
+        handler: typeof handler === 'function' ? handler : null,
+        timeout: (options && options.timeout) || 30000
+      });
+      return { success: true };
+    },
+
+    /**
+     * Removes a guard and cleans up any pending confirmations from that guard.
+     * @param {string} selector - The same selector used in guard()
+     * @returns {{success: true}}
+     */
+    unguard(selector) {
+      Zephyr.agent._guards.delete(selector);
+      // Clean up pending entries that no longer have an active guard
+      Zephyr.agent._pending.forEach(function (entry, confirmId) {
+        var tag = entry.element.tagName.toLowerCase();
+        if (!Zephyr.agent._matchGuard(entry.element, tag, entry.action)) {
+          clearTimeout(entry.timerId);
+          entry.element.removeAttribute('data-z-guarded');
+          Zephyr.agent._pending.delete(confirmId);
+        }
+      });
+      return { success: true };
+    },
+
+    /**
+     * Confirms a pending guarded action, executing it immediately.
+     * @param {string} confirmId - The ID returned by act() when a guard triggered
+     * @returns {{success: boolean, error?: string}}
+     */
+    confirm(confirmId) {
+      var entry = Zephyr.agent._pending.get(confirmId);
+      if (!entry) return { success: false, error: 'No pending action with id: ' + confirmId };
+
+      clearTimeout(entry.timerId);
+      Zephyr.agent._pending.delete(confirmId);
+      entry.element.removeAttribute('data-z-guarded');
+
+      // Capture in recording if active
+      if (Zephyr.agent._recording) {
+        Zephyr.agent._recording.push({
+          selector: entry.selector, action: entry.action,
+          params: entry.params, timestamp: Date.now()
+        });
+      }
+
+      entry.fn(entry.element, entry.params);
+      return { success: true };
+    },
+
+    /**
+     * Denies a pending guarded action, discarding it without executing.
+     * @param {string} confirmId - The ID returned by act() when a guard triggered
+     * @returns {{success: boolean, denied?: boolean, error?: string}}
+     */
+    deny(confirmId) {
+      var entry = Zephyr.agent._pending.get(confirmId);
+      if (!entry) return { success: false, error: 'No pending action with id: ' + confirmId };
+
+      clearTimeout(entry.timerId);
+      Zephyr.agent._pending.delete(confirmId);
+      entry.element.removeAttribute('data-z-guarded');
+      return { success: true, denied: true };
+    },
+
+    /**
+     * Returns all pending guarded actions awaiting confirmation.
+     * @returns {Array<{confirmId: string, selector: string, action: string, params: Object|null, timestamp: number}>}
+     */
+    guarded() {
+      var result = [];
+      Zephyr.agent._pending.forEach(function (entry, confirmId) {
+        result.push({
+          confirmId: confirmId,
+          selector: entry.selector,
+          action: entry.action,
+          params: entry.params,
+          timestamp: entry.timestamp
+        });
       });
       return result;
     },

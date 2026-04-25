@@ -172,6 +172,24 @@ interface ZephyrComponentDescription extends ZephyrComponentState {
 interface ZephyrActResult {
   success: boolean;
   error?: string;
+  /** Present when a guard intercepts the action. */
+  pending?: boolean;
+  /** The ID to pass to confirm() or deny(). */
+  confirmId?: string;
+}
+
+interface ZephyrDenyResult {
+  success: boolean;
+  denied?: boolean;
+  error?: string;
+}
+
+interface ZephyrPendingAction {
+  confirmId: string;
+  selector: string;
+  action: string;
+  params: Record<string, any> | null;
+  timestamp: number;
 }
 
 interface ZephyrSetStateResult {
@@ -318,6 +336,32 @@ interface ZephyrAgentAPI {
    * Returns all currently locked components and their owning agents.
    */
   locks(): Array<{ selector: string; agentId: string }>;
+
+  /**
+   * Registers a guard requiring confirmation before executing specified actions.
+   * @param selector - CSS selector, tag name, or '*' for all components
+   * @param actions - Array of action names to guard, or '*' for all actions
+   * @param handler - Optional function returning false to bypass the guard
+   * @param options - Options: { timeout: number } (default 30000ms auto-deny)
+   */
+  guard(
+    selector: string,
+    actions: string[] | '*',
+    handler?: (selector: string, action: string, params?: Record<string, any>) => boolean,
+    options?: { timeout?: number }
+  ): { success: true };
+
+  /** Removes a guard and cleans up related pending confirmations. */
+  unguard(selector: string): { success: true };
+
+  /** Confirms a pending guarded action, executing it immediately. */
+  confirm(confirmId: string): ZephyrActResult;
+
+  /** Denies a pending guarded action, discarding it without executing. */
+  deny(confirmId: string): ZephyrDenyResult;
+
+  /** Returns all pending guarded actions awaiting confirmation. */
+  guarded(): ZephyrPendingAction[];
 
   /** Generates a markdown prompt describing all Zephyr components on the page. */
   getPrompt(): string;

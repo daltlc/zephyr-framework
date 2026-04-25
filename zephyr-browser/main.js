@@ -35,7 +35,11 @@ if (fs.existsSync(envPath)) {
     const eqIndex = trimmed.indexOf('=');
     if (eqIndex === -1) continue;
     const key = trimmed.slice(0, eqIndex).trim();
-    const value = trimmed.slice(eqIndex + 1).trim();
+    let value = trimmed.slice(eqIndex + 1).trim();
+    const hashIdx = value.indexOf('#');
+    if (hashIdx > 0 && value[0] !== '"' && value[0] !== "'") {
+      value = value.slice(0, hashIdx).trim();
+    }
     // Don't override existing env vars (CLI takes precedence)
     if (!process.env[key]) {
       process.env[key] = value;
@@ -48,7 +52,7 @@ if (fs.existsSync(envPath)) {
 // ---------------------------------------------------------------------------
 
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const MODEL = process.env.ZEPHYR_MODEL || 'claude-haiku-4-20250506';
+const MODEL = process.env.ZEPHYR_MODEL || 'claude-haiku-4-5-20251001';
 const MAX_ITERATIONS = 10;
 
 // Path to the Zephyr demo page (parent directory)

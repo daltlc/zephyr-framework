@@ -42,6 +42,15 @@ Zephyr.agent.getSchema()
 
 // Generate a prompt for this page's components
 Zephyr.agent.getPrompt()
+
+// Guard destructive actions — require confirmation before executing
+Zephyr.agent.guard('z-modal', ['close'])
+Zephyr.agent.act('#my-modal', 'close')
+// → { success: false, pending: true, confirmId: 'zg_1_...' }
+Zephyr.agent.confirm('zg_1_...')  // executes the close
+Zephyr.agent.deny('zg_1_...')     // discards it
+Zephyr.agent.guarded()            // list all pending
+Zephyr.agent.unguard('z-modal')   // remove the guard
 ```
 
 ## Component Quick Reference

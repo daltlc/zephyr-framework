@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Agent Guard System</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixtures -->
+  <z-modal id="test-modal">
+    <h2>Test Modal</h2>
+    <p>Modal content</p>
+  </z-modal>
+
+  <z-tabs id="test-tabs">
+    <div role="tablist">
+      <button data-tab="alpha" role="tab">Alpha</button>
+      <button data-tab="beta" role="tab">Beta</button>
+    </div>
+    <div data-tab-panel="alpha" role="tabpanel">Panel Alpha</div>
+    <div data-tab-panel="beta" role="tabpanel">Panel Beta</div>
+  </z-tabs>
+
+  <z-select id="test-select" name="color">
+    <button slot="trigger">Choose</button>
+    <div slot="options">
+      <div data-value="red">Red</div>
+      <div data-value="blue">Blue</div>
+    </div>
+  </z-select>
+
+  <z-dropdown id="test-dropdown">
+    <button slot="trigger">Menu</button>
+    <div slot="content"><a href="#">Link</a></div>
+  </z-dropdown>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Agent Guard System');
+
+    function waitForElements() {
+      return new Promise(r => setTimeout(r, 50));
+    }
+
+    function cleanup() {
+      // Clear all guards and pending
+      Zephyr.agent._guards.clear();
+      Zephyr.agent._pending.forEach(function (entry) {
+        clearTimeout(entry.timerId);
+      });
+      Zephyr.agent._pending.clear();
+      Zephyr.agent._confirmSeq = 0;
+      // Remove guarded attributes
+      document.querySelectorAll('[data-z-guarded]').forEach(function (el) {
+        el.removeAttribute('data-z-guarded');
+      });
+      // Close any open modals/dropdowns
+      var modal = document.querySelector('#test-modal');
+      if (modal && modal.hasAttribute('data-open')) modal.close();
+      var dd = document.querySelector('#test-dropdown');
+      if (dd) dd.removeAttribute('data-open');
+    }
+
+    // --- Guard Registration ---
+
+    t.test('guard() registers a guard', async (assert) => {
+      await waitForElements();
+      cleanup();
+      var result = Zephyr.agent.guard('z-modal', ['close']);
+      assert.ok(result.success, 'guard() should return success');
+      assert.equal(Zephyr.agent._guards.size, 1, 'should have 1 guard');
+      cleanup();
+    });
+
+    t.test('unguard() removes a guard', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['close']);
+      Zephyr.agent.unguard('z-modal');
+      assert.equal(Zephyr.agent._guards.size, 0, 'should have 0 guards after unguard');
+      cleanup();
+    });
+
+    // --- act() with Guards ---
+
+    t.test('act() returns pending when action is guarded', async (assert) => {
+      cleanup();
+      // Open modal first so we can guard closing it
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      assert.equal(result.success, false, 'success should be false');
+      assert.equal(result.pending, true, 'pending should be true');
+      assert.ok(result.confirmId, 'should have a confirmId');
+      // Modal should still be open
+      assert.ok(document.querySelector('#test-modal').hasAttribute('data-open'), 'modal should still be open');
+      cleanup();
+    });
+
+    t.test('act() executes normally for unguarded actions', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['close']); // only guard close, not open
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.success, true, 'open should succeed (not guarded)');
+      cleanup();
+    });
+
+    t.test('data-z-guarded attribute is set on pending', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      var modal = document.querySelector('#test-modal');
+      assert.equal(modal.getAttribute('data-z-guarded'), result.confirmId, 'data-z-guarded should match confirmId');
+      cleanup();
+    });
+
+    // --- confirm() ---
+
+    t.test('confirm() executes the pending action', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      var confirmResult = Zephyr.agent.confirm(result.confirmId);
+      assert.equal(confirmResult.success, true, 'confirm should succeed');
+      // Modal should now be closed
+      assert.ok(!document.querySelector('#test-modal').hasAttribute('data-open'), 'modal should be closed after confirm');
+      cleanup();
+    });
+
+    t.test('confirm() removes data-z-guarded attribute', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      Zephyr.agent.confirm(result.confirmId);
+      assert.ok(!document.querySelector('#test-modal').hasAttribute('data-z-guarded'), 'data-z-guarded should be removed');
+      cleanup();
+    });
+
+    t.test('confirm() with invalid ID returns error', async (assert) => {
+      cleanup();
+      var result = Zephyr.agent.confirm('invalid_id');
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(result.error, 'should have error message');
+      cleanup();
+    });
+
+    // --- deny() ---
+
+    t.test('deny() discards the action without executing', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      var denyResult = Zephyr.agent.deny(result.confirmId);
+      assert.equal(denyResult.success, true, 'deny should succeed');
+      assert.equal(denyResult.denied, true, 'should have denied flag');
+      // Modal should still be open
+      assert.ok(document.querySelector('#test-modal').hasAttribute('data-open'), 'modal should still be open after deny');
+      cleanup();
+    });
+
+    t.test('deny() removes data-z-guarded attribute', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      Zephyr.agent.deny(result.confirmId);
+      assert.ok(!document.querySelector('#test-modal').hasAttribute('data-z-guarded'), 'data-z-guarded should be removed');
+      cleanup();
+    });
+
+    t.test('deny() with invalid ID returns error', async (assert) => {
+      cleanup();
+      var result = Zephyr.agent.deny('invalid_id');
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(result.error, 'should have error message');
+      cleanup();
+    });
+
+    // --- guarded() ---
+
+    t.test('guarded() returns pending actions', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      var pending = Zephyr.agent.guarded();
+      assert.equal(pending.length, 1, 'should have 1 pending');
+      assert.equal(pending[0].confirmId, result.confirmId, 'confirmId should match');
+      assert.equal(pending[0].selector, '#test-modal', 'selector should match');
+      assert.equal(pending[0].action, 'close', 'action should match');
+      assert.ok(pending[0].timestamp, 'should have timestamp');
+      cleanup();
+    });
+
+    t.test('guarded() is empty after confirm', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      Zephyr.agent.confirm(result.confirmId);
+      assert.equal(Zephyr.agent.guarded().length, 0, 'should have 0 pending after confirm');
+      cleanup();
+    });
+
+    // --- Guard Matching ---
+
+    t.test('tag-level guard matches all elements of that tag', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-dropdown', ['open']);
+      var result = Zephyr.agent.act('#test-dropdown', 'open');
+      assert.equal(result.pending, true, 'should be guarded by tag match');
+      cleanup();
+    });
+
+    t.test('selector-level guard matches specific element', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('#test-modal', ['open']);
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.pending, true, 'should be guarded by selector match');
+      cleanup();
+    });
+
+    t.test('wildcard guard matches all components', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('*', ['open']);
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.pending, true, 'should be guarded by wildcard');
+      cleanup();
+    });
+
+    t.test('wildcard actions guards all actions', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', '*');
+      var openResult = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(openResult.pending, true, 'open should be guarded');
+      Zephyr.agent.deny(openResult.confirmId);
+      var closeResult = Zephyr.agent.act('#test-modal', 'close');
+      assert.equal(closeResult.pending, true, 'close should be guarded');
+      cleanup();
+    });
+
+    t.test('guard does not match unrelated actions', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.success, true, 'open should not be guarded');
+      cleanup();
+    });
+
+    // --- Handler Function ---
+
+    t.test('handler returning false bypasses the guard', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['open'], function () { return false; });
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.success, true, 'should execute when handler returns false');
+      cleanup();
+    });
+
+    t.test('handler returning true applies the guard', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['open'], function () { return true; });
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.pending, true, 'should be pending when handler returns true');
+      cleanup();
+    });
+
+    t.test('handler receives selector, action, params', async (assert) => {
+      cleanup();
+      var received = {};
+      Zephyr.agent.guard('z-select', ['select'], function (sel, act, par) {
+        received = { selector: sel, action: act, params: par };
+        return true;
+      });
+      Zephyr.agent.act('#test-select', 'select', { value: 'red' });
+      assert.equal(received.selector, '#test-select', 'should receive selector');
+      assert.equal(received.action, 'select', 'should receive action');
+      assert.equal(received.params.value, 'red', 'should receive params');
+      cleanup();
+    });
+
+    // --- Lock + Guard Interaction ---
+
+    t.test('lock takes priority over guard', async (assert) => {
+      cleanup();
+      Zephyr.agent.guard('z-modal', ['open']);
+      Zephyr.agent.lock('#test-modal', 'agent-1');
+      var result = Zephyr.agent.act('#test-modal', 'open');
+      assert.equal(result.success, false, 'should fail');
+      assert.ok(!result.pending, 'should not be pending (lock rejects first)');
+      assert.ok(result.error.indexOf('locked') !== -1, 'error should mention locked');
+      Zephyr.agent.unlock('#test-modal', 'agent-1');
+      cleanup();
+    });
+
+    // --- Double Confirm ---
+
+    t.test('double confirm returns error', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      Zephyr.agent.confirm(result.confirmId);
+      var second = Zephyr.agent.confirm(result.confirmId);
+      assert.equal(second.success, false, 'second confirm should fail');
+      assert.ok(second.error, 'should have error message');
+      cleanup();
+    });
+
+    // --- Timeout Auto-Deny ---
+
+    t.test('pending action is auto-denied after timeout', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close'], null, { timeout: 100 });
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      assert.equal(Zephyr.agent.guarded().length, 1, 'should have 1 pending');
+      // Wait for timeout
+      await new Promise(r => setTimeout(r, 200));
+      assert.equal(Zephyr.agent.guarded().length, 0, 'should have 0 pending after timeout');
+      // Modal should still be open (denied, not confirmed)
+      assert.ok(document.querySelector('#test-modal').hasAttribute('data-open'), 'modal should still be open');
+      cleanup();
+    });
+
+    // --- Recording Interaction ---
+
+    t.test('confirm() pushes to recording', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      var recorder = Zephyr.agent.record();
+      var result = Zephyr.agent.act('#test-modal', 'close');
+      // act() should NOT record when guarded (it hasn't executed yet)
+      var before = recorder.stop();
+      assert.equal(before.length, 0, 'guarded act should not record');
+
+      // Now confirm — confirm should record
+      Zephyr.agent.guard('z-modal', ['close']); // re-guard
+      var recorder2 = Zephyr.agent.record();
+      var result2 = Zephyr.agent.act('#test-modal', 'close');
+      Zephyr.agent.confirm(result2.confirmId);
+      var after = recorder2.stop();
+      assert.equal(after.length, 1, 'confirm should push to recording');
+      assert.equal(after[0].action, 'close', 'recorded action should be close');
+      cleanup();
+    });
+
+    // --- Unguard Cleans Up Pending ---
+
+    t.test('unguard() cleans up pending entries', async (assert) => {
+      cleanup();
+      Zephyr.agent.act('#test-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      Zephyr.agent.act('#test-modal', 'close');
+      assert.equal(Zephyr.agent.guarded().length, 1, 'should have 1 pending');
+      Zephyr.agent.unguard('z-modal');
+      assert.equal(Zephyr.agent.guarded().length, 0, 'should have 0 pending after unguard');
+      assert.ok(!document.querySelector('#test-modal').hasAttribute('data-z-guarded'), 'data-z-guarded should be removed');
+      cleanup();
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

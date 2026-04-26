@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="Zephyr Framework" width="100%">
+  <img width="752" height="284" alt="Screenshot 2026-04-25 at 6 33 04 PM" src="https://github.com/user-attachments/assets/c4dd6ee5-a222-436e-80bb-5f5c9ae7498e" />
 </p>
 
 <p align="center">

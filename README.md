@@ -19,6 +19,13 @@
 
 ---
 
+## Live Demos
+
+- **[Component Showcase](https://daltlc.github.io/zephyr-framework/)** — Interactive demo of all 14 components and the Agent API
+- **[Helio FAQ Demo](https://zephyr-agent-demo.vercel.app)** — A fictional SaaS product page with a live AI support assistant powered by `<z-agent>` — shows what a real customer would experience ([Source](https://github.com/daltlc/zephyr-agent-demo))
+
+---
+
 ## Try it now
 
 Save this as an HTML file and open it in your browser. No install, no build step, no dependencies:

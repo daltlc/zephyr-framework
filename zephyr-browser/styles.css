@@ -5,16 +5,14 @@
  * The panel sits alongside the Zephyr demo page in a split-pane layout.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
 :root {
-  --midnight: #0a0e27;
-  --charcoal: #1a1d35;
-  --slate: #2a2f4f;
-  --silver: #9ba3bf;
-  --ice: #e8edf7;
-  --accent: #ff6b9d;
-  --accent-soft: #ffa5c3;
+  --midnight: #0a0a0a;
+  --charcoal: #111;
+  --slate: #1a1a1a;
+  --silver: #888;
+  --ice: #f0f0f0;
+  --accent: #e8f55e;
+  --accent-soft: #d4e04a;
   --success: #4ade80;
   --warning: #ffd700;
 }
@@ -22,7 +20,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: system-ui, sans-serif;
   background: var(--midnight);
   color: var(--ice);
   height: 100vh;
@@ -100,9 +98,9 @@ webview {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-align: center;
-  background: rgba(255, 107, 157, 0.1);
+  background: rgba(232, 245, 94, 0.1);
   color: var(--accent);
-  border-bottom: 1px solid rgba(255, 107, 157, 0.2);
+  border-bottom: 1px solid rgba(232, 245, 94, 0.2);
   flex-shrink: 0;
 }
 
@@ -170,7 +168,7 @@ webview {
 
 .comparison-card.highlight {
   border-color: var(--accent);
-  background: rgba(255, 107, 157, 0.05);
+  background: rgba(232, 245, 94, 0.05);
 }
 
 .comparison-card.highlight h3 {
@@ -209,6 +207,7 @@ webview {
   white-space: pre;
   overflow-x: auto;
   color: var(--silver);
+  font-family: monospace;
 }
 
 .flow .highlight { color: var(--accent); font-weight: 600; }
@@ -293,8 +292,8 @@ webview {
 /* Tool call indicators */
 .tool-call {
   align-self: flex-start;
-  background: rgba(255, 107, 157, 0.08);
-  border: 1px solid rgba(255, 107, 157, 0.15);
+  background: rgba(232, 245, 94, 0.08);
+  border: 1px solid rgba(232, 245, 94, 0.15);
   border-radius: 0.375rem;
   padding: 0.375rem 0.625rem;
   font-size: 0.6875rem;
@@ -403,7 +402,7 @@ webview {
   font-size: 0.625rem;
   color: var(--slate);
   background: var(--midnight);
-  border-top: 1px solid rgba(42, 47, 79, 0.5);
+  border-top: 1px solid rgba(26, 26, 26, 0.5);
   flex-shrink: 0;
 }
 

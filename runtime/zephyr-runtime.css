@@ -8,14 +8,14 @@
 
 /* ----- Runtime tokens ----- */
 :root {
-  --z-rt-bg: #0a0e27;
-  --z-rt-surface: #111631;
-  --z-rt-border: #1e2540;
-  --z-rt-text: #e8edf7;
+  --z-rt-bg: #0a0a0a;
+  --z-rt-surface: #111;
+  --z-rt-border: #1a1a1a;
+  --z-rt-text: #f0f0f0;
   --z-rt-text-muted: #64748b;
   --z-rt-text-dim: #475569;
-  --z-rt-accent: #ff6b9d;
-  --z-rt-accent-soft: #ffa5c3;
+  --z-rt-accent: #e8f55e;
+  --z-rt-accent-soft: #d4e04a;
   --z-rt-success: #4ade80;
   --z-rt-warning: #fbbf24;
   --z-rt-error: #f87171;
@@ -116,7 +116,7 @@ z-stream {
   z-index: 10;
   padding: 0.375rem 1rem;
   background: var(--z-rt-accent);
-  color: #0a0e27;
+  color: #0a0a0a;
   border: none;
   border-radius: 1rem;
   font-family: var(--z-rt-font);

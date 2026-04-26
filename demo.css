@@ -6,23 +6,21 @@
  * they intentionally override framework @layer styles via the cascade.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
 :root {
-  --midnight: #0a0e27;
-  --charcoal: #1a1d35;
-  --slate: #2a2f4f;
-  --silver: #9ba3bf;
-  --ice: #e8edf7;
-  --accent: #ff6b9d;
-  --accent-soft: #ffa5c3;
+  --midnight: #0a0a0a;
+  --charcoal: #111;
+  --slate: #1a1a1a;
+  --silver: #888;
+  --ice: #f0f0f0;
+  --accent: #e8f55e;
+  --accent-soft: #d4e04a;
   --warning: #ffd700;
 }
 
 body {
   margin: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  background: linear-gradient(135deg, var(--midnight) 0%, var(--charcoal) 100%);
+  font-family: system-ui, sans-serif;
+  background: var(--midnight);
   color: var(--ice);
   min-height: 100vh;
   padding: 2rem;
@@ -42,14 +40,10 @@ header {
 }
 
 h1 {
-  font-family: 'Playfair Display', serif;
   font-size: clamp(2.5rem, 8vw, 5rem);
   font-weight: 900;
   margin: 0;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
   letter-spacing: -0.02em;
 }
 
@@ -96,7 +90,7 @@ h1 {
 }
 
 .hero-link:hover {
-  background: rgba(255, 107, 157, 0.1);
+  background: rgba(232, 245, 94, 0.1);
   color: var(--accent-soft);
   transform: translateY(-2px);
 }
@@ -109,11 +103,12 @@ h1 {
 }
 
 .section-heading {
-  font-family: 'Playfair Display', serif;
   font-size: 2rem;
+  font-weight: 700;
   color: var(--accent-soft);
   margin: 0 0 0.5rem;
   text-align: center;
+  letter-spacing: -0.02em;
 }
 
 .section-desc {
@@ -127,11 +122,11 @@ h1 {
 
 /* Agent feature cards — accent border */
 .agent-card {
-  border-color: rgba(255, 107, 157, 0.3);
+  border-color: rgba(232, 245, 94, 0.3);
 }
 
 .agent-card:hover {
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.25);
+  box-shadow: 0 20px 40px rgba(232, 245, 94, 0.25);
 }
 
 .demo-grid {
@@ -144,7 +139,7 @@ h1 {
 
 .demo-card {
   background: var(--charcoal);
-  border: 1px solid rgba(155, 163, 191, 0.1);
+  border: 1px solid #1f1f1f;
   border-radius: 1rem;
   padding: 2rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -173,25 +168,26 @@ h1 {
 
 .demo-card:hover {
   transform: translateY(-0.25rem);
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.15);
+  box-shadow: 0 20px 40px rgba(232, 245, 94, 0.15);
 }
 
 h2 {
-  font-family: 'Playfair Display', serif;
   font-size: 1.75rem;
+  font-weight: 700;
   margin: 0 0 1.5rem;
   color: var(--accent-soft);
-  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 button:not(z-agent button), .button {
   background: var(--accent);
-  color: white;
+  color: #0a0a0a;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: 500;
+  font-family: system-ui, sans-serif;
   transition: all 0.2s ease;
   text-decoration: none;
   display: inline-block;
@@ -200,7 +196,7 @@ button:not(z-agent button), .button {
 button:not(z-agent button):hover, .button:hover {
   background: var(--accent-soft);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+  box-shadow: 0 4px 12px rgba(232, 245, 94, 0.3);
 }
 
 button:not(z-agent button):active, .button:active {
@@ -247,7 +243,7 @@ z-tabs [role="tablist"] {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(155, 163, 191, 0.1);
+  border-bottom: 1px solid #1f1f1f;
   padding-bottom: 0;
 }
 
@@ -257,6 +253,7 @@ z-tabs [data-tab] {
   padding: 0.75rem 1.25rem;
   color: var(--silver);
   font-weight: 500;
+  font-family: system-ui, sans-serif;
   border-radius: 0.5rem 0.5rem 0 0;
 }
 
@@ -275,7 +272,7 @@ z-select [slot="trigger"] {
   background: var(--slate);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   color: var(--ice);
   width: 100%;
   text-align: left;
@@ -297,7 +294,7 @@ z-select[data-open] [slot="trigger"]::after {
 
 z-select [slot="options"] {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   width: 100%;
   border-radius: 0.5rem;
 }
@@ -329,10 +326,11 @@ z-carousel [slot="item"] {
 }
 
 z-carousel [slot="item"] h3 {
-  font-family: 'Playfair Display', serif;
   font-size: 2rem;
+  font-weight: 700;
   margin-bottom: 1rem;
   color: var(--accent-soft);
+  letter-spacing: -0.01em;
 }
 
 .carousel-controls {
@@ -352,7 +350,7 @@ z-carousel [slot="item"] h3 {
 
 .carousel-controls button:hover {
   background: var(--accent);
-  color: white;
+  color: #0a0a0a;
 }
 
 /* Dropdown Styles */
@@ -360,13 +358,13 @@ z-dropdown [slot="trigger"] {
   background: var(--slate);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   color: var(--ice);
 }
 
 z-dropdown [slot="content"] {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   padding: 1rem;
   color: var(--silver);
 }
@@ -394,10 +392,11 @@ z-modal dialog {
 }
 
 z-modal dialog h3 {
-  font-family: 'Playfair Display', serif;
   font-size: 1.75rem;
+  font-weight: 700;
   margin: 0 0 1rem;
   color: var(--accent-soft);
+  letter-spacing: -0.01em;
 }
 
 z-modal dialog p {
@@ -420,13 +419,13 @@ z-modal dialog p {
 
 .modal-actions button:first-child {
   background: var(--accent);
-  color: white;
+  color: #0a0a0a;
 }
 
 /* Toast position override */
 z-toast {
   background: var(--accent);
-  color: white;
+  color: #0a0a0a;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -435,7 +434,7 @@ footer {
   text-align: center;
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid rgba(155, 163, 191, 0.1);
+  border-top: 1px solid #1f1f1f;
   color: var(--silver);
   font-size: 0.875rem;
 }
@@ -446,6 +445,7 @@ code {
   border-radius: 0.25rem;
   color: var(--accent-soft);
   font-size: 0.875em;
+  font-family: monospace;
 }
 
 /* Combobox Styles */
@@ -455,11 +455,12 @@ z-combobox {
 
 z-combobox input {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: var(--ice);
   width: 100%;
+  font-family: system-ui, sans-serif;
 }
 
 z-combobox input::placeholder {
@@ -468,7 +469,7 @@ z-combobox input::placeholder {
 
 z-combobox [slot="listbox"] {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
 }
 
 z-combobox [slot="listbox"] [data-value] {
@@ -485,7 +486,7 @@ z-combobox [slot="listbox"] [data-value][data-highlighted] {
 /* Date Picker Styles */
 z-datepicker [slot="display"] {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   border-radius: 0.5rem;
   padding: 0.75rem 1.5rem;
   color: var(--silver);
@@ -499,7 +500,7 @@ z-datepicker [slot="display"][data-has-value] {
 /* Infinite Scroll Styles */
 .infinite-item {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid rgba(155, 163, 191, 0.1);
+  border-bottom: 1px solid #181818;
   color: var(--silver);
   font-size: 0.875rem;
 }
@@ -507,7 +508,7 @@ z-datepicker [slot="display"][data-has-value] {
 /* Sortable Styles */
 .sortable-item {
   background: var(--slate);
-  border: 1px solid rgba(155, 163, 191, 0.2);
+  border: 1px solid #2a2a2a;
   border-radius: 0.375rem;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
@@ -534,7 +535,7 @@ z-file-upload [slot="dropzone"] {
 z-file-upload[data-dragover] [slot="dropzone"] {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(255, 107, 157, 0.05);
+  background: rgba(232, 245, 94, 0.05);
 }
 
 z-file-upload .z-file-item {
@@ -557,9 +558,9 @@ z-file-upload .z-file-progress-bar {
 z-virtual-list .z-virtual-item {
   color: var(--silver);
   font-size: 0.875rem;
-  border-bottom: 1px solid rgba(155, 163, 191, 0.05);
+  border-bottom: 1px solid #181818;
 }
 
 z-virtual-list .z-virtual-item:hover {
-  background: rgba(155, 163, 191, 0.05);
+  background: rgba(255, 255, 255, 0.03);
 }

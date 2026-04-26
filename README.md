@@ -64,9 +64,9 @@ That's it. Three components, zero JavaScript, working in your browser.
 
 ## Deploy a working AI agent in one click
 
-Want a live, deployed demo with a real `<z-agent>` chat widget controlling your UI? Fork the reference Kanban demo and deploy it to Vercel. Bring your own Anthropic API key:
+Want a live, deployed site with a real `<z-agent>` chat widget? Fork the reference demo and deploy it to Vercel. Bring your own Anthropic API key:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdaltlc%2Fzephyr-agent-demo&project-name=zephyr-boards&env=ANTHROPIC_API_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdaltlc%2Fzephyr-agent-demo&project-name=zephyr-agent-demo&env=ANTHROPIC_API_KEY)
 
 The demo includes a serverless proxy (`/api/chat.js`) that keeps your key server-side, never exposed in the browser. Source: [zephyr-agent-demo](https://github.com/daltlc/zephyr-agent-demo).
 
@@ -202,7 +202,7 @@ After connecting, the agent gets 6 tools: `zephyr_act`, `zephyr_get_state`, `zep
 ## Live Demos
 
 - **[Component Showcase](https://daltlc.github.io/zephyr-framework/)** — Interactive demo of all 14 components and the Agent API
-- **[Zephyr Boards](https://zephyr-agent-demo.vercel.app)** — A task board where an AI agent creates, moves, and manages tasks through natural language in real time ([Source](https://github.com/daltlc/zephyr-agent-demo))
+- **[Helio FAQ Demo](https://zephyr-agent-demo.vercel.app)** — A fictional SaaS product page with a live AI support assistant powered by `<z-agent>` — shows what a real customer would experience ([Source](https://github.com/daltlc/zephyr-agent-demo))
 
 ---
 

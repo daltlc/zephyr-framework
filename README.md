@@ -30,7 +30,7 @@ Save this as an HTML file and open it in your browser. No install, no build step
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My App</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.css">
 </head>
 <body>
   <z-accordion>
@@ -53,7 +53,7 @@ Save this as an HTML file and open it in your browser. No install, no build step
     <div slot="panel" data-tab="two">More content here.</div>
   </z-tabs>
 
-  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.js"></script>
 </body>
 </html>
 ```
@@ -90,8 +90,8 @@ npm install zephyr-framework
 
 **CDN** (no install):
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.css">
-<script src="https://cdn.jsdelivr.net/npm/zephyr-framework@0.3/zephyr-framework.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.css">
+<script src="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.js"></script>
 ```
 
 **Scaffold a new project** (includes MCP server):

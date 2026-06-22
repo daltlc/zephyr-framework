@@ -31,10 +31,16 @@
       assert.ok(customElements.get('z-data-grid'), 'z-data-grid should be defined');
     });
 
-    t.test('has role="table"', async (assert) => {
+    t.test('has a role="table" wrapper with only row/rowgroup children', async (assert) => {
       await waitForElements();
       const grid = document.getElementById('test-grid');
-      assert.equal(grid.getAttribute('role'), 'table');
+      const table = grid.querySelector('.z-grid-table');
+      assert.equal(table.getAttribute('role'), 'table');
+      assert.ok(table.getAttribute('aria-label'), 'table should have an accessible name');
+      // Toolbar and footer live outside the table role (invalid children)
+      assert.ok(!grid.querySelector('[role="table"] .z-grid-toolbar'), 'toolbar should be outside the table role');
+      const children = Array.from(table.children).map(c => c.getAttribute('role'));
+      assert.ok(children.every(r => r === 'row' || r === 'rowgroup'), 'table children should be rows/rowgroups');
     });
 
     t.test('setColumns renders header cells', async (assert) => {
@@ -56,7 +62,9 @@
 
     t.test('cell content uses textContent (XSS safe)', async (assert) => {
       const grid = document.getElementById('test-grid');
-      grid.setRows([{ name: '<script>alert(1)</script>', age: 0, city: 'Test' }]);
+      // <\/script> escapes keep the literal from terminating this <script> element
+      const xss = '<script>alert(1)<\/script>';
+      grid.setRows([{ name: xss, age: 0, city: 'Test' }]);
       const firstCell = grid.querySelector('.z-grid-row .z-grid-cell');
       assert.ok(!firstCell.innerHTML.includes('<script>'), 'should not contain script tag');
       assert.ok(firstCell.textContent.includes('<script>'), 'should show escaped text');

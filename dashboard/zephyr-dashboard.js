@@ -232,10 +232,17 @@ class ZDataGrid extends ZephyrElement {
     this._footerEl = document.createElement('div');
     this._footerEl.classList.add('z-grid-footer');
 
-    this.setAttribute('role', 'table');
+    // role="table" goes on a wrapper holding only row/rowgroup children —
+    // the toolbar and footer are not valid children of a table role
+    this._tableEl = document.createElement('div');
+    this._tableEl.classList.add('z-grid-table');
+    this._tableEl.setAttribute('role', 'table');
+    this._tableEl.setAttribute('aria-label', this.getAttribute('data-label') || 'Data grid');
+    this._tableEl.appendChild(this._headerEl);
+    this._tableEl.appendChild(this._bodyEl);
+
     this.appendChild(this._toolbar);
-    this.appendChild(this._headerEl);
-    this.appendChild(this._bodyEl);
+    this.appendChild(this._tableEl);
     this.appendChild(this._footerEl);
   }
 

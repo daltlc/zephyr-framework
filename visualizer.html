@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Visualizer — Zephyr Framework</title>
+  <link rel="stylesheet" href="zephyr-framework.css">
+  <link rel="stylesheet" href="demo.css">
+  <link rel="stylesheet" href="dashboard/zephyr-dashboard.css">
+</head>
+<body>
+
+  <header>
+    <h1>Auto-Visualizer</h1>
+    <div class="subtitle">Data in. Right component out.</div>
+    <p class="hero-tagline">
+      Pass any data shape to <code>Zephyr.agent.visualize()</code> and the framework
+      automatically picks and renders the right component — no configuration needed.
+    </p>
+    <div class="hero-links">
+      <a href="index.html" class="hero-link">← Back</a>
+      <a href="https://github.com/daltlc/zephyr-framework" class="hero-link">GitHub</a>
+    </div>
+  </header>
+
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h3 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">Time Series → z-chart</h3>
+      <div id="viz-chart"></div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.8rem;">
+        Array of <code>{ time, value }</code> auto-renders as a line chart.
+      </p>
+    </div>
+    <div class="demo-card">
+      <h3 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">KPI Objects → z-stat</h3>
+      <div id="viz-stats" style="--z-panel-bg: var(--slate); --z-panel-border: var(--lavender); --z-stat-trend-down: #f87171;"></div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.8rem;">
+        Array of <code>{ label, value, trend }</code> auto-renders as stat cards.
+      </p>
+    </div>
+    <div class="demo-card">
+      <h3 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">String Array → z-sortable</h3>
+      <div id="viz-list"></div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.8rem;">
+        Array of strings auto-renders as a drag-to-reorder list.
+      </p>
+    </div>
+    <div class="demo-card" style="grid-column: 1 / -1;">
+      <h3 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">Object Array → z-data-grid</h3>
+      <div id="viz-table"></div>
+      <p style="margin-top: 0.75rem; color: var(--silver); font-size: 0.8rem;">
+        Array of objects auto-renders as a sortable, filterable data grid with columns derived from keys.
+      </p>
+    </div>
+  </div>
+
+  <script src="zephyr-framework.js"></script>
+  <script src="dashboard/zephyr-dashboard.js"></script>
+  <script>
+    const now = Math.floor(Date.now() / 1000);
+
+    Zephyr.agent.visualize(
+      Array.from({ length: 20 }, (_, i) => ({ time: now - (19 - i) * 86400, value: 100 + Math.round(Math.sin(i * 0.6) * 30 + Math.random() * 10) })),
+      '#viz-chart',
+      { title: 'Daily Visitors' }
+    );
+
+    Zephyr.agent.visualize([
+      { label: 'Revenue', value: '$124K', trend: 'up', trendValue: '+12%' },
+      { label: 'Users', value: '8,421', trend: 'up', trendValue: '+5%' },
+      { label: 'Churn', value: '2.1%', trend: 'down', trendValue: '-0.3%' },
+    ], '#viz-stats');
+
+    Zephyr.agent.visualize(
+      ['Design system audit', 'Performance review', 'API versioning', 'Accessibility pass'],
+      '#viz-list'
+    );
+
+    Zephyr.agent.visualize([
+      { name: 'Alice', role: 'Engineer', team: 'Platform', score: 98 },
+      { name: 'Bob', role: 'Designer', team: 'Product', score: 94 },
+      { name: 'Carol', role: 'PM', team: 'Growth', score: 91 },
+      { name: 'Dave', role: 'Engineer', team: 'Platform', score: 89 },
+    ], '#viz-table');
+  </script>
+</body>
+</html>

@@ -43,7 +43,17 @@
       "describe": { "description": "Get structured description of a component instance", "signature": "describe(selector: string): { tag, id, state, actions, slots, events, methods }" },
       "setState": { "description": "Set or remove data attributes on a component", "signature": "setState(selector: string, attributes: object): { success: boolean, state: object }" },
       "getSchema": { "description": "Get the full component schema with actions and descriptions", "signature": "getSchema(): object" },
-      "getPrompt": { "description": "Generate an LLM-ready markdown prompt for components on the current page", "signature": "getPrompt(): string" }
+      "getPrompt": { "description": "Generate an LLM-ready markdown prompt for components on the current page", "signature": "getPrompt(): string" },
+      "visualize": {
+        "description": "Auto-select and render the best component for arbitrary data. Analyzes data shape: time series → z-chart, {label,value} objects → z-stat cards, string arrays → z-sortable/z-virtual-list, object arrays → z-data-grid. Clears the container before rendering.",
+        "signature": "visualize(data: any, container: string, options?: { hint?: 'chart'|'stats'|'list'|'table', title?: string }): { success: boolean, component?: string, selector?: string, error?: string }",
+        "dataRouting": {
+          "chart": "Array of { time, value } or { time, open, high, low, close } — line or candlestick chart",
+          "stats": "Array of ≤8 { label, value, trend? } objects, or a single such object — stat cards",
+          "list": "Array of strings or { id, label } objects — sortable list (virtual if >50 items)",
+          "table": "Array of objects with 3+ keys (fallback) — data grid with auto-derived columns"
+        }
+      }
     }
   },
 

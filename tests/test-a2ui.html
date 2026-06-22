@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: A2UI Renderer</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <div id="surface-1"></div>
+  <div id="surface-2"></div>
+  <div id="surface-3"></div>
+  <div id="surface-4"></div>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../zephyr-a2ui.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('A2UI Renderer');
+
+    t.test('renders the spec profile-card stream example', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-1');
+      const stream = [
+        '{"surfaceUpdate": {"components": [{"id": "root", "component": {"Column": {"children": {"explicitList": ["profile_card"]}}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "profile_card", "component": {"Card": {"child": "card_content"}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "card_content", "component": {"Column": {"children": {"explicitList": ["header_row", "bio_text"]}}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "header_row", "component": {"Row": {"alignment": "center", "children": {"explicitList": ["avatar", "name_text"]}}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "avatar", "component": {"Image": {"url": {"literalString": "https://www.example.com/profile.jpg"}}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "name_text", "component": {"Text": {"usageHint": "h3", "text": {"literalString": "A2A Fan"}}}}]}}',
+        '{"surfaceUpdate": {"components": [{"id": "bio_text", "component": {"Text": {"text": {"literalString": "Loves protocols."}}}}]}}',
+        '{"beginRendering": {"surfaceId": "s1", "root": "root"}}'
+      ].join('\n');
+      const results = surface.processStream(stream);
+      assert.ok(results.every(r => r.success), 'every message should process cleanly');
+      const el = document.getElementById('surface-1');
+      assert.ok(el.querySelector('section.z-a2ui-card'), 'should render the card');
+      assert.equal(el.querySelector('h3').textContent, 'A2A Fan', 'usageHint h3 should become a heading');
+      assert.equal(el.querySelector('img').src, 'https://www.example.com/profile.jpg', 'image url should be set');
+      assert.ok(el.textContent.includes('Loves protocols.'), 'bio text should render');
+    });
+
+    t.test('does not render before beginRendering', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-2');
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { Text: { text: { literalString: 'early' } } } }
+      ] } });
+      assert.equal(document.getElementById('surface-2').children.length, 0, 'nothing renders before the signal');
+      surface.handleMessage({ beginRendering: { surfaceId: 's2', root: 'root' } });
+      assert.ok(document.getElementById('surface-2').textContent.includes('early'), 'renders after the signal');
+    });
+
+    t.test('resolves data bindings and refreshes on dataModelUpdate', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-3');
+      surface.handleMessage({ dataModelUpdate: { surfaceId: 's3', path: 'user', contents: [
+        { key: 'name', valueString: 'Bob' },
+        { key: 'isVerified', valueBoolean: true }
+      ] } });
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { Text: { text: { path: '/user/name' } } } }
+      ] } });
+      surface.handleMessage({ beginRendering: { surfaceId: 's3', root: 'root' } });
+      const el = document.getElementById('surface-3');
+      assert.equal(el.textContent.trim(), 'Bob', 'path binding should resolve');
+
+      surface.handleMessage({ dataModelUpdate: { path: 'user', contents: [
+        { key: 'name', valueString: 'Alice' }
+      ] } });
+      assert.equal(el.textContent.trim(), 'Alice', 'bound text should refresh in place');
+    });
+
+    t.test('renders template lists from a data-bound array', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-4');
+      surface.handleMessage({ dataModelUpdate: { contents: [
+        { key: 'todos', valueArray: [ { label: 'One' }, { label: 'Two' }, { label: 'Three' } ] }
+      ] } });
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { List: { children: { template: { dataBinding: '/todos', componentId: 'item' } } } } },
+        { id: 'item', component: { Text: { text: { path: 'label' } } } }
+      ] } });
+      surface.handleMessage({ beginRendering: { root: 'root' } });
+      const el = document.getElementById('surface-4');
+      const items = el.querySelectorAll('p');
+      assert.equal(items.length, 3, 'template should stamp one element per item');
+      assert.equal(items[1].textContent, 'Two', 'relative paths should resolve against item data');
+      el.textContent = '';
+    });
+
+    t.test('buttons emit userAction with resolved context', async (assert) => {
+      const actions = [];
+      const surface = Zephyr.a2ui.createSurface('#surface-4', { onAction: a => actions.push(a) });
+      surface.handleMessage({ dataModelUpdate: { contents: [{ key: 'form', valueMap: [{ key: 'field', valueString: 'typed' }] }] } });
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { Button: { label: { literalString: 'Go' }, action: {
+          name: 'submit_form',
+          context: [
+            { key: 'userInput', value: { path: '/form/field' } },
+            { key: 'formId', value: { literalString: 'f-123' } }
+          ]
+        } } } }
+      ] } });
+      surface.handleMessage({ beginRendering: { surfaceId: 's4', root: 'root' } });
+      document.querySelector('#surface-4 button').click();
+      assert.equal(actions.length, 1, 'onAction should fire');
+      assert.equal(actions[0].name, 'submit_form');
+      assert.equal(actions[0].surfaceId, 's4');
+      assert.equal(actions[0].context.userInput, 'typed', 'path context should resolve');
+      assert.equal(actions[0].context.formId, 'f-123', 'literal context should resolve');
+      assert.ok(actions[0].timestamp, 'should carry a timestamp');
+      document.getElementById('surface-4').textContent = '';
+    });
+
+    t.test('two-way input binding writes back to the data model', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-4');
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { TextField: { label: { literalString: 'Name' }, text: { path: '/form/name' } } } }
+      ] } });
+      surface.handleMessage({ beginRendering: { root: 'root' } });
+      const input = document.querySelector('#surface-4 input');
+      input.value = 'Dalton';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      assert.equal(surface.dataModel.form.name, 'Dalton', 'input should write to the model');
+      document.getElementById('surface-4').textContent = '';
+    });
+
+    t.test('text is rendered safely and unsafe URLs are dropped', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-4');
+      surface.handleMessage({ surfaceUpdate: { components: [
+        { id: 'root', component: { Column: { children: { explicitList: ['xss', 'img'] } } } },
+        { id: 'xss', component: { Text: { text: { literalString: '<img src=x onerror=alert(1)>' } } } },
+        { id: 'img', component: { Image: { url: { literalString: 'javascript:alert(1)' } } } }
+      ] } });
+      surface.handleMessage({ beginRendering: { root: 'root' } });
+      const el = document.getElementById('surface-4');
+      assert.ok(!el.querySelector('p img'), 'HTML in text must not parse');
+      assert.ok(el.textContent.includes('<img'), 'text should be escaped, not executed');
+      const img = el.querySelector('img');
+      assert.ok(!img.getAttribute('src') || !img.src.startsWith('javascript:'), 'javascript: URLs must be dropped');
+      el.textContent = '';
+    });
+
+    t.test('malformed messages return errors instead of throwing', async (assert) => {
+      const surface = Zephyr.a2ui.createSurface('#surface-4');
+      const bad = surface.handleMessage('not json {');
+      assert.ok(!bad.success, 'invalid JSON should fail gracefully');
+      const unknown = surface.handleMessage({ somethingElse: {} });
+      assert.ok(!unknown.success, 'unknown message types should fail gracefully');
+      assert.ok(unknown.error.includes('somethingElse'), 'error should name the unknown key');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

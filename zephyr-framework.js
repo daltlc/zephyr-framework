@@ -24,6 +24,9 @@
  */
 class ZephyrElement extends HTMLElement {
   connectedCallback() {
+    // Trigger buttons default to type="submit" — inside a <form> a click would
+    // submit and navigate. Defuse unless the author set an explicit type.
+    this.querySelectorAll('button[slot="trigger"]:not([type])').forEach(b => { b.type = 'button'; });
     this.attachTemplate();
     this.attachBehaviors();
   }
@@ -70,15 +73,27 @@ class ZephyrElement extends HTMLElement {
 
   /**
    * Wraps a DOM mutation in a View Transition if the API is available.
-   * Falls back to executing the function directly in unsupported browsers.
+   * Falls back to executing the function directly in unsupported browsers,
+   * when the user prefers reduced motion, or in agent headless mode — in all
+   * three cases the mutation applies synchronously.
    * @param {Function} fn - The DOM mutation to perform
    */
   static withTransition(fn) {
-    if (document.startViewTransition) {
-      document.startViewTransition(() => fn());
-    } else {
+    const skipTransition =
+      !document.startViewTransition ||
+      document.documentElement.hasAttribute('data-z-headless') ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    if (skipTransition) {
       fn();
+      return;
     }
+
+    const transition = document.startViewTransition(() => fn());
+    // A skipped transition (hidden tab, rapid successive calls) rejects these
+    // promises; the DOM update still applies, so the rejection is benign.
+    transition.finished.catch(() => {});
+    if (transition.ready) transition.ready.catch(() => {});
   }
 
   /** Toggles the data-open attribute on this element. */
@@ -212,8 +227,12 @@ class ZModal extends ZephyrElement {
       }
     });
 
-    // Escape key is handled natively by <dialog>, but we dispatch event
+    // Escape key is handled natively by <dialog>, but we dispatch event.
+    // Mirror the native state to data-open so agents (getState/observe) see it.
+    // The close event arrives via a queued task — skip the removal if the
+    // dialog was reopened before the task ran.
     dialog.addEventListener('close', () => {
+      if (!dialog.open) this.removeAttribute('data-open');
       this.dispatchEvent(new CustomEvent('close', { bubbles: true }));
     });
   }
@@ -221,14 +240,20 @@ class ZModal extends ZephyrElement {
   /** Opens the modal dialog with a View Transition animation. */
   open() {
     const dialog = this.querySelector('dialog');
-    ZephyrElement.withTransition(() => dialog.showModal());
+    ZephyrElement.withTransition(() => {
+      dialog.showModal();
+      this.setAttribute('data-open', '');
+    });
     this.dispatchEvent(new CustomEvent('open', { bubbles: true }));
   }
 
   /** Closes the modal dialog with a View Transition animation. */
   close() {
     const dialog = this.querySelector('dialog');
-    ZephyrElement.withTransition(() => dialog.close());
+    ZephyrElement.withTransition(() => {
+      dialog.close();
+      this.removeAttribute('data-open');
+    });
   }
 }
 
@@ -337,6 +362,11 @@ class ZSelect extends ZephyrElement {
     button.setAttribute('aria-expanded', 'false');
     button.setAttribute('aria-haspopup', 'listbox');
     options.setAttribute('role', 'listbox');
+    // Listboxes need an accessible name — label via the trigger button
+    if (!button.id) button.id = `select-trigger-${Math.random().toString(36).slice(2, 8)}`;
+    if (!options.hasAttribute('aria-label') && !options.hasAttribute('aria-labelledby')) {
+      options.setAttribute('aria-labelledby', button.id);
+    }
     items.forEach(item => item.setAttribute('role', 'option'));
 
     button.addEventListener('click', () => {
@@ -586,6 +616,11 @@ class ZCombobox extends ZephyrElement {
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-haspopup', 'listbox');
     listbox.setAttribute('role', 'listbox');
+    // Listboxes need an accessible name; scrollable lists need keyboard focus
+    if (!listbox.hasAttribute('aria-label') && !listbox.hasAttribute('aria-labelledby')) {
+      listbox.setAttribute('aria-label', input.getAttribute('placeholder') || 'Options');
+    }
+    if (!listbox.hasAttribute('tabindex')) listbox.setAttribute('tabindex', '0');
     items.forEach(item => {
       item.setAttribute('role', 'option');
       item.setAttribute('tabindex', '-1');
@@ -773,6 +808,9 @@ class ZDatepicker extends ZephyrElement {
  */
 class ZInfiniteScroll extends ZephyrElement {
   attachTemplate() {
+    // Scrollable region must be keyboard-reachable to scroll without a mouse
+    if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0');
+
     // Create sentinel element
     this._sentinel = document.createElement('div');
     this._sentinel.classList.add('z-infinite-sentinel');
@@ -928,6 +966,9 @@ class ZFileUpload extends ZephyrElement {
       fileInput.classList.add('z-file-input-hidden');
       this.appendChild(fileInput);
     }
+    if (!fileInput.hasAttribute('aria-label') && !fileInput.hasAttribute('aria-labelledby')) {
+      fileInput.setAttribute('aria-label', 'File upload');
+    }
 
     // ARIA
     dropZone.setAttribute('role', 'button');
@@ -1053,6 +1094,9 @@ class ZFileUpload extends ZephyrElement {
  */
 class ZVirtualList extends ZephyrElement {
   attachTemplate() {
+    // Scrollable region must be keyboard-reachable to scroll without a mouse
+    if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0');
+
     this._items = [];
     this._renderer = (item, idx) => `<div>${item}</div>`;
     this._itemHeight = parseInt(this.dataset.itemHeight) || 40;
@@ -2145,10 +2189,17 @@ window.Zephyr = {
         container.appendChild(el);
       }
 
-      // Post-insert setup call (e.g., setData on a chart after it connects to DOM)
-      if (spec.setup && spec.setup.method && typeof el[spec.setup.method] === 'function') {
+      // Post-insert setup call (e.g., setData on a chart after it connects to
+      // DOM). Routed through the act() adapter when one exists so setup.params
+      // follows the same object convention as act(selector, action, params).
+      const adapter = Zephyr.agent._actions[el.tagName.toLowerCase()];
+      if (spec.setup && spec.setup.method) {
         try {
-          el[spec.setup.method](spec.setup.params);
+          if (adapter && typeof adapter[spec.setup.method] === 'function') {
+            adapter[spec.setup.method](el, spec.setup.params);
+          } else if (typeof el[spec.setup.method] === 'function') {
+            el[spec.setup.method](spec.setup.params);
+          }
         } catch (e) {
           // Element was inserted but setup failed — still return success with warning
           return { success: true, selector: el.id ? '#' + el.id : el.tagName.toLowerCase(), warning: 'Setup failed: ' + e.message };
@@ -2222,6 +2273,184 @@ window.Zephyr = {
       }
 
       return { success: true, selector: result.selector, panels: panelSelectors };
+    },
+
+    // -----------------------------------------------------------------------
+    // Visualize API — Auto-select the best component for arbitrary data
+    // -----------------------------------------------------------------------
+
+    /** @private True when every item has a time/date key + a numeric value (or OHLC keys). */
+    _isTimeSeries(data) {
+      if (!Array.isArray(data) || !data.length || typeof data[0] !== 'object') return false;
+      const first = data[0];
+      const hasTime = Object.keys(first).some(k => /^(time|date|timestamp|t|x)$/i.test(k));
+      const hasValue = Object.keys(first).some(k => /^(value|v|y|price|close|amount)$/i.test(k) && typeof first[k] === 'number');
+      const hasOHLC = ['open', 'high', 'low', 'close'].every(k => k in first);
+      return hasTime && (hasValue || hasOHLC);
+    },
+
+    /** @private True for an array of {label, value, trend?} objects with ≤8 items, or a single such object. */
+    _isStats(data) {
+      if (data && typeof data === 'object' && !Array.isArray(data) && 'label' in data && 'value' in data) return true;
+      if (!Array.isArray(data) || !data.length || data.length > 8) return false;
+      return data.every(item => typeof item === 'object' && 'label' in item && 'value' in item);
+    },
+
+    /** @private True for an array of strings or {id, label} objects. */
+    _isSimpleList(data) {
+      if (!Array.isArray(data) || !data.length) return false;
+      return data.every(item => typeof item === 'string' || (typeof item === 'object' && 'label' in item));
+    },
+
+    /** @private Renders data as a z-chart (line or candlestick). */
+    _renderAsChart(data, containerSelector, options) {
+      const first = data[0] || {};
+      const chartType = (['open', 'high', 'low', 'close'].every(k => k in first)) ? 'candlestick' : 'line';
+      const id = 'z-viz-chart-' + Date.now();
+      return Zephyr.agent.render(containerSelector, {
+        tag: 'z-chart', id,
+        attributes: {
+          'data-type': chartType, 'data-height': '300',
+          ...(options.title ? { 'data-title': options.title } : {})
+        },
+        setup: { method: 'setData', params: { data } }
+      });
+    },
+
+    /** @private Renders data as a stacked column of z-stat cards inside a z-dashboard. */
+    _renderAsStats(data, containerSelector, options) {
+      const stats = Array.isArray(data) ? data : [data];
+      return Zephyr.agent.compose(containerSelector, {
+        tag: 'z-dashboard', id: 'z-viz-stats-' + Date.now(),
+        attributes: { 'data-columns': '1' },
+        panels: stats.map((s, i) => ({
+          id: 'stat-' + i,
+          component: {
+            tag: 'z-stat', id: 'z-viz-stat-' + i + '-' + Date.now(),
+            attributes: {
+              'data-label': String(s.label), 'data-value': String(s.value),
+              ...(s.trend ? { 'data-trend': s.trend } : {}),
+              ...(s.trendValue ? { 'data-trend-value': s.trendValue } : {})
+            }
+          }
+        }))
+      });
+    },
+
+    /** @private Renders data as a z-sortable (≤50 items) or z-virtual-list (>50 items). */
+    _renderAsList(data, containerSelector) {
+      const id = 'z-viz-list-' + Date.now();
+      if (data.length > 50) {
+        const result = Zephyr.agent.render(containerSelector, {
+          tag: 'z-virtual-list', id, attributes: { 'data-item-height': '40' }
+        });
+        if (result.success) {
+          const el = document.getElementById(id);
+          if (el) {
+            el.style.height = '300px';
+            el.setRenderer((item) => {
+              const text = typeof item === 'string' ? item : (item.label || item.id || '');
+              // Use a temporary element so textContent escapes any HTML
+              const tmp = document.createElement('div');
+              tmp.className = 'z-vlist-row';
+              tmp.textContent = text;
+              return tmp.outerHTML;
+            });
+            el.setItems(data);
+          }
+        }
+        return result;
+      }
+      return Zephyr.agent.render(containerSelector, {
+        tag: 'z-sortable', id,
+        children: data.map((item, i) => {
+          const text = typeof item === 'string' ? item : (item.label || '');
+          const val = (typeof item === 'object' && item.id) ? String(item.id) : String(i);
+          return { tag: 'div', attributes: { 'data-sortable': val }, text };
+        })
+      });
+    },
+
+    /** @private Renders data as a z-data-grid, auto-deriving columns from the first row's keys. */
+    _renderAsTable(data, containerSelector) {
+      const id = 'z-viz-grid-' + Date.now();
+      const result = Zephyr.agent.render(containerSelector, { tag: 'z-data-grid', id });
+      if (!result.success) return result;
+      const el = document.getElementById(id);
+      if (el) {
+        const columns = Object.keys(data[0]).map(k => ({
+          key: k,
+          label: k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' '),
+          sortable: true
+        }));
+        el.setColumns(columns);
+        el.setRows(data);
+      }
+      return result;
+    },
+
+    /**
+     * Auto-selects and renders the best Zephyr component for the given data.
+     * Analyzes data shape and picks from: z-chart, z-stat, z-sortable/z-virtual-list, z-data-grid.
+     * Clears the container before rendering.
+     * @param {*} data - Any data: time series array, stat array/object, string list, or object array
+     * @param {string} containerSelector - CSS selector for the target container
+     * @param {Object} [options]
+     * @param {'chart'|'stats'|'list'|'table'} [options.hint] - Override the auto-detection
+     * @param {string} [options.title] - Title for chart visualizations
+     * @returns {{ success: boolean, component?: string, selector?: string, error?: string }}
+     */
+    visualize(data, containerSelector, options = {}) {
+      const container = document.querySelector(containerSelector);
+      if (!container) return { success: false, error: 'Container not found: ' + containerSelector };
+      if (data == null || (Array.isArray(data) && !data.length)) {
+        return { success: false, error: 'No data to visualize.' };
+      }
+
+      // Clear before rendering (consistent with compose())
+      container.textContent = '';
+
+      const hint = options.hint;
+
+      // Chart/stats/table routes render dashboard add-on components — fail with
+      // a clear message instead of render()'s generic "Disallowed tag" error.
+      const missingAddon = (registryKey, tag) => Zephyr.components[registryKey] ? null : {
+        success: false,
+        error: tag + ' requires the dashboard add-on — load dashboard/zephyr-dashboard.js first.'
+      };
+
+      try {
+        if (hint === 'chart' || (!hint && Zephyr.agent._isTimeSeries(data))) {
+          const blocked = missingAddon('chart', 'z-chart');
+          if (blocked) return blocked;
+          const r = Zephyr.agent._renderAsChart(data, containerSelector, options);
+          return { ...r, component: 'z-chart' };
+        }
+        if (hint === 'stats' || (!hint && Zephyr.agent._isStats(data))) {
+          const blocked = missingAddon('stat', 'z-stat');
+          if (blocked) return blocked;
+          const r = Zephyr.agent._renderAsStats(data, containerSelector, options);
+          return { ...r, component: 'z-stat' };
+        }
+        if (hint === 'list' || (!hint && Zephyr.agent._isSimpleList(data))) {
+          if (!Array.isArray(data)) return { success: false, error: 'List visualization requires an array.' };
+          const r = Zephyr.agent._renderAsList(data, containerSelector);
+          return { ...r, component: data.length > 50 ? 'z-virtual-list' : 'z-sortable' };
+        }
+        if (hint === 'table' || (Array.isArray(data) && data.length && typeof data[0] === 'object')) {
+          if (!Array.isArray(data) || typeof data[0] !== 'object') {
+            return { success: false, error: 'Table visualization requires an array of objects.' };
+          }
+          const blocked = missingAddon('dataGrid', 'z-data-grid');
+          if (blocked) return blocked;
+          const r = Zephyr.agent._renderAsTable(data, containerSelector);
+          return { ...r, component: 'z-data-grid' };
+        }
+      } catch (e) {
+        return { success: false, error: 'Visualization failed: ' + e.message };
+      }
+
+      return { success: false, error: 'Cannot infer visualization type. Pass options.hint: "chart", "stats", "list", or "table".' };
     }
   }
 };

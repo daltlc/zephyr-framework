@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (minified artifacts)
+        run: npm run build
+
+      - name: Run test suite headlessly
+        run: npm test
+
+      - name: Accessibility audit (axe-core)
+        run: npm run test:a11y
+
+      - name: Upload minified artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-minified
+          path: |
+            *.min.js
+            *.min.css
+            dashboard/*.min.js
+            dashboard/*.min.css
+            runtime/*.min.js
+            runtime/*.min.css

@@ -637,6 +637,126 @@ mcpServer.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Visualization Tools — Named tools for automatic data display (Goose-style)
+// ---------------------------------------------------------------------------
+
+/**
+ * Tool: zephyr_show_chart
+ *
+ * Renders a line, area, or candlestick chart from time series data.
+ * Use for: trends over time, price history, numeric series, OHLC stock data.
+ */
+mcpServer.tool(
+  'zephyr_show_chart',
+  'Show a line, area, or candlestick chart. Use for: time series data, trends over time, historical data, price/stock data (OHLC → candlestick), numeric series over timestamps.',
+  {
+    container: z.string().describe('CSS selector for the target container'),
+    type: z.enum(['line', 'area', 'candlestick', 'histogram']).default('line').describe('Chart type. Use "candlestick" when data has open/high/low/close fields.'),
+    data: z.array(z.any()).describe('Array of { time, value } for line/area, or { time, open, high, low, close } for candlestick'),
+    title: z.string().optional().describe('Optional chart title'),
+  },
+  async ({ container, type, data, title }) => {
+    const result = await callBrowser('render', [container, {
+      tag: 'z-chart', id: 'chart-' + Date.now(),
+      attributes: { 'data-type': type, 'data-height': '300', ...(title ? { 'data-title': title } : {}) },
+      setup: { method: 'setData', params: { data } }
+    }]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_show_table
+ *
+ * Renders a sortable, filterable data table from rows and column definitions.
+ * Use for: tabular records, structured datasets with 3+ fields per row.
+ */
+mcpServer.tool(
+  'zephyr_show_table',
+  'Show a sortable, filterable data table. Use for: tabular data with rows and columns, lists of objects/records, any structured dataset with 3+ fields per row.',
+  {
+    container: z.string().describe('CSS selector for the target container'),
+    columns: z.array(z.object({
+      key: z.string(),
+      label: z.string(),
+      sortable: z.boolean().optional(),
+    })).describe('Column definitions'),
+    rows: z.array(z.record(z.any())).describe('Row data objects'),
+  },
+  async ({ container, columns, rows }) => {
+    const id = 'grid-' + Date.now();
+    await callBrowser('render', [container, { tag: 'z-data-grid', id }]);
+    await callBrowser('act', ['#' + id, 'setColumns', { columns }]);
+    const result = await callBrowser('act', ['#' + id, 'setRows', { rows }]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_show_stats
+ *
+ * Renders a row of KPI stat cards with optional trend indicators.
+ * Use for: metrics, performance numbers, dashboard KPIs, label+value pairs.
+ */
+mcpServer.tool(
+  'zephyr_show_stats',
+  'Show KPI stat cards. Use for: metrics, performance numbers, dashboard KPIs, any data with a label + value + optional trend direction (up/down/neutral) and trend value (e.g., "+5%").',
+  {
+    container: z.string().describe('CSS selector for the target container'),
+    stats: z.array(z.object({
+      label: z.string(),
+      value: z.string(),
+      trend: z.enum(['up', 'down', 'neutral']).optional(),
+      trendValue: z.string().optional(),
+    })),
+  },
+  async ({ container, stats }) => {
+    const result = await callBrowser('compose', [container, {
+      tag: 'z-dashboard', id: 'stats-' + Date.now(),
+      attributes: { 'data-columns': '1' },
+      panels: stats.map((s, i) => ({
+        id: 'stat-' + i,
+        component: {
+          tag: 'z-stat',
+          attributes: {
+            'data-label': s.label, 'data-value': s.value,
+            ...(s.trend ? { 'data-trend': s.trend } : {}),
+            ...(s.trendValue ? { 'data-trend-value': s.trendValue } : {}),
+          },
+        },
+      })),
+    }]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+/**
+ * Tool: zephyr_show_list
+ *
+ * Renders a sortable list or virtual-scrolling list.
+ * Use for: ordered items, ranked results, drag-to-reorder lists.
+ */
+mcpServer.tool(
+  'zephyr_show_list',
+  'Show a sortable list. Use for: ordered items, ranked results, drag-to-reorder lists. Large lists (50+ items) automatically use virtual scrolling.',
+  {
+    container: z.string().describe('CSS selector for the target container'),
+    items: z.array(z.object({
+      id: z.string(),
+      label: z.string(),
+    })).describe('List items with id and display label'),
+  },
+  async ({ container, items }) => {
+    const id = 'list-' + Date.now();
+    const spec = items.length > 50
+      ? { tag: 'z-virtual-list', id, attributes: { 'data-item-height': '40' }, setup: { method: 'setItems', params: { items } } }
+      : { tag: 'z-sortable', id, children: items.map(item => ({ tag: 'div', attributes: { 'data-sortable': item.id }, text: item.label })) };
+    const result = await callBrowser('render', [container, spec]);
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------
 

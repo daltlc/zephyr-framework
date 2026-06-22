@@ -187,6 +187,102 @@ const zephyrTools = {
     inputSchema: z.object({}),
     execute: async () => callBrowser('guarded', []),
   }),
+
+  // ---------------------------------------------------------------------------
+  // Visualization tools — Goose-style named tools for automatic data display
+  // ---------------------------------------------------------------------------
+
+  zephyr_show_chart: tool({
+    description:
+      'Show a line, area, or candlestick chart. Use for: time series data, trends over time, historical data, price/stock data (OHLC → candlestick), numeric series over timestamps.',
+    inputSchema: z.object({
+      container: z.string().describe('CSS selector for the target container'),
+      type: z.enum(['line', 'area', 'candlestick', 'histogram']).default('line').describe('Chart type. Use "candlestick" when data has open/high/low/close fields.'),
+      data: z.array(z.any()).describe('Array of { time, value } for line/area, or { time, open, high, low, close } for candlestick'),
+      title: z.string().optional().describe('Optional chart title'),
+    }),
+    execute: async ({ container, type, data, title }) =>
+      callBrowser('render', [container, {
+        tag: 'z-chart', id: 'chart-' + Date.now(),
+        attributes: { 'data-type': type, 'data-height': '300', ...(title ? { 'data-title': title } : {}) },
+        setup: { method: 'setData', params: { data } }
+      }]),
+  }),
+
+  zephyr_show_table: tool({
+    description:
+      'Show a sortable, filterable data table. Use for: tabular data with rows and columns, lists of objects/records, any structured dataset with 3+ fields per row.',
+    inputSchema: z.object({
+      container: z.string().describe('CSS selector for the target container'),
+      columns: z.array(z.object({
+        key: z.string(),
+        label: z.string(),
+        sortable: z.boolean().optional(),
+      })).describe('Column definitions'),
+      rows: z.array(z.record(z.any())).describe('Row data objects'),
+    }),
+    execute: async ({ container, columns, rows }) => {
+      const id = 'grid-' + Date.now();
+      await callBrowser('render', [container, { tag: 'z-data-grid', id }]);
+      return callBrowser('act', ['#' + id, 'setColumns', { columns }])
+        .then(() => callBrowser('act', ['#' + id, 'setRows', { rows }]));
+    },
+  }),
+
+  zephyr_show_stats: tool({
+    description:
+      'Show KPI stat cards. Use for: metrics, performance numbers, dashboard KPIs, any data with a label + value + optional trend direction (up/down/neutral) and trend value (e.g., "+5%").',
+    inputSchema: z.object({
+      container: z.string().describe('CSS selector for the target container'),
+      stats: z.array(z.object({
+        label: z.string(),
+        value: z.string(),
+        trend: z.enum(['up', 'down', 'neutral']).optional(),
+        trendValue: z.string().optional().describe('Trend change text, e.g. "+5%" or "-$200"'),
+      })),
+    }),
+    execute: async ({ container, stats }) =>
+      callBrowser('compose', [container, {
+        tag: 'z-dashboard', id: 'stats-' + Date.now(),
+        attributes: { 'data-columns': '1' },
+        panels: stats.map((s, i) => ({
+          id: 'stat-' + i,
+          component: {
+            tag: 'z-stat',
+            attributes: {
+              'data-label': s.label, 'data-value': s.value,
+              ...(s.trend ? { 'data-trend': s.trend } : {}),
+              ...(s.trendValue ? { 'data-trend-value': s.trendValue } : {}),
+            },
+          },
+        })),
+      }]),
+  }),
+
+  zephyr_show_list: tool({
+    description:
+      'Show a sortable list. Use for: ordered items, ranked results, drag-to-reorder lists. Large lists (50+ items) automatically use a virtual scrolling list.',
+    inputSchema: z.object({
+      container: z.string().describe('CSS selector for the target container'),
+      items: z.array(z.object({
+        id: z.string(),
+        label: z.string(),
+      })).describe('List items with id and display label'),
+    }),
+    execute: async ({ container, items }) => {
+      const id = 'list-' + Date.now();
+      if (items.length > 50) {
+        return callBrowser('render', [container, {
+          tag: 'z-virtual-list', id, attributes: { 'data-item-height': '40' },
+          setup: { method: 'setItems', params: { items } }
+        }]);
+      }
+      return callBrowser('render', [container, {
+        tag: 'z-sortable', id,
+        children: items.map(item => ({ tag: 'div', attributes: { 'data-sortable': item.id }, text: item.label })),
+      }]);
+    },
+  }),
 };
 
 // ---------------------------------------------------------------------------
@@ -202,6 +298,12 @@ Your workflow:
 3. Use zephyr_describe for detailed component inspection
 4. Use zephyr_render or zephyr_compose to create new components
 
+When displaying data, prefer the purpose-named visualization tools over raw zephyr_render:
+- zephyr_show_chart     — time series, trends, price history, numeric data over time
+- zephyr_show_table     — tabular data with rows/columns, records with 3+ fields
+- zephyr_show_stats     — KPIs, metrics, label+value pairs with optional trend indicators
+- zephyr_show_list      — ordered items, ranked results, drag-to-reorder lists
+
 Always call zephyr_get_state first to understand the page before acting.
 Be concise in your responses. Describe what you did after acting.`;
 
@@ -210,7 +312,7 @@ app.post('/api/chat', async (req, res) => {
     const { messages } = req.body;
 
     const result = await generateText({
-      model: anthropic('claude-sonnet-4'),
+      model: anthropic('claude-sonnet-4-6'),
       system: SYSTEM_PROMPT,
       tools: zephyrTools,
       stopWhen: stepCountIs(8),

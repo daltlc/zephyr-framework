@@ -28,6 +28,22 @@ async function run() {
     banner: { js: `/* Zephyr Agent Widget v${pkg.version} | MIT License */` },
   });
 
+  // Minify WebMCP adapter JS
+  await build({
+    entryPoints: ['zephyr-webmcp.js'],
+    outfile: 'zephyr-webmcp.min.js',
+    minify: true,
+    banner: { js: `/* Zephyr WebMCP Adapter v${pkg.version} | MIT License */` },
+  });
+
+  // Minify A2UI renderer JS
+  await build({
+    entryPoints: ['zephyr-a2ui.js'],
+    outfile: 'zephyr-a2ui.min.js',
+    minify: true,
+    banner: { js: `/* Zephyr A2UI Renderer v${pkg.version} | MIT License */` },
+  });
+
   // Minify framework CSS
   await build({
     entryPoints: ['zephyr-framework.css'],
@@ -72,6 +88,8 @@ async function run() {
   const files = [
     ['zephyr-framework.js', 'zephyr-framework.min.js'],
     ['zephyr-agent-widget.js', 'zephyr-agent-widget.min.js'],
+    ['zephyr-webmcp.js', 'zephyr-webmcp.min.js'],
+    ['zephyr-a2ui.js', 'zephyr-a2ui.min.js'],
     ['zephyr-framework.css', 'zephyr-framework.min.css'],
     ['dashboard/zephyr-dashboard.js', 'dashboard/zephyr-dashboard.min.js'],
     ['dashboard/zephyr-dashboard.css', 'dashboard/zephyr-dashboard.min.css'],

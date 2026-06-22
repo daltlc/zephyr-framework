@@ -44,19 +44,26 @@ class TestSuite {
     title.style.cssText = 'font-size: 1.5rem; margin-bottom: 1rem;';
     container.appendChild(title);
 
+    // Attach up front so results stream in as tests run (and a hung test
+    // still shows everything that ran before it)
+    document.body.appendChild(container);
+
     for (const { description, fn } of this._tests) {
       const assert = new Assertions();
       try {
         await fn(assert);
         if (assert.failures.length === 0) {
           this._passed++;
+          this._results.push({ status: 'PASS', description, error: null });
           this._addResult(container, 'PASS', description, null);
         } else {
           this._failed++;
+          this._results.push({ status: 'FAIL', description, error: assert.failures.join('; ') });
           this._addResult(container, 'FAIL', description, assert.failures.join('; '));
         }
       } catch (err) {
         this._failed++;
+        this._results.push({ status: 'FAIL', description, error: err.message });
         this._addResult(container, 'FAIL', description, err.message);
       }
     }
@@ -71,7 +78,14 @@ class TestSuite {
     summary.textContent = `${this._passed} passed, ${this._failed} failed, ${this._tests.length} total`;
     container.appendChild(summary);
 
-    document.body.appendChild(container);
+    // Machine-readable signal for headless runners (tests/run-ci.js)
+    window.__zephyrTestResults = {
+      name: this.name,
+      passed: this._passed,
+      failed: this._failed,
+      total: this._tests.length,
+      results: this._results
+    };
   }
 
   _addResult(container, status, description, error) {
@@ -135,9 +149,16 @@ class Assertions {
   }
 }
 
-/** Helper to wait for custom elements to initialize. */
+/**
+ * Helper to wait for custom elements to initialize.
+ * Falls back to a short timeout because headless browsers stop producing
+ * animation frames once the page is idle, which would stall the double-rAF.
+ */
 function waitForElements() {
-  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  return new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+    setTimeout(resolve, 100);
+  });
 }
 
 /** Helper to simulate a click event on an element. */

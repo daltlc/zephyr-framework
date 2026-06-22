@@ -241,6 +241,41 @@ No screenshots. No DOM parsing. No guessing. One function call.
 
 ---
 
+## WebMCP — agent-operable in the browser, natively
+
+[WebMCP](https://github.com/webmachinelearning/webmcp) is the W3C-incubated standard (from Google and Microsoft, shipping in Chrome's early preview with an origin trial in Chrome 149 and Firefox committed) that lets a web page expose structured tools directly to the browser's built-in AI agents. Zephyr ships a one-line adapter:
+
+```html
+<script src="zephyr-framework.js"></script>
+<script src="zephyr-webmcp.js"></script>
+```
+
+That's it. Every Zephyr component on the page is now a native, typed tool for any WebMCP-enabled browser agent — `zephyr_act`, `zephyr_get_state`, `zephyr_describe`, `zephyr_set_state`, `zephyr_get_schema`, `zephyr_get_prompt`, and `zephyr_visualize` register automatically via `document.modelContext.registerTool()`. No extension, no proxy server, no API key in the page.
+
+- **Human in the loop** — actions protected with `Zephyr.agent.guard()` come back to the agent as pending confirmations; the user confirms in the page.
+- **Graceful everywhere** — in browsers without WebMCP the adapter is a silent no-op; feature-detect with `Zephyr.webmcp.available()`.
+- **Manual control** — `<script src="zephyr-webmcp.js" data-auto="false">` then `Zephyr.webmcp.register()` / `Zephyr.webmcp.unregister()`.
+
+> Zephyr explored this pattern before the standard existed — see [`zephyr-browser/`](zephyr-browser/), our Electron proof-of-concept, now superseded by the real API.
+
+---
+
+## Zephyr and the agentic stack
+
+The agent protocol landscape layers cleanly, and Zephyr is the render-and-control substrate underneath all of it:
+
+| Layer | Protocol | What it does | Zephyr's integration |
+|---|---|---|---|
+| Agent ↔ agent | A2A | Agents coordinate with each other | — (above Zephyr's layer) |
+| Agent ↔ tools | MCP | Agents call typed tools | `zephyr-mcp/` server: 6+ tools over a live page |
+| Browser ↔ agent | WebMCP | Pages expose tools to browser agents | `zephyr-webmcp.js` adapter (above) |
+| Agent ↔ UI payload | A2UI | Agents describe UIs as declarative JSON | `zephyr-a2ui.js` renderer + `zephyr-a2ui-catalog.json` catalog |
+| Agent ↔ frontend transport | AG-UI | Streams agent events to frontends | Complementary — bring your own transport |
+
+Every protocol needs components that agents can actually see, control, and render. That's the layer Zephyr owns: zero-build, framework-agnostic web components with a structured agent API.
+
+---
+
 ## MCP Server — AI agents control your UI
 
 The [Model Context Protocol](https://modelcontextprotocol.io/) server is the killer feature. It turns every Zephyr component on a live page into a tool that Claude Desktop, Cursor, or any MCP-compatible host can call directly.
@@ -306,6 +341,25 @@ Think of it this way: **MCP is the waiter** (it executes actions on a live page)
 - **Structured contracts** — The catalog formally documents what each component accepts (properties), does (actions), reports (events), and provides (ARIA). This powers auto-generated docs, visual component browsers, and validation of agent-generated UIs.
 - **Ecosystem positioning** — Google backs A2UI as the standard for agent-driven interfaces (deployed in Gemini Enterprise, Opal). Having a catalog means Zephyr shows up alongside Google's own components when agents search for UI toolkits.
 
+### A2UI Renderer — `zephyr-a2ui.js`
+
+The catalog is the menu; the renderer is the kitchen. `zephyr-a2ui.js` consumes an A2UI v0.8 JSONL stream and renders it to real DOM — zero build step, zero dependencies:
+
+```html
+<script src="zephyr-framework.js"></script>
+<script src="zephyr-a2ui.js"></script>
+<script>
+  const surface = Zephyr.a2ui.createSurface('#output', {
+    onAction(userAction) {
+      // forward to the agent (A2A message, fetch, websocket, …)
+    }
+  });
+  for (const line of jsonlStream) surface.handleMessage(line);
+</script>
+```
+
+It implements the full client model from the spec: component buffering (adjacency list), the `beginRendering` gate (no flash of incomplete content), `BoundValue` data binding with in-place refresh on `dataModelUpdate`, `template` list stamping, two-way form inputs that write back to the data model, and `userAction` events with resolved context. The standard catalog maps to accessible native elements (and Zephyr components like `z-modal` where they fit); extend `Zephyr.a2ui.renderers` to support custom catalogs. Agent text renders via `textContent` and URLs are scheme-restricted — agent streams are untrusted input.
+
 ---
 
 ## Agent Chat Widget — AI on your live site
@@ -332,7 +386,9 @@ A visitor types "open the settings modal" — the agent calls `Zephyr.agent.act(
 | Direct | `data-api-key` | Quick demos. Calls LLM API from browser. Key visible in source. |
 | Proxy | `data-endpoint` | Production. POST to your backend, which forwards to any LLM. |
 
-**Supports Anthropic and OpenAI** — set `data-provider="anthropic"` (default) or `data-provider="openai"`.
+**Supports Anthropic and OpenAI** — set `data-provider="anthropic"` (default) or `data-provider="openai"`. Defaults to `claude-haiku-4-5` / `gpt-4o`; override with `data-model`.
+
+**Responses stream in real time** — text renders token-by-token as the model generates it, in both direct and proxy modes (a proxy that returns plain JSON still works). Failed requests show a friendly error with a retry button; requests time out cleanly instead of hanging.
 
 **Attributes:**
 
@@ -436,6 +492,31 @@ Zephyr.agent.unguard('z-modal');   // remove the guard
 ```
 
 A full machine-readable schema is available in `zephyr-schema.json`, and an LLM system prompt template in `zephyr-prompt.md`.
+
+---
+
+## Auto-Visualizer — the right component for any data
+
+Agents constantly have data to show: query results, metrics, time series. Instead of making the LLM pick a component and wire it up, pass the data to `Zephyr.agent.visualize()` and the framework routes it to the right component automatically. [Live demo →](https://daltlc.github.io/zephyr-framework/visualizer.html)
+
+```javascript
+// Auto-detect from data shape
+Zephyr.agent.visualize(data, '#output');
+
+// Override detection with a hint
+Zephyr.agent.visualize(data, '#output', { hint: 'chart', title: 'Revenue' });
+```
+
+| Data shape | Renders |
+|------------|---------|
+| `[{ time, value }, ...]` or OHLC `{ time, open, high, low, close }` | `z-chart` (line or candlestick) |
+| `[{ label, value, trend? }, ...]` (≤8 items) or a single such object | `z-stat` KPI cards |
+| `['string', ...]` or `[{ id, label }, ...]` | `z-sortable` (≤50 items) or `z-virtual-list` (>50) |
+| Any array of objects | `z-data-grid` with columns derived from keys |
+
+For tool-using agents, the MCP server and AI SDK example expose the same capability as purpose-named tools — `zephyr_show_chart`, `zephyr_show_table`, `zephyr_show_stats`, `zephyr_show_list` — so the model's intent ("show me a chart of...") maps directly to a tool name instead of a generic render call.
+
+Chart, stats, and table routes use the [Dashboard Add-on](#dashboard-add-on) (`dashboard/zephyr-dashboard.js`); `visualize()` returns a structured `{ success, component, selector, error }` result either way.
 
 ---
 

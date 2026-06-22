@@ -182,9 +182,8 @@
     transition: color 0.2s var(--z-transition-timing);
   }
 
-  z-tabs [data-tab]:not([data-active]) {
-    opacity: 0.6;
-  }
+  /* Inactive tabs are distinguished by the active tab's background and
+     underline — not by opacity, which can push text below WCAG contrast */
 
   z-tabs [data-tab][data-active]::after {
     content: '';
@@ -591,12 +590,10 @@
     transition:
       border-color var(--z-transition-duration) var(--z-transition-timing),
       background-color var(--z-transition-duration) var(--z-transition-timing);
-    opacity: 0.6;
   }
 
   z-file-upload [slot="dropzone"]:hover,
   z-file-upload[data-dragover] [slot="dropzone"] {
-    opacity: 1;
     border-style: solid;
   }
 
@@ -847,6 +844,28 @@
     font-size: 0.8125rem;
   }
 
+  /* Retry affordance shown after an error */
+  z-agent .z-agent-msg-retry {
+    align-self: flex-start;
+    background: none;
+    padding: 0;
+  }
+
+  z-agent .z-agent-retry-btn {
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    border: 1px solid rgb(209 213 219);
+    border-radius: var(--z-border-radius);
+    background: rgb(255 255 255);
+    color: rgb(55 65 81);
+    cursor: pointer;
+    transition: background var(--z-transition-duration) var(--z-transition-timing);
+  }
+
+  z-agent .z-agent-retry-btn:hover {
+    background: rgb(243 244 246);
+  }
+
   /* Typing indicator — three dots animation */
   z-agent .z-agent-typing {
     align-self: flex-start;
@@ -1004,6 +1023,14 @@
         opacity: 1;
         transform: translateY(0);
       }
+    }
+  }
+
+  /* Scroll-driven entrance effects dim and move content — disable them for
+     users who prefer reduced motion so nothing is left at partial opacity */
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in-on-scroll {
+      animation: none;
     }
   }
 }

@@ -8,7 +8,9 @@
   "sideEffects": true,
   "scripts": {
     "build": "node build.js",
-    "test": "echo \"Open tests/index.html in a browser to run the test suite\"",
+    "test": "node tests/run-ci.js",
+    "test:a11y": "node tests/run-a11y.js",
+    "prepublishOnly": "node build.js && node tests/run-ci.js",
     "dev": "npx http-server -c-1"
   },
   "files": [
@@ -19,6 +21,10 @@
     "zephyr-framework.d.ts",
     "zephyr-agent-widget.js",
     "zephyr-agent-widget.min.js",
+    "zephyr-webmcp.js",
+    "zephyr-webmcp.min.js",
+    "zephyr-a2ui.js",
+    "zephyr-a2ui.min.js",
     "zephyr-schema.json",
     "zephyr-prompt.md",
     "zephyr-a2ui-catalog.json",
@@ -64,6 +70,8 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "esbuild": "^0.27.4"
+    "@axe-core/playwright": "^4.11.3",
+    "esbuild": "^0.27.4",
+    "playwright": "^1.50.0"
   }
 }

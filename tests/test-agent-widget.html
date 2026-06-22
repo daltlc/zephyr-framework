@@ -256,6 +256,80 @@
       assert.ok(!modal.classList.contains('z-agent-target'), 'Should remove pulse class after timeout');
     });
 
+    // --- Streaming Accumulators ---
+
+    t.test('anthropic accumulator rebuilds text and emits deltas', async (assert) => {
+      const deltas = [];
+      const acc = PROVIDERS.anthropic.createStreamAccumulator(d => deltas.push(d));
+      acc.handleEvent({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+      acc.handleEvent({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Hel' } });
+      acc.handleEvent({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'lo' } });
+      acc.handleEvent({ type: 'content_block_stop', index: 0 });
+      acc.handleEvent({ type: 'message_delta', delta: { stop_reason: 'end_turn' } });
+      const result = acc.finalize();
+      assert.equal(deltas.join('|'), 'Hel|lo', 'should emit each text delta');
+      assert.equal(result.content[0].text, 'Hello', 'should rebuild full text');
+      assert.equal(result.stop_reason, 'end_turn');
+      const parsed = PROVIDERS.anthropic.parseResponse(result);
+      assert.equal(parsed.text, 'Hello', 'parseResponse should accept the rebuilt object');
+    });
+
+    t.test('anthropic accumulator assembles tool_use input from partial JSON', async (assert) => {
+      const acc = PROVIDERS.anthropic.createStreamAccumulator(() => {});
+      acc.handleEvent({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'tu_1', name: 'zephyr_act', input: {} } });
+      acc.handleEvent({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{"selector":"#m' } });
+      acc.handleEvent({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: 'odal","action":"open"}' } });
+      acc.handleEvent({ type: 'content_block_stop', index: 0 });
+      const parsed = PROVIDERS.anthropic.parseResponse(acc.finalize());
+      assert.ok(parsed.hasToolCalls, 'should detect tool call');
+      assert.equal(parsed.toolCalls[0].name, 'zephyr_act');
+      assert.equal(parsed.toolCalls[0].input.selector, '#modal', 'should parse accumulated JSON input');
+    });
+
+    t.test('openai accumulator rebuilds content and tool calls', async (assert) => {
+      const deltas = [];
+      const acc = PROVIDERS.openai.createStreamAccumulator(d => deltas.push(d));
+      acc.handleEvent({ choices: [{ delta: { content: 'Hi ' } }] });
+      acc.handleEvent({ choices: [{ delta: { content: 'there' } }] });
+      acc.handleEvent({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'call_1', function: { name: 'zephyr_act', arguments: '{"sele' } }] } }] });
+      acc.handleEvent({ choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: 'ctor":"#x"}' } }] } }] });
+      const parsed = PROVIDERS.openai.parseResponse(acc.finalize());
+      assert.equal(deltas.join(''), 'Hi there', 'should emit content deltas');
+      assert.equal(parsed.text, 'Hi there');
+      assert.ok(parsed.hasToolCalls, 'should detect tool call');
+      assert.equal(parsed.toolCalls[0].input.selector, '#x', 'should parse joined arguments');
+    });
+
+    // --- Error Handling ---
+
+    t.test('_httpError maps status codes to friendly messages', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      const err429 = await agent._httpError(new Response('{}', { status: 429 }));
+      assert.ok(err429.message.includes('Rate limited'), '429 should mention rate limiting');
+      const err529 = await agent._httpError(new Response('{}', { status: 529 }));
+      assert.ok(err529.message.includes('overloaded'), '529 should mention overload');
+      const err401 = await agent._httpError(new Response('{}', { status: 401 }));
+      assert.ok(err401.message.includes('Authentication'), '401 should mention authentication');
+    });
+
+    t.test('failed request renders error message and retry button', async (assert) => {
+      const agent = document.getElementById('test-agent');
+      agent.setAttribute('data-api-key', 'sk-test-fake');
+      const realFetch = window.fetch;
+      window.fetch = () => Promise.reject(new TypeError('Failed to fetch'));
+      try {
+        await agent._handleUserMessage('hello');
+      } finally {
+        window.fetch = realFetch;
+        agent.removeAttribute('data-api-key');
+      }
+      const errors = agent.querySelectorAll('.z-agent-msg-error');
+      assert.ok(errors.length > 0, 'should render an error message');
+      const retry = agent.querySelector('.z-agent-retry-btn');
+      assert.ok(retry, 'should render a retry button');
+      retry.closest('.z-agent-msg-retry').remove();
+    });
+
     // --- Run tests ---
     t.run();
   </script>

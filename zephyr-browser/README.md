@@ -1,5 +1,7 @@
 # Zephyr Browser - WebMCP Proof of Concept
 
+> **📦 Archived — we called it, and then it became a real standard.** This proof-of-concept anticipated the WebMCP pattern before Google and Microsoft proposed [WebMCP](https://github.com/webmachinelearning/webmcp) through the W3C, now shipping in Chrome's early preview. Zephyr supports the real API via the [`zephyr-webmcp.js` adapter](../zephyr-webmcp.js) — use that instead. This Electron app is kept for historical reference and is no longer maintained.
+
 A minimal Electron app showing what we're calling the **WebMCP** pattern. The browser process acts as the AI agent, controls Zephyr web components via IPC, and your API keys never touch the webpage.
 
 ![Zephyr Browser screenshot](screenshot.png)
@@ -82,4 +84,4 @@ ANTHROPIC_API_KEY=sk-ant-... npm start
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
-| `ZEPHYR_MODEL` | `claude-haiku-4-20250506` | Model to use |
+| `ZEPHYR_MODEL` | `claude-haiku-4-5` | Model to use |

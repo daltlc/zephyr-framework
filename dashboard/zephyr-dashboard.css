@@ -133,6 +133,12 @@ z-data-grid {
   padding: 0.5rem;
 }
 
+.z-grid-table {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .z-grid-filter {
   width: 100%;
   padding: 0.375rem 0.625rem;

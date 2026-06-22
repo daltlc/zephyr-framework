@@ -228,7 +228,7 @@ const PROVIDERS = {
     defaultUrl: 'https://api.anthropic.com/v1/messages',
 
     /** Default model if none specified */
-    defaultModel: 'claude-sonnet-4-20250514',
+    defaultModel: 'claude-haiku-4-5',
 
     /**
      * Format the request for Anthropic's Messages API.
@@ -252,10 +252,61 @@ const PROVIDERS = {
         body: {
           model: model || this.defaultModel,
           max_tokens: 1024,
+          stream: true,
           system: systemPrompt,
           // Filter out system messages — Anthropic uses a separate system field
           messages: messages.filter(m => m.role !== 'system'),
           tools: tools
+        }
+      };
+    },
+
+    /**
+     * Creates an accumulator that rebuilds the full Messages API response
+     * object from SSE events, emitting text deltas via onText as they arrive.
+     * The finalized object has the same shape parseResponse() expects.
+     * @param {function(string)} onText - Called with each text delta
+     * @returns {{ handleEvent: function(Object), finalize: function(): Object }}
+     */
+    createStreamAccumulator(onText) {
+      const blocks = [];
+      let stopReason = null;
+      return {
+        handleEvent(data) {
+          switch (data.type) {
+            case 'content_block_start':
+              blocks[data.index] = Object.assign({}, data.content_block);
+              // tool_use input streams as partial JSON strings — accumulate
+              if (data.content_block.type === 'tool_use') blocks[data.index]._json = '';
+              break;
+            case 'content_block_delta': {
+              const block = blocks[data.index];
+              if (!block) break;
+              if (data.delta.type === 'text_delta') {
+                block.text = (block.text || '') + data.delta.text;
+                onText(data.delta.text);
+              } else if (data.delta.type === 'input_json_delta') {
+                block._json += data.delta.partial_json;
+              }
+              break;
+            }
+            case 'content_block_stop': {
+              const block = blocks[data.index];
+              if (block && block._json !== undefined) {
+                try { block.input = JSON.parse(block._json || '{}'); } catch (e) { /* keep existing input */ }
+                delete block._json;
+              }
+              break;
+            }
+            case 'message_delta':
+              if (data.delta && data.delta.stop_reason) stopReason = data.delta.stop_reason;
+              break;
+            case 'error':
+              throw new Error((data.error && data.error.message) || 'Stream error');
+          }
+        },
+        finalize() {
+          return { content: blocks.filter(Boolean), stop_reason: stopReason };
         }
       };
     },
@@ -369,9 +420,52 @@ const PROVIDERS = {
         },
         body: {
           model: model || this.defaultModel,
+          stream: true,
           messages: allMessages,
           tools: openaiTools,
           tool_choice: 'auto'
+        }
+      };
+    },
+
+    /**
+     * Creates an accumulator that rebuilds a Chat Completions response object
+     * from SSE chunks, emitting text deltas via onText as they arrive.
+     * The finalized object has the same shape parseResponse() expects
+     * (tool call arguments stay as JSON strings — parseResponse parses them).
+     * @param {function(string)} onText - Called with each text delta
+     * @returns {{ handleEvent: function(Object), finalize: function(): Object }}
+     */
+    createStreamAccumulator(onText) {
+      let content = '';
+      const toolCalls = [];
+      return {
+        handleEvent(data) {
+          if (data.error) throw new Error(data.error.message || 'Stream error');
+          const delta = data.choices && data.choices[0] && data.choices[0].delta;
+          if (!delta) return;
+          if (delta.content) {
+            content += delta.content;
+            onText(delta.content);
+          }
+          for (const tc of delta.tool_calls || []) {
+            const slot = toolCalls[tc.index] = toolCalls[tc.index] ||
+              { id: '', type: 'function', function: { name: '', arguments: '' } };
+            if (tc.id) slot.id = tc.id;
+            if (tc.function && tc.function.name) slot.function.name += tc.function.name;
+            if (tc.function && tc.function.arguments) slot.function.arguments += tc.function.arguments;
+          }
+        },
+        finalize() {
+          const calls = toolCalls.filter(Boolean);
+          return {
+            choices: [{
+              message: {
+                content: content || null,
+                ...(calls.length ? { tool_calls: calls } : {})
+              }
+            }]
+          };
         }
       };
     },
@@ -491,6 +585,15 @@ class ZAgent extends HTMLElement {
 
     /** @private Maximum tool call iterations per turn (prevents runaway loops) */
     this._maxIterations = 10;
+
+    /** Max time to wait for response headers before aborting. */
+    this._requestTimeoutMs = 30000;
+
+    /** Max time between stream chunks before treating the stream as stalled. */
+    this._streamIdleTimeoutMs = 30000;
+
+    /** Message bubble currently receiving streamed text (null when idle). */
+    this._streamEl = null;
 
     /** @private Maximum messages to keep in history (sliding window) */
     this._maxMessages = 30;
@@ -772,7 +875,7 @@ class ZAgent extends HTMLElement {
    * @returns {Promise<string>} The assistant's final text response
    * @private
    */
-  async _handleUserMessage(userMessage) {
+  async _handleUserMessage(userMessage, isRetry = false) {
     // Get the provider adapter (anthropic or openai)
     const providerName = this.getAttribute('data-provider') || 'anthropic';
     const provider = PROVIDERS[providerName];
@@ -791,8 +894,9 @@ class ZAgent extends HTMLElement {
       return '';
     }
 
-    // Add the user message to conversation history
-    this._messages.push({ role: 'user', content: userMessage });
+    // Add the user message to conversation history (a retry resends the
+    // history as-is — the message is already in it)
+    if (!isRetry) this._messages.push({ role: 'user', content: userMessage });
 
     // Trim conversation history to prevent token overflow
     // Keep only the last N messages (system prompt is rebuilt each turn)
@@ -808,6 +912,7 @@ class ZAgent extends HTMLElement {
     this._setLoading(true);
 
     let finalText = '';
+    let streamed = false;
 
     try {
       // ---- Tool call loop ----
@@ -820,9 +925,10 @@ class ZAgent extends HTMLElement {
       while (iterations < this._maxIterations) {
         iterations++;
 
-        // Call the LLM API
+        // Call the LLM API — text deltas stream into a live message bubble
         const responseData = await this._callAPI(
-          provider, this._messages, systemPrompt, endpoint, apiKey
+          provider, this._messages, systemPrompt, endpoint, apiKey,
+          (delta) => this._appendStreamText(delta)
         );
         lastResponseData = responseData;
 
@@ -832,10 +938,15 @@ class ZAgent extends HTMLElement {
         // If no tool calls, we're done — render the text response
         if (!parsed.hasToolCalls) {
           finalText = parsed.text;
+          streamed = this._endStream() !== '';
           // Add the assistant's response to conversation history
           this._messages.push({ role: 'assistant', content: finalText });
           break;
         }
+
+        // Text streamed alongside tool calls stays in its bubble; the next
+        // iteration's text gets a fresh one
+        this._endStream();
 
         // The LLM wants to use tools — add its message to history first
         // (required by both Anthropic and OpenAI protocols)
@@ -881,9 +992,11 @@ class ZAgent extends HTMLElement {
       }
 
     } catch (err) {
-      // API call failed — show the error in the chat
+      // API call failed — show the error in the chat with a retry button
       finalText = '';
+      this._endStream();
       this._renderMessage('error', err.message || 'Failed to reach the AI service.');
+      this._renderRetry(userMessage);
       this.dispatchEvent(new CustomEvent('error', {
         detail: { message: err.message }
       }));
@@ -892,17 +1005,69 @@ class ZAgent extends HTMLElement {
     // Hide typing indicator
     this._setLoading(false);
 
-    // Render the final text response (if any)
-    if (finalText) {
-      this._renderMessage('assistant', finalText);
-
-      // Dispatch message event
+    // Render the final text response — unless it already streamed into a
+    // live bubble, in which case only the message event remains to dispatch
+    if (finalText && streamed) {
       this.dispatchEvent(new CustomEvent('message', {
         detail: { role: 'assistant', content: finalText }
       }));
+    } else if (finalText) {
+      this._renderMessage('assistant', finalText);
     }
 
     return finalText;
+  }
+
+  /**
+   * Appends streamed text to the live assistant bubble, creating it (and
+   * removing the typing indicator) on the first delta of a turn.
+   * @param {string} text - Text delta from the stream
+   * @private
+   */
+  _appendStreamText(text) {
+    if (!text) return;
+    if (!this._streamEl) {
+      const typing = this._els.messages.querySelector('[data-typing]');
+      if (typing) typing.remove();
+      this._streamEl = document.createElement('div');
+      this._streamEl.className = 'z-agent-msg z-agent-msg-assistant';
+      this._els.messages.appendChild(this._streamEl);
+    }
+    this._streamEl.textContent += text;
+    this._scrollToBottom();
+  }
+
+  /**
+   * Finalizes the live streaming bubble (it stays in the chat).
+   * @returns {string} The streamed text, or '' if nothing streamed
+   * @private
+   */
+  _endStream() {
+    const el = this._streamEl;
+    this._streamEl = null;
+    return el ? el.textContent : '';
+  }
+
+  /**
+   * Renders a retry button after an error so the user can resend the failed
+   * message without retyping it.
+   * @param {string} userMessage - The message that failed
+   * @private
+   */
+  _renderRetry(userMessage) {
+    const wrap = document.createElement('div');
+    wrap.className = 'z-agent-msg z-agent-msg-retry';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'z-agent-retry-btn';
+    btn.textContent = 'Retry';
+    btn.addEventListener('click', () => {
+      wrap.remove();
+      this._handleUserMessage(userMessage, true);
+    });
+    wrap.appendChild(btn);
+    this._els.messages.appendChild(wrap);
+    this._scrollToBottom();
   }
 
   /**
@@ -922,55 +1087,144 @@ class ZAgent extends HTMLElement {
    * @returns {Promise<Object>} Raw API response data
    * @private
    */
-  async _callAPI(provider, messages, systemPrompt, endpoint, apiKey) {
+  async _callAPI(provider, messages, systemPrompt, endpoint, apiKey, onText) {
     const model = this.getAttribute('data-model') || provider.defaultModel;
 
-    if (endpoint) {
-      // ---- Proxy mode ----
-      // Send a provider-agnostic payload to the user's backend.
-      // The backend is responsible for forwarding to the LLM and returning
-      // the response in the provider's native format.
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages,
-          tools: ZEPHYR_TOOLS,
-          system: systemPrompt,
-          model,
-          provider: this.getAttribute('data-provider') || 'anthropic'
-        })
-      });
+    // Abort if the server doesn't respond with headers in time; the SSE reader
+    // applies its own rolling idle timeout once the stream is flowing.
+    const controller = new AbortController();
+    const headerTimer = setTimeout(() => controller.abort(), this._requestTimeoutMs);
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => res.statusText);
-        throw new Error(`Proxy returned ${res.status}: ${text}`);
+    let res;
+    try {
+      if (endpoint) {
+        // ---- Proxy mode ----
+        // Send a provider-agnostic payload to the user's backend. The backend
+        // forwards to the LLM and returns either the provider's native JSON
+        // response or a pass-through SSE stream.
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages,
+            tools: ZEPHYR_TOOLS,
+            system: systemPrompt,
+            model,
+            stream: true,
+            provider: this.getAttribute('data-provider') || 'anthropic'
+          }),
+          signal: controller.signal
+        });
+      } else {
+        // ---- Direct mode ----
+        // Call the LLM API directly from the browser using the API key.
+        const { url, headers, body } = provider.formatRequest(
+          messages, ZEPHYR_TOOLS, model, systemPrompt, apiKey
+        );
+        res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
       }
-
-      return res.json();
-
-    } else {
-      // ---- Direct mode ----
-      // Call the LLM API directly from the browser using the API key.
-      const { url, headers, body } = provider.formatRequest(
-        messages, ZEPHYR_TOOLS, model, systemPrompt, apiKey
-      );
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: { message: res.statusText } }));
-        // Return the error data so parseResponse can handle it gracefully
-        if (errorData.error) return errorData;
-        throw new Error(`API returned ${res.status}: ${res.statusText}`);
+    } catch (err) {
+      clearTimeout(headerTimer);
+      if (err.name === 'AbortError') {
+        throw new Error('The request timed out. Please try again.');
       }
-
-      return res.json();
+      throw new Error('Could not reach the AI service. Check your connection and try again.');
     }
+    clearTimeout(headerTimer);
+
+    if (!res.ok) {
+      throw await this._httpError(res);
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/event-stream') && res.body) {
+      return this._readSSE(res, provider, onText || (() => {}), controller);
+    }
+    // Non-streaming response (e.g. a proxy that doesn't stream)
+    return res.json();
+  }
+
+  /**
+   * Maps an HTTP error response to a user-friendly Error.
+   * @param {Response} res - The failed fetch response
+   * @returns {Promise<Error>}
+   * @private
+   */
+  async _httpError(res) {
+    const data = await res.json().catch(() => null);
+    const apiMessage = data && data.error && data.error.message;
+    if (res.status === 401 || res.status === 403) {
+      return new Error(apiMessage || 'Authentication failed — check the API key or endpoint configuration.');
+    }
+    if (res.status === 429) {
+      return new Error('Rate limited — please wait a moment and try again.');
+    }
+    if (res.status === 529 || res.status === 503) {
+      return new Error('The AI service is temporarily overloaded — try again shortly.');
+    }
+    return new Error(apiMessage || `The AI service returned an error (${res.status}).`);
+  }
+
+  /**
+   * Reads a Server-Sent Events stream and feeds each event to the provider's
+   * stream accumulator. Applies a rolling idle timeout so a stalled stream
+   * doesn't hang the chat forever.
+   * @param {Response} res - Response with an SSE body
+   * @param {Object} provider - Provider adapter with createStreamAccumulator()
+   * @param {function(string)} onText - Called with each text delta
+   * @param {AbortController} controller - Controller for the in-flight request
+   * @returns {Promise<Object>} The reconstructed provider response object
+   * @private
+   */
+  async _readSSE(res, provider, onText, controller) {
+    const accumulator = provider.createStreamAccumulator(onText);
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    let idleTimer = null;
+    const resetIdle = () => {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => controller.abort(), this._streamIdleTimeoutMs);
+    };
+    resetIdle();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        resetIdle();
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE events are separated by blank lines; data lines start with "data:"
+        let newlineIdx;
+        while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, newlineIdx).trim();
+          buffer = buffer.slice(newlineIdx + 1);
+          if (!line.startsWith('data:')) continue;
+          const payload = line.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          let data;
+          try { data = JSON.parse(payload); } catch (e) { continue; }
+          accumulator.handleEvent(data);
+        }
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('The response stream stalled. Please try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(idleTimer);
+      reader.releaseLock();
+    }
+
+    return accumulator.finalize();
   }
 
   // -----------------------------------------------------------------------

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zephyr MCP App</title>
+  <!--
+    MCP Apps (SEP-1865) UI resource template, rendered with Zephyr.
+
+    The host serves this HTML in a sandboxed iframe (content type
+    text/html;profile=mcp-app) and talks JSON-RPC over postMessage. Zephyr is
+    a natural fit here: zero build step, zero dependencies, and the
+    Auto-Visualizer turns whatever data the tool returns into the right
+    component without the server hand-writing a UI per tool.
+  -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zephyr-framework@1/dashboard/zephyr-dashboard.min.css">
+  <style>
+    body { margin: 0; padding: 1rem; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="output" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@1/zephyr-framework.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/zephyr-framework@1/dashboard/zephyr-dashboard.min.js"></script>
+  <script>
+    'use strict';
+
+    // ---- Minimal MCP Apps JSON-RPC bridge (iframe side) --------------------
+    // Requests go to the host via window.parent.postMessage; responses come
+    // back on 'message' and are matched to pending requests by id.
+
+    let nextId = 1;
+    const pending = new Map();
+
+    function rpc(method, params) {
+      return new Promise((resolve, reject) => {
+        const id = nextId++;
+        pending.set(id, { resolve, reject });
+        window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
+      });
+    }
+
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      if (!msg || msg.jsonrpc !== '2.0') return;
+
+      // Response to one of our requests
+      if (msg.id !== undefined && pending.has(msg.id)) {
+        const { resolve, reject } = pending.get(msg.id);
+        pending.delete(msg.id);
+        if (msg.error) reject(new Error(msg.error.message));
+        else resolve(msg.result);
+        return;
+      }
+
+      // Notification from the host: tool result data to render
+      if (msg.method === 'ui/notifications/tool-result' || msg.method === 'notifications/tool-result') {
+        renderToolResult(msg.params);
+      }
+    });
+
+    // ---- Rendering ----------------------------------------------------------
+    // The Auto-Visualizer routes the data shape to the right Zephyr component:
+    // time series → chart, label/value → stat cards, objects → data grid.
+
+    function renderToolResult(params) {
+      const data = params && (params.structuredContent || params.data || params);
+      const result = Zephyr.agent.visualize(data, '#output');
+      if (!result.success) {
+        const fallback = document.createElement('pre');
+        fallback.textContent = JSON.stringify(data, null, 2);
+        document.getElementById('output').appendChild(fallback);
+      }
+    }
+
+    // Tell the host the app is ready to receive data
+    rpc('ui/initialize', {}).catch(() => { /* host may not require initialize */ });
+  </script>
+</body>
+</html>

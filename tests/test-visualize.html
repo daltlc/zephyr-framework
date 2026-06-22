@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: Auto-Visualizer</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+  <link rel="stylesheet" href="../dashboard/zephyr-dashboard.css">
+</head>
+<body>
+  <div id="target"></div>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../dashboard/zephyr-dashboard.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('Auto-Visualizer');
+
+    const now = Math.floor(Date.now() / 1000);
+
+    const timeSeries = Array.from({ length: 10 }, (_, i) => ({ time: now + i * 86400, value: 100 + i }));
+    const ohlcSeries = Array.from({ length: 5 }, (_, i) => ({ time: now + i * 86400, open: 100, high: 110, low: 90, close: 105 }));
+    const statsArray = [
+      { label: 'Revenue', value: '$100K', trend: 'up', trendValue: '+10%' },
+      { label: 'Users', value: '500', trend: 'neutral' },
+    ];
+    const singleStat = { label: 'Score', value: '92' };
+    const stringList = ['Alpha', 'Beta', 'Gamma', 'Delta'];
+    const objectArray = [
+      { name: 'Alice', score: 95, team: 'Red' },
+      { name: 'Bob', score: 88, team: 'Blue' },
+    ];
+
+    // --- Time series → z-chart ---
+
+    t.test('time series data renders a z-chart', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(timeSeries, '#target');
+      assert.ok(result.success, 'visualize should succeed');
+      assert.equal(result.component, 'z-chart', 'component should be z-chart');
+      assert.ok(document.getElementById('target').querySelector('z-chart'), 'z-chart should be in DOM');
+    });
+
+    t.test('OHLC data renders z-chart (candlestick type)', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(ohlcSeries, '#target');
+      assert.ok(result.success, 'OHLC visualize should succeed');
+      assert.equal(result.component, 'z-chart');
+      const chart = document.getElementById('target').querySelector('z-chart');
+      assert.ok(chart, 'z-chart element should exist');
+      assert.equal(chart.getAttribute('data-type'), 'candlestick', 'type should be candlestick');
+    });
+
+    t.test('hint "chart" forces z-chart for non-time-series data', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize([{ time: now, value: 1 }], '#target', { hint: 'chart' });
+      assert.ok(result.success, 'hint chart should succeed');
+      assert.equal(result.component, 'z-chart');
+    });
+
+    // --- Stats → z-stat ---
+
+    t.test('stats array renders z-stat cards', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(statsArray, '#target');
+      assert.ok(result.success, 'stats visualize should succeed');
+      assert.equal(result.component, 'z-stat');
+      const stats = document.getElementById('target').querySelectorAll('z-stat');
+      assert.equal(stats.length, 2, 'should render 2 stat cards');
+      assert.equal(stats[0].getAttribute('data-label'), 'Revenue');
+      assert.equal(stats[1].getAttribute('data-trend'), 'neutral');
+    });
+
+    t.test('single stat object renders one z-stat', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(singleStat, '#target');
+      assert.ok(result.success, 'single stat should succeed');
+      assert.equal(result.component, 'z-stat');
+      const stat = document.getElementById('target').querySelector('z-stat');
+      assert.ok(stat, 'z-stat should exist');
+      assert.equal(stat.getAttribute('data-value'), '92');
+    });
+
+    t.test('hint "stats" forces z-stat for any array', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize([{ label: 'X', value: '1' }], '#target', { hint: 'stats' });
+      assert.ok(result.success, 'hint stats should succeed');
+      assert.equal(result.component, 'z-stat');
+    });
+
+    // --- String list → z-sortable ---
+
+    t.test('string array renders a z-sortable list', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(stringList, '#target');
+      assert.ok(result.success, 'string list visualize should succeed');
+      assert.equal(result.component, 'z-sortable');
+      const el = document.getElementById('target').querySelector('z-sortable');
+      assert.ok(el, 'z-sortable should exist');
+      assert.equal(el.children.length, 4, 'should have 4 items');
+      assert.equal(el.children[0].textContent, 'Alpha');
+    });
+
+    t.test('large list (>50 items) renders z-virtual-list', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const bigList = Array.from({ length: 60 }, (_, i) => 'Item ' + (i + 1));
+      const result = Zephyr.agent.visualize(bigList, '#target');
+      assert.ok(result.success, 'large list should succeed');
+      assert.equal(result.component, 'z-virtual-list');
+      assert.ok(document.getElementById('target').querySelector('z-virtual-list'), 'z-virtual-list should exist');
+    });
+
+    t.test('hint "list" forces z-sortable for object arrays', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize([{ id: '1', label: 'A' }, { id: '2', label: 'B' }], '#target', { hint: 'list' });
+      assert.ok(result.success, 'hint list should succeed');
+      assert.equal(result.component, 'z-sortable');
+    });
+
+    // --- Object array → z-data-grid ---
+
+    t.test('object array renders a z-data-grid', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(objectArray, '#target');
+      assert.ok(result.success, 'object array visualize should succeed');
+      assert.equal(result.component, 'z-data-grid');
+      assert.ok(document.getElementById('target').querySelector('z-data-grid'), 'z-data-grid should exist');
+    });
+
+    t.test('hint "table" forces z-data-grid', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(objectArray, '#target', { hint: 'table' });
+      assert.ok(result.success, 'hint table should succeed');
+      assert.equal(result.component, 'z-data-grid');
+    });
+
+    // --- General behavior ---
+
+    t.test('visualize() clears container before rendering', async (assert) => {
+      const container = document.getElementById('target');
+      container.textContent = '';
+      Zephyr.agent.visualize(statsArray, '#target');
+      const firstCount = container.children.length;
+      Zephyr.agent.visualize(stringList, '#target');
+      // Container should be cleared and re-populated, not appended
+      const secondCount = container.children.length;
+      assert.ok(secondCount > 0, 'should have new content after second call');
+      assert.ok(container.querySelector('z-sortable'), 'should have z-sortable, not leftover z-stat');
+      assert.ok(!container.querySelector('z-stat'), 'old z-stat should be gone');
+    });
+
+    t.test('unknown data type returns error result', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(42, '#target');
+      assert.ok(!result.success, 'bare number should not succeed without hint');
+      assert.ok(result.error, 'should return an error message');
+    });
+
+    t.test('invalid container returns error', async (assert) => {
+      const result = Zephyr.agent.visualize(stringList, '#does-not-exist');
+      assert.ok(!result.success, 'should fail for missing container');
+      assert.ok(result.error.includes('Container not found'), 'error should mention container');
+    });
+
+    t.test('empty array returns error result', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize([], '#target');
+      assert.ok(!result.success, 'empty array should not succeed');
+      assert.ok(result.error.includes('No data'), 'error should mention missing data');
+    });
+
+    t.test('null data returns error result', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(null, '#target');
+      assert.ok(!result.success, 'null data should not succeed');
+      assert.ok(result.error.includes('No data'), 'error should mention missing data');
+    });
+
+    t.test('hint "table" with non-object rows returns error result', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize(['a', 'b'], '#target', { hint: 'table' });
+      assert.ok(!result.success, 'primitive rows should not succeed as a table');
+      assert.ok(result.error.includes('array of objects'), 'error should explain the required shape');
+    });
+
+    t.test('hint "list" with non-array data returns error result', async (assert) => {
+      document.getElementById('target').textContent = '';
+      const result = Zephyr.agent.visualize({ label: 'X', value: '1' }, '#target', { hint: 'list' });
+      assert.ok(!result.success, 'non-array should not succeed as a list');
+      assert.ok(result.error.includes('requires an array'), 'error should explain the required shape');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test: WebMCP Adapter</title>
+  <link rel="stylesheet" href="../zephyr-framework.css">
+</head>
+<body>
+  <!-- Test fixtures -->
+  <z-modal id="webmcp-modal">
+    <h2>WebMCP Modal</h2>
+    <p>Content</p>
+  </z-modal>
+
+  <z-select id="webmcp-select" name="color">
+    <button slot="trigger">Choose</button>
+    <div slot="options">
+      <div data-value="red">Red</div>
+      <div data-value="blue">Blue</div>
+    </div>
+  </z-select>
+
+  <script>
+    // Mock the WebMCP API (document.modelContext) before the adapter loads,
+    // mirroring the registerTool() surface from the W3C explainer.
+    window.__registeredTools = new Map();
+    document.modelContext = {
+      registerTool(tool, options) {
+        if (!tool.name || !tool.description || typeof tool.execute !== 'function') {
+          return Promise.reject(new TypeError('Invalid tool definition'));
+        }
+        window.__registeredTools.set(tool.name, tool);
+        if (options && options.signal) {
+          options.signal.addEventListener('abort', () => {
+            window.__registeredTools.delete(tool.name);
+          });
+        }
+        return Promise.resolve();
+      }
+    };
+  </script>
+
+  <script src="../zephyr-framework.js"></script>
+  <script src="../zephyr-webmcp.js"></script>
+  <script src="harness.js"></script>
+  <script>
+    const t = new TestSuite('WebMCP Adapter');
+
+    // Auto-registration kicks off async at load; give it a tick to finish
+    const ready = new Promise(r => setTimeout(r, 50));
+
+    t.test('detects the mocked WebMCP API', async (assert) => {
+      await ready;
+      assert.ok(Zephyr.webmcp, 'Zephyr.webmcp should exist');
+      assert.ok(Zephyr.webmcp.available(), 'available() should be true with the mock');
+    });
+
+    t.test('auto-registers all Zephyr tools on load', async (assert) => {
+      await ready;
+      assert.ok(Zephyr.webmcp.registered, 'adapter should report registered');
+      const expected = ['zephyr_act', 'zephyr_get_state', 'zephyr_describe',
+        'zephyr_set_state', 'zephyr_get_schema', 'zephyr_get_prompt', 'zephyr_visualize'];
+      for (const name of expected) {
+        assert.ok(window.__registeredTools.has(name), name + ' should be registered');
+      }
+    });
+
+    t.test('registered tools have valid schemas', async (assert) => {
+      await ready;
+      for (const [name, tool] of window.__registeredTools) {
+        assert.ok(tool.description.length > 20, name + ' should have a real description');
+        assert.equal(tool.inputSchema.type, 'object', name + ' inputSchema should be an object schema');
+      }
+    });
+
+    t.test('zephyr_get_state executes and returns MCP content', async (assert) => {
+      await ready;
+      const tool = window.__registeredTools.get('zephyr_get_state');
+      const result = await tool.execute({});
+      assert.ok(Array.isArray(result.content), 'should return content array');
+      assert.equal(result.content[0].type, 'text');
+      const state = JSON.parse(result.content[0].text);
+      assert.ok(state.some(c => c.tag === 'z-modal'), 'state should include the modal');
+    });
+
+    t.test('zephyr_act opens a component through the adapter', async (assert) => {
+      await ready;
+      const tool = window.__registeredTools.get('zephyr_act');
+      const result = await tool.execute({ selector: '#webmcp-modal', action: 'open' });
+      const parsed = JSON.parse(result.content[0].text);
+      assert.ok(parsed.success, 'act should succeed');
+      assert.ok(document.getElementById('webmcp-modal').hasAttribute('data-open'), 'modal should be open');
+      Zephyr.agent.act('#webmcp-modal', 'close');
+    });
+
+    t.test('guarded actions surface the pending confirmation', async (assert) => {
+      await ready;
+      Zephyr.agent.act('#webmcp-modal', 'open');
+      Zephyr.agent.guard('z-modal', ['close']);
+      const tool = window.__registeredTools.get('zephyr_act');
+      const result = await tool.execute({ selector: '#webmcp-modal', action: 'close' });
+      const parsed = JSON.parse(result.content[0].text);
+      assert.equal(parsed.success, false, 'guarded act should not execute');
+      assert.ok(parsed.pending, 'should be pending');
+      assert.ok(parsed.confirmId, 'should include a confirmId');
+      Zephyr.agent.deny(parsed.confirmId);
+      Zephyr.agent.unguard('z-modal');
+      Zephyr.agent.act('#webmcp-modal', 'close');
+    });
+
+    t.test('tool errors return structured failures instead of throwing', async (assert) => {
+      await ready;
+      const tool = window.__registeredTools.get('zephyr_describe');
+      const result = await tool.execute({ selector: '#does-not-exist' });
+      const parsed = JSON.parse(result.content[0].text);
+      assert.ok(parsed.error, 'should return an error field for a missing element');
+    });
+
+    t.test('unregister() removes all tools via the abort signal', async (assert) => {
+      await ready;
+      Zephyr.webmcp.unregister();
+      assert.equal(window.__registeredTools.size, 0, 'all tools should be removed');
+      assert.ok(!Zephyr.webmcp.registered, 'adapter should report unregistered');
+      // Re-register for any later tests
+      const ok = await Zephyr.webmcp.register();
+      assert.ok(ok, 're-registration should succeed');
+      assert.equal(window.__registeredTools.size, 7, 'tools should be back');
+    });
+
+    t.run();
+  </script>
+</body>
+</html>

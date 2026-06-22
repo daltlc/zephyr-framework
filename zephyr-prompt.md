@@ -236,6 +236,35 @@ Actions: `setColumns({ columns })`, `setRows({ rows })`, `sort({ column, directi
 ```
 Actions: `setType({ type })`, `setData({ data })`, `addPoint({ point })`, `addSeries({ type, data })`, `setTimeRange({ from, to })`
 
+## Auto-Visualizer — Automatic Data Display
+
+When an agent has data to display, use the purpose-named visualization tools (AI SDK / MCP) or call `Zephyr.agent.visualize()` directly (code). The framework picks the right component automatically.
+
+### Agent tools (prefer these over raw `render`/`compose` for data display)
+
+| Tool | Use when prompt implies |
+|------|------------------------|
+| `zephyr_show_chart` | Time series, trends over time, price history, numeric series, OHLC stock data |
+| `zephyr_show_table` | Tabular records, objects with 3+ fields, structured datasets |
+| `zephyr_show_stats` | KPIs, metrics, label + value pairs, trend indicators (+5%, -$200) |
+| `zephyr_show_list` | Ordered items, ranked results, drag-to-reorder lists |
+
+### Code API
+
+```js
+// Auto-detect from data shape
+Zephyr.agent.visualize(data, '#output');
+
+// Override with hint
+Zephyr.agent.visualize(data, '#output', { hint: 'chart', title: 'Revenue' });
+```
+
+**Data shape → component mapping:**
+- `[{ time, value }, ...]` or `[{ time, open, high, low, close }, ...]` → `z-chart` (line or candlestick)
+- `[{ label, value, trend? }, ...]` (≤8 items) or `{ label, value }` → `z-stat` cards
+- `['string', ...]` or `[{ id, label }, ...]` → `z-sortable` (≤50) or `z-virtual-list` (>50)
+- Any array of objects → `z-data-grid` (columns auto-derived from keys)
+
 ## Render API — Dynamic Component Creation
 
 ```js

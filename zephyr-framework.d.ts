@@ -380,6 +380,36 @@ interface ZephyrAgentAPI {
    * Sugar over render() for dashboard/panel patterns.
    */
   compose(containerSelector: string, layout: ZephyrComposeLayout): ZephyrComposeResult;
+
+  /**
+   * Auto-selects and renders the best Zephyr component for the given data.
+   * Analyzes data shape: time series → z-chart, stat objects → z-stat cards,
+   * simple arrays → z-sortable/z-virtual-list, object arrays → z-data-grid.
+   * Clears the container before rendering.
+   * @param data - Any data: time series array, stat array/object, string list, or object array
+   * @param containerSelector - CSS selector for the target container
+   * @param options - Optional hint and title
+   */
+  visualize(data: any, containerSelector: string, options?: ZephyrVisualizeOptions): ZephyrVisualizeResult;
+}
+
+// ---------------------------------------------------------------------------
+// Visualize API Types
+// ---------------------------------------------------------------------------
+
+interface ZephyrVisualizeOptions {
+  /** Override auto-detection: 'chart', 'stats', 'list', or 'table'. */
+  hint?: 'chart' | 'stats' | 'list' | 'table';
+  /** Title for chart visualizations. */
+  title?: string;
+}
+
+interface ZephyrVisualizeResult {
+  success: boolean;
+  /** The component tag that was rendered (e.g., 'z-chart', 'z-stat'). */
+  component?: string;
+  selector?: string;
+  error?: string;
 }
 
 // ---------------------------------------------------------------------------

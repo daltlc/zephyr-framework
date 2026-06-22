@@ -50,6 +50,8 @@ All code in this project must follow these principles:
 - Accessibility: validate ARIA attributes and keyboard navigation
 - Test harness should be HTML-based (no Node dependency) to match the zero-JS philosophy
 - Tests live in a `tests/` directory
+- `npm test` runs every `tests/test-*.html` page headlessly via `tests/run-ci.js` (Playwright Chromium, devDependency only); the same suite runs in GitHub Actions (`.github/workflows/ci.yml`). Pages remain directly openable in a browser.
+- Inside test scripts, never write a literal `</script>` in a string — escape it as `<\/script>` or the HTML parser truncates the script element
 
 ## Code Hygiene
 

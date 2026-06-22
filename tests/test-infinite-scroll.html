@@ -28,15 +28,19 @@
     });
 
     t.test('dispatches loadmore event when sentinel is visible', async (assert) => {
-      await waitForElements();
-      const scroller = document.getElementById('test-infinite');
+      // The page-level scroller dispatched its initial loadmore at load time,
+      // before this listener could attach — so test with a fresh element and
+      // attach the listener before it connects to the DOM.
+      const scroller = document.createElement('z-infinite-scroll');
+      scroller.style.cssText = 'max-height: 150px; overflow-y: auto;';
       let loadmoreFired = false;
-
       scroller.addEventListener('loadmore', () => { loadmoreFired = true; }, { once: true });
+      document.body.appendChild(scroller);
 
-      // The sentinel should be immediately visible since container is empty
+      // The sentinel is immediately visible since the container is empty
       await new Promise(r => setTimeout(r, 200));
       assert.ok(loadmoreFired, 'loadmore should fire when sentinel is visible');
+      scroller.remove();
     });
 
     t.test('does not dispatch while data-loading is set', async (assert) => {

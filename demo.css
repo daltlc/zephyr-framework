@@ -7,14 +7,17 @@
  */
 
 :root {
-  --midnight: #0a0a0a;
-  --charcoal: #111;
-  --slate: #1a1a1a;
-  --silver: #888;
-  --ice: #f0f0f0;
-  --accent: #e8f55e;
-  --accent-soft: #d4e04a;
-  --warning: #ffd700;
+  --midnight: #141008;
+  --charcoal: #1e180e;
+  --slate: #2a2018;
+  --silver: #9a8a7a;
+  --ice: #f0ece6;
+  --accent: #e2c87d;
+  --accent-soft: #c9a84c;
+  --teal: #c5dee3;
+  --lavender: #d2c9e6;
+  --sand: #e7d7aa;
+  --warning: #e2c87d;
 }
 
 body {
@@ -67,7 +70,7 @@ h1 {
 }
 
 .hero-tagline strong {
-  color: var(--accent-soft);
+  color: var(--sand);
 }
 
 .hero-links {
@@ -79,8 +82,8 @@ h1 {
 
 .hero-link {
   background: transparent;
-  border: none;
-  color: var(--accent);
+  border: 1px solid rgba(210, 201, 230, 0.3);
+  color: var(--lavender);
   padding: 0.5rem 1.25rem;
   border-radius: 0.5rem;
   text-decoration: none;
@@ -90,8 +93,9 @@ h1 {
 }
 
 .hero-link:hover {
-  background: rgba(232, 245, 94, 0.1);
-  color: var(--accent-soft);
+  background: rgba(210, 201, 230, 0.1);
+  border-color: var(--lavender);
+  color: var(--ice);
   transform: translateY(-2px);
 }
 
@@ -105,7 +109,7 @@ h1 {
 .section-heading {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--accent-soft);
+  color: var(--sand);
   margin: 0 0 0.5rem;
   text-align: center;
   letter-spacing: -0.02em;
@@ -120,13 +124,13 @@ h1 {
   text-align: center;
 }
 
-/* Agent feature cards — accent border */
+/* Agent feature cards — teal accent border */
 .agent-card {
-  border-color: rgba(232, 245, 94, 0.3);
+  border-color: rgba(197, 222, 227, 0.3);
 }
 
 .agent-card:hover {
-  box-shadow: 0 20px 40px rgba(232, 245, 94, 0.25);
+  box-shadow: 0 20px 40px rgba(197, 222, 227, 0.12);
 }
 
 .demo-grid {
@@ -139,7 +143,7 @@ h1 {
 
 .demo-card {
   background: var(--charcoal);
-  border: 1px solid #1f1f1f;
+  border: 1px solid rgba(210, 201, 230, 0.15);
   border-radius: 1rem;
   padding: 2rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -168,7 +172,7 @@ h1 {
 
 .demo-card:hover {
   transform: translateY(-0.25rem);
-  box-shadow: 0 20px 40px rgba(232, 245, 94, 0.15);
+  box-shadow: 0 20px 40px rgba(226, 200, 125, 0.08);
 }
 
 h2 {
@@ -181,7 +185,7 @@ h2 {
 
 button:not(z-agent button), .button {
   background: var(--accent);
-  color: #0a0a0a;
+  color: #1c1410;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
@@ -196,7 +200,7 @@ button:not(z-agent button), .button {
 button:not(z-agent button):hover, .button:hover {
   background: var(--accent-soft);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(232, 245, 94, 0.3);
+  box-shadow: 0 4px 12px rgba(226, 200, 125, 0.3);
 }
 
 button:not(z-agent button):active, .button:active {
@@ -243,7 +247,7 @@ z-tabs [role="tablist"] {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #1f1f1f;
+  border-bottom: 1px solid rgba(210, 201, 230, 0.2);
   padding-bottom: 0;
 }
 
@@ -258,7 +262,7 @@ z-tabs [data-tab] {
 }
 
 z-tabs [data-tab][data-active] {
-  color: var(--accent);
+  color: var(--teal);
   background: var(--slate);
 }
 
@@ -272,7 +276,7 @@ z-select [slot="trigger"] {
   background: var(--slate);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   color: var(--ice);
   width: 100%;
   text-align: left;
@@ -294,7 +298,7 @@ z-select[data-open] [slot="trigger"]::after {
 
 z-select [slot="options"] {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   width: 100%;
   border-radius: 0.5rem;
 }
@@ -306,7 +310,7 @@ z-select [slot="options"] [data-value] {
 
 z-select [slot="options"] [data-value]:hover {
   background: var(--charcoal);
-  color: var(--accent-soft);
+  color: var(--teal);
 }
 
 /* Carousel Styles */
@@ -350,7 +354,7 @@ z-carousel [slot="item"] h3 {
 
 .carousel-controls button:hover {
   background: var(--accent);
-  color: #0a0a0a;
+  color: #1c1410;
 }
 
 /* Dropdown Styles */
@@ -358,13 +362,13 @@ z-dropdown [slot="trigger"] {
   background: var(--slate);
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   color: var(--ice);
 }
 
 z-dropdown [slot="content"] {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   padding: 1rem;
   color: var(--silver);
 }
@@ -380,7 +384,7 @@ z-dropdown [slot="content"] a {
 
 z-dropdown [slot="content"] a:hover {
   background: var(--charcoal);
-  color: var(--accent-soft);
+  color: var(--teal);
 }
 
 /* Modal Styles */
@@ -419,13 +423,13 @@ z-modal dialog p {
 
 .modal-actions button:first-child {
   background: var(--accent);
-  color: #0a0a0a;
+  color: #1c1410;
 }
 
 /* Toast position override */
 z-toast {
   background: var(--accent);
-  color: #0a0a0a;
+  color: #1c1410;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -434,16 +438,17 @@ footer {
   text-align: center;
   margin-top: 4rem;
   padding-top: 2rem;
-  border-top: 1px solid #1f1f1f;
+  border-top: 1px solid rgba(210, 201, 230, 0.15);
   color: var(--silver);
   font-size: 0.875rem;
 }
 
+/* Inline code — teal bg for readability on dark */
 code {
-  background: var(--slate);
-  padding: 0.25rem 0.5rem;
+  background: var(--teal);
+  padding: 0.2rem 0.45rem;
   border-radius: 0.25rem;
-  color: var(--accent-soft);
+  color: #1a3040;
   font-size: 0.875em;
   font-family: monospace;
 }
@@ -455,7 +460,7 @@ z-combobox {
 
 z-combobox input {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: var(--ice);
@@ -469,7 +474,7 @@ z-combobox input::placeholder {
 
 z-combobox [slot="listbox"] {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
 }
 
 z-combobox [slot="listbox"] [data-value] {
@@ -480,13 +485,13 @@ z-combobox [slot="listbox"] [data-value] {
 z-combobox [slot="listbox"] [data-value]:hover,
 z-combobox [slot="listbox"] [data-value][data-highlighted] {
   background: var(--charcoal);
-  color: var(--accent-soft);
+  color: var(--teal);
 }
 
 /* Date Picker Styles */
 z-datepicker [slot="display"] {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.2);
   border-radius: 0.5rem;
   padding: 0.75rem 1.5rem;
   color: var(--silver);
@@ -500,7 +505,7 @@ z-datepicker [slot="display"][data-has-value] {
 /* Infinite Scroll Styles */
 .infinite-item {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #181818;
+  border-bottom: 1px solid rgba(210, 201, 230, 0.1);
   color: var(--silver);
   font-size: 0.875rem;
 }
@@ -508,7 +513,7 @@ z-datepicker [slot="display"][data-has-value] {
 /* Sortable Styles */
 .sortable-item {
   background: var(--slate);
-  border: 1px solid #2a2a2a;
+  border: 1px solid rgba(210, 201, 230, 0.15);
   border-radius: 0.375rem;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
@@ -521,7 +526,7 @@ z-datepicker [slot="display"][data-has-value] {
 }
 
 .sortable-item[data-drag-over] {
-  border-top-color: var(--accent);
+  border-top-color: var(--teal);
 }
 
 /* File Upload Styles */
@@ -533,9 +538,9 @@ z-file-upload [slot="dropzone"] {
 }
 
 z-file-upload[data-dragover] [slot="dropzone"] {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(232, 245, 94, 0.05);
+  border-color: var(--teal);
+  color: var(--teal);
+  background: rgba(197, 222, 227, 0.06);
 }
 
 z-file-upload .z-file-item {
@@ -551,16 +556,29 @@ z-file-upload .z-file-progress {
 }
 
 z-file-upload .z-file-progress-bar {
-  background: var(--accent);
+  background: var(--teal);
 }
 
 /* Virtual List Styles */
 z-virtual-list .z-virtual-item {
   color: var(--silver);
   font-size: 0.875rem;
-  border-bottom: 1px solid #181818;
+  border-bottom: 1px solid rgba(210, 201, 230, 0.1);
 }
 
 z-virtual-list .z-virtual-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(197, 222, 227, 0.04);
+}
+
+/* Reduced motion — skip entrance animations so content is never left dimmed
+   or shifting for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

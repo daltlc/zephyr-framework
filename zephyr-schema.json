@@ -39,6 +39,18 @@
     },
     "timeout": "Default 30 seconds. Pending actions are auto-denied after timeout."
   },
+  "autoVisualizer": {
+    "description": "Auto-selects and renders the best component for arbitrary data. Call Zephyr.agent.visualize(data, container, options?) or use the purpose-named agent tools (zephyr_show_chart, zephyr_show_table, zephyr_show_stats, zephyr_show_list). Chart, stats, and table routes require the dashboard add-on (dashboard/zephyr-dashboard.js).",
+    "methods": {
+      "visualize": "visualize(data, container, options?) — options: { hint?: 'chart'|'stats'|'list'|'table', title?: string }. Returns { success, component?, selector?, error? }."
+    },
+    "dataRouting": {
+      "chart": "Array of { time, value } or { time, open, high, low, close } — z-chart (line or candlestick)",
+      "stats": "Array of ≤8 { label, value, trend? } objects, or a single such object — z-stat cards",
+      "list": "Array of strings or { id, label } objects — z-sortable (≤50 items) or z-virtual-list (>50)",
+      "table": "Any array of objects (fallback) — z-data-grid with columns auto-derived from keys"
+    }
+  },
   "components": {
     "accordion": {
       "tag": "z-accordion",

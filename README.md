@@ -77,14 +77,16 @@ Want a live, deployed site with a real `<z-agent>` chat widget? Fork the referen
 
 The demo includes a serverless proxy (`/api/chat.js`) that keeps your key server-side, never exposed in the browser. Source: [zephyr-agent-demo](https://github.com/daltlc/zephyr-agent-demo).
 
-**Two paths to production:**
+**Two paths to production** — both free:
 
-| | DIY (free) | Hosted ([zephyr-agent.sh](https://zephyr-agent.sh), $9 once) |
+| | Fork the demo | Snippet generator ([zephyr-agent.sh](https://zephyr-agent.sh)) |
 |---|---|---|
-| Fork the demo, deploy your own proxy | ✓ | ✗ |
+| Deploy your own serverless proxy | ✓ | ✗ |
 | No backend to maintain | ✗ | ✓ |
 | Works on Webflow, Squarespace, GitHub Pages | ✗ | ✓ |
-| BYOK encrypted server-side | ✓ | ✓ |
+| API key stays server-side | ✓ | ✗ (key ships in the client snippet) |
+
+[zephyr-agent.sh](https://zephyr-agent.sh) is a static, client-side snippet generator — no account, no storage, nothing sent to its servers. Fork the demo instead when you need your key kept out of the browser.
 
 ---
 
